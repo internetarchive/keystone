@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+    "config",
+    "keystone",
+]
+
+[project]
+name = "keystone"
+version = "0.1"
+description = "Sidecar API for ARCH"
+dependencies = [
+    "django",
+    "django-ninja",
+    "psycopg",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "model_bakery",
+    "pylint",
+    "pylint-django",
+    "pylint-gitlab",
+    "pytest",
+    "pytest-cov",
+    "pytest-django",
+    "tox",
+]
+
+[project.scripts]
+"manage.py" = "config:django_manage"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+testpaths = [
+    "tests",
+    "integration",
+]
+python_files = [
+    "tests.py",
+    "test_*.py",
+    "*_tests.py",
+]

@@ -1,0 +1,36 @@
+# see: https://pylint.pycqa.org/en/latest/messages/messages_list.html
+# see: https://pylint.pycqa.org/en/latest/technical_reference/features.html
+# see: https://www.getcodeflow.com/pylint-configuration.html
+
+[MASTER]
+
+# List of plugins (as comma separated values of python module names) to load,
+# usually to register additional checkers.
+load-plugins=pylint_django,pylint.extensions.no_self_use
+
+django-settings-module=config.settings
+
+ignore=keystone/migrations
+
+
+[BASIC]
+
+# Good variable names which should always be accepted, separated by a comma.
+good-names=i,
+           j,
+           k,
+           e,
+           ex,
+           Run,
+           _,
+           rf,
+           pk,
+           db,
+           t0,
+           dt,
+
+[MESSAGES CONTROL]
+disable=missing-module-docstring,
+        fixme,
+        too-few-public-methods,
+
