@@ -42,8 +42,8 @@ else ifeq ($(ENV),CI)
 	DJANGO_SETTINGS_MODULE=config.settings \
 	   venv/bin/pytest \
 		--junit-xml=$(PYTEST_REPORT) \
-		--cov=vault \
-		--cov=vault_site \
+		--cov=keystone \
+		--cov=config \
 		--cov-report=xml
 endif
 
