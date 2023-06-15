@@ -1,0 +1,38 @@
+# see: https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
+
+variables:
+  POSTGRES_DB: "keystone"
+  POSTGRES_USER: "keystone"
+  POSTGRES_PASSWORD: "keystone"
+  VAULT_POSTGRES_HOST: "postgres"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  ENV: CI # run Makefile in CI mode
+  PYTEST_REPORT: pytest.xml
+  PYLINT_REPORT: pylint.json
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .cache/pip
+    - venv/
+
+test-py:
+  stage: test
+  image: python:3.8
+  services:
+  - postgres:14
+  # job can be preempted by subsequent requests to re-run
+  # https://git.archive.org/help/ci/yaml/README.md#interruptible
+  interruptible: true
+  script:
+  - python --version
+  - make venv
+  - make install
+  - pytest
+  artifacts:
+    reports:
+      junit: $PYTEST_REPORT
+      codequality: $PYLINT_REPORT
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
