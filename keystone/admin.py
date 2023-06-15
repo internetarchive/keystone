@@ -4,9 +4,9 @@ from django.template.defaultfilters import filesizeformat
 from . import models
 
 
-@admin.register(models.Organization)
-class OrganizationAdmin(admin.ModelAdmin):
-    """Django admin config for Organization"""
+@admin.register(models.Account)
+class AccountAdmin(admin.ModelAdmin):
+    """Django admin config for Account"""
 
     list_display = (
         "id",
@@ -21,13 +21,13 @@ class TeamAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
-        "organization_name",
+        "account_name",
     )
 
-    @admin.display(description="Organization", ordering="organization__name")
-    def organization_name(self, team):
-        """Show the Team's Organization's name in Django admin list_display"""
-        return team.organization
+    @admin.display(description="Account", ordering="account__name")
+    def account_name(self, team):
+        """Show the Team's Account's name in Django admin list_display"""
+        return team.account
 
 
 @admin.register(models.User)
@@ -36,13 +36,13 @@ class UserAdmin(admin.ModelAdmin):
 
     list_display = (
         "username",
-        "organization_name",
+        "account_name",
     )
 
-    @admin.display(description="Organization", ordering="organization__name")
-    def organization_name(self, user):
-        """Show the User's Organization's name in Django admin list_display"""
-        return user.organization
+    @admin.display(description="Account", ordering="account__name")
+    def account_name(self, user):
+        """Show the User's Account's name in Django admin list_display"""
+        return user.account
 
 
 @admin.register(models.Collection)

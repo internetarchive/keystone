@@ -9,8 +9,8 @@ docker-compose -f dev/docker-compose.yml up postgres
 make venv
 make install
 manage.py migrate
-manage.py createorganization 'My Org Name'
-# enter ID for Organization created and printed in previous step when prompted
+manage.py createaccount 'My account Name'
+# enter ID for Account created and printed in previous step when prompted
 # enter ADMIN for role when prompted
 manage.py createsuperuser
 pytest
@@ -36,14 +36,14 @@ over-writing the work of pip-sync.
 ## TODO / Questions
 
 - Hierarchical quota assignment?
-    - A transaction can count against a User, Team, and Org quota
-      - All users of an Org can't do work that exceeds the Org quota
+    - A transaction can count against a User, Team, and Account quota
+      - All users of an account can't do work that exceeds the Account quota
       - If a user has a quota, they can't do work that exceeds their quota
-      - If a user doesn't have a quota, they can't do work if it puts the org over
+      - If a user doesn't have a quota, they can't do work if it puts the account over
       - Do users have a choice of charging work against a team quota?
       - If a user is a part of multiple teams it doesn't seem right to charge all teams
     - Quotas are optional for Users and Teams
-- Keep Org/Team/User in keystone app, and move the rest to arch app
+- Keep Account/Team/User in keystone app, and move the rest to arch app
     - There could also be a Vault and AIT app added to the service
     - Each product app in this service would have its own Quota schema
 - 

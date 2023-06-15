@@ -2,11 +2,11 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.db.utils import IntegrityError
 
-from keystone.models import Organization
+from keystone.models import Account
 
 
 class Command(BaseCommand):
-    help = "Create an Organization"
+    help = "Create an Account"
 
     def add_arguments(self, parser):
         parser.add_argument("name", type=str)
@@ -15,11 +15,11 @@ class Command(BaseCommand):
         name = options["name"]
 
         try:
-            org = Organization.objects.create(name=name)
+            account = Account.objects.create(name=name)
         except IntegrityError as e:
             raise CommandError(
-                f"Organization already exists with name {name}",
+                f"Account already exists with name {name}",
                 returncode=1,
             ) from e
 
-        self.stdout.write(f"{org.name} - {org.id}")
+        self.stdout.write(f"{account.name} - {account.id}")

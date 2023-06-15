@@ -20,7 +20,7 @@ def choice_constraint(field, choices):
     )
 
 
-class Organization(models.Model):
+class Account(models.Model):
     """Top-level for a group of Users."""
 
     name = models.CharField(max_length=255, unique=True)
@@ -43,13 +43,13 @@ class User(AbstractUser):
     """Keystone user. Django Auth model."""
 
     email = models.EmailField(unique=True)
-    organization = models.ForeignKey(Organization, on_delete=models.PROTECT)
+    account = models.ForeignKey(Account, on_delete=models.PROTECT)
     role = models.CharField(
         choices=UserRoles.choices, default=UserRoles.USER, max_length=16
     )
     teams = models.ManyToManyField("Team", blank=True, related_name="members")
 
-    REQUIRED_FIELDS = (*AbstractUser.REQUIRED_FIELDS, "organization_id", "role")
+    REQUIRED_FIELDS = (*AbstractUser.REQUIRED_FIELDS, "account_id", "role")
 
     class Meta:
         constraints = [choice_constraint(field="role", choices=UserRoles)]
@@ -61,11 +61,11 @@ class User(AbstractUser):
 
 class Team(models.Model):
     """Users may be members of zero or more teams.
-    Teams belong to a single Organization.
+    Teams belong to a single Account.
     """
 
     name = models.CharField(max_length=255)
-    organization = models.ForeignKey(Organization, on_delete=models.PROTECT)
+    account = models.ForeignKey(Account, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -90,7 +90,7 @@ class Collection(models.Model):
 
     name = models.CharField(max_length=255)
     collection_type = models.CharField(choices=CollectionTypes.choices, max_length=16)
-    organizations = models.ManyToManyField(Organization)
+    accounts = models.ManyToManyField(Account)
     teams = models.ManyToManyField(Team)
     users = models.ManyToManyField(User)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -105,7 +105,7 @@ class Collection(models.Model):
 
 
 class ArchQuota(models.Model):
-    """ArchQuotas can be assigned to Organizations, Teams, and Users.
+    """ArchQuotas can be assigned to Accounts, Teams, and Users.
     `content_type`, `object_id`, and `content_object` generically link ArchQuotas
     to one of those three models.
     """
@@ -128,16 +128,16 @@ class ArchQuota(models.Model):
     @classmethod
     def fetch_for_user(cls, user):
         """Return all ArchQuotas that apply to this user."""
-        content_types = ContentType.objects.get_for_models(Organization, Team, User)
+        content_types = ContentType.objects.get_for_models(Account, Team, User)
         quotas = ArchQuota.objects.filter(
-            Q(content_type=content_types[Organization], object_id=user.organization_id)
+            Q(content_type=content_types[Account], object_id=user.account_id)
             | Q(content_type=content_types[Team], object_id__in=user.teams.all())
             | Q(content_type=content_types[User], object_id=user.id)
         )
         quota_dict = defaultdict(list)
         for quota in quotas:
-            if quota.content_type == content_types[Organization]:
-                quota_dict[Organization] = quota
+            if quota.content_type == content_types[Account]:
+                quota_dict[Account] = quota
             if quota.content_type == content_types[Team]:
                 quota_dict[Team].append(quota)
             if quota.content_type == content_types[User]:
