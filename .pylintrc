@@ -33,4 +33,6 @@ good-names=i,
 disable=missing-module-docstring,
         fixme,
         too-few-public-methods,
+        no-self-use,
+        import-outside-toplevel
 

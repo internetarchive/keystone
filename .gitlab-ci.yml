@@ -28,7 +28,9 @@ test-py:
   - python --version
   - make venv
   - make install
-  - pytest
+  - make test
+  - make lint
+  - make ck-format
   artifacts:
     reports:
       junit: $PYTEST_REPORT

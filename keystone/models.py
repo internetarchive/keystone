@@ -127,19 +127,20 @@ class ArchQuota(models.Model):
 
     @classmethod
     def fetch_for_user(cls, user):
-        ct = ContentType.objects.get_for_models(Organization, Team, User)
+        """Return all ArchQuotas that apply to this user."""
+        content_types = ContentType.objects.get_for_models(Organization, Team, User)
         quotas = ArchQuota.objects.filter(
-            Q(content_type=ct[Organization], object_id=user.organization_id)
-            | Q(content_type=ct[Team], object_id__in=user.teams.all())
-            | Q(content_type=ct[User], object_id=user.id)
+            Q(content_type=content_types[Organization], object_id=user.organization_id)
+            | Q(content_type=content_types[Team], object_id__in=user.teams.all())
+            | Q(content_type=content_types[User], object_id=user.id)
         )
         quota_dict = defaultdict(list)
         for quota in quotas:
-            if quota.content_type == ct[Organization]:
+            if quota.content_type == content_types[Organization]:
                 quota_dict[Organization] = quota
-            if quota.content_type == ct[Team]:
+            if quota.content_type == content_types[Team]:
                 quota_dict[Team].append(quota)
-            if quota.content_type == ct[User]:
+            if quota.content_type == content_types[User]:
                 quota_dict[User] = quota
         return quota_dict
 
