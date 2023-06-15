@@ -2,6 +2,8 @@
 
 ## Setup Dev Environment
 
+Before you begin, ensure docker-compose is installed and **Python 3.10** is active.
+
 ```shell
 docker-compose -f dev/docker-compose.yml up postgres
 make venv
