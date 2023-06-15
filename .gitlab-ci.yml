@@ -18,7 +18,7 @@ cache:
 
 test-py:
   stage: test
-  image: python:3.8
+  image: python:3.10
   services:
   - postgres:14
   # job can be preempted by subsequent requests to re-run
