@@ -421,9 +421,9 @@ tomlkit==0.11.8 \
     # via
     #   pylint
     #   pylint-gitlab
-tox==4.6.0 \
-    --hash=sha256:4874000453e637a87ca892f9744a2ab9a7d24064dad1b0ecbf5a4c3c146cc732 \
-    --hash=sha256:954f1f647f67f481d239a193288983242a6152b67503c4a56b19a4aafaa29736
+tox==4.6.1 \
+    --hash=sha256:b45c4927bd1b3d91d532fbae9d7ffb676ff2b4d2ae26ef93b41b3189d1eff860 \
+    --hash=sha256:bf71ff8ee08499d4a3db6b73e35ef8d0e4346a3bea84517245b1e4a09b9f0774
     # via keystone (pyproject.toml)
 typing-extensions==4.6.3 \
     --hash=sha256:88a4153d8505aabbb4e13aacb7c486c2b4a33ca3b3f807914a9b4c844c471c26 \
