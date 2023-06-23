@@ -5,6 +5,7 @@ variables:
   POSTGRES_USER: "keystone"
   POSTGRES_PASSWORD: "keystone"
   KEYSTONE_POSTGRES_HOST: "postgres"
+  KEYSTONE_POSTGRES_PORT: 5432
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   ENV: CI # run Makefile in CI mode
   PYTEST_REPORT: pytest.xml
