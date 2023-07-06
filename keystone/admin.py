@@ -88,20 +88,16 @@ class JobTypeAdmin(admin.ModelAdmin):
 class JobStartAdmin(admin.ModelAdmin):
     """Django admin config for JobStart"""
 
-    list_display = (
-        "job_type",
-        "user",
-        "input_size",
-    )
+    list_display = ("id", "job_type", "user", "input_size", "sample", "created_at")
 
-    @admin.display(description="Input Size", ordering="-estimated_input_bytes")
+    @admin.display(description="Input Size", ordering="-input_bytes")
     def input_size(self, job_start, human=True):
-        """Get human-friendly format for the estimated size of a Job's input.
+        """Get human-friendly format for the size of a Job's input.
         This is intended primarily for Django admin list_display.
         """
         if human:
-            return filesizeformat(job_start.estimated_input_bytes)
-        return job_start.estimated_input_bytes
+            return filesizeformat(job_start.input_bytes)
+        return job_start.input_bytes
 
 
 @admin.register(models.JobComplete)
@@ -109,8 +105,20 @@ class JobCompleteAdmin(admin.ModelAdmin):
     """Django admin config for JobComplete"""
 
     list_display = (
+        "id",
         "job_start",
-        "input_bytes",
         "output_bytes",
+        "created_at",
+    )
+
+
+@admin.register(models.JobEvent)
+class JobEventAdmin(admin.ModelAdmin):
+    """Django admin config for JobEvent"""
+
+    list_display = (
+        "id",
+        "job_start",
+        "event_type",
         "created_at",
     )

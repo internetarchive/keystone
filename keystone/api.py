@@ -3,7 +3,15 @@ from ninja import NinjaAPI, Schema, ModelSchema
 from ninja.security import APIKeyHeader, django_auth
 
 from config import settings
-from .models import Collection, CollectionTypes, JobComplete, JobStart, JobType, User
+from .models import (
+    Collection,
+    CollectionTypes,
+    JobComplete,
+    JobStart,
+    JobType,
+    User,
+    JobEvent,
+)
 
 
 class ApiKey(APIKeyHeader):
@@ -48,11 +56,14 @@ def register_collection(request, collection: CollectionIn):
 class JobStartIn(Schema):
     """Request POST payload schema for JobStart registration"""
 
+    id: str
     job_type_name: str
     job_type_version: str
     username: str
-    estimated_input_bytes: int
+    input_bytes: int
+    sample: bool
     parameters: str
+    created_at: str
 
 
 class JobStartOut(ModelSchema):
@@ -66,7 +77,8 @@ class JobStartOut(ModelSchema):
             "id",
             "job_type",
             "user",
-            "estimated_input_bytes",
+            "input_bytes",
+            "sample",
             "parameters",
             "created_at",
         ]
@@ -80,20 +92,59 @@ def register_job_start(request, payload: JobStartIn):
     )
     user = get_object_or_404(User, username=payload.username)
     job_start = JobStart.objects.create(
+        id=payload.id,
         job_type=job_type,
         user=user,
-        estimated_input_bytes=payload.estimated_input_bytes,
+        input_bytes=payload.input_bytes,
+        sample=payload.sample,
         parameters=payload.parameters,
+        created_at=payload.created_at,
     )
     return job_start
+
+
+class JobEventIn(Schema):
+    """Request POST payload schema for JobEvent registration"""
+
+    job_start_id: str
+    event_type: str
+    created_at: str
+
+
+class JobEventOut(ModelSchema):
+    """Response schema for JobEvent registration"""
+
+    class Config:
+        """Ninja ModelSchema configuration."""
+
+        model = JobEvent
+        model_fields = [
+            "id",
+            "job_start",
+            "event_type",
+            "created_at",
+        ]
+
+
+@private_api.post("/job/event", response=JobEventOut)
+def register_job_event(request, payload: JobEventIn):
+    """Tell Keystone an ARCH job event has occurred"""
+
+    job_start = get_object_or_404(JobStart, id=payload.job_start_id)
+    job_event = JobEvent.objects.create(
+        job_start=job_start,
+        event_type=payload.event_type,
+        created_at=payload.created_at,
+    )
+    return job_event
 
 
 class JobCompleteIn(Schema):
     """Request POST payload schema for JobComplete registration"""
 
-    job_id: int
-    input_bytes: int
+    job_start_id: str
     output_bytes: int
+    created_at: str
 
 
 class JobCompleteOut(ModelSchema):
@@ -103,7 +154,7 @@ class JobCompleteOut(ModelSchema):
         """Ninja ModelSchema configuration."""
 
         model = JobComplete
-        model_fields = ["id", "job_start", "input_bytes", "output_bytes", "created_at"]
+        model_fields = ["id", "job_start", "output_bytes", "created_at"]
 
 
 @private_api.post("/job/complete", response=JobCompleteOut)
@@ -112,11 +163,11 @@ def register_job_complete(request, payload: JobCompleteIn):
     "Complete" does not imply success. The job may have ended in error,
     cancelled by the user, or some other final state.
     """
-    job_start = get_object_or_404(JobStart, id=payload.job_id)
+    job_start = get_object_or_404(JobStart, id=payload.job_start_id)
     job_complete = JobComplete.objects.create(
         job_start=job_start,
-        input_bytes=payload.input_bytes,
         output_bytes=payload.output_bytes,
+        created_at=payload.created_at,
     )
     return job_complete
 
