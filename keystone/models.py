@@ -9,6 +9,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q, UniqueConstraint
 
+import uuid6
+from .validators import validate_username
+
 
 def choice_constraint(field, choices):
     """Create a check constraint for a given Django model field name and Choices
@@ -41,6 +44,12 @@ class UserRoles(models.TextChoices):
 # Create your models here.
 class User(AbstractUser):
     """Keystone user. Django Auth model."""
+
+    username = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[validate_username],
+    )
 
     email = models.EmailField(unique=True)
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
@@ -172,19 +181,37 @@ class JobStart(models.Model):
     """There should be a JobStart record each time a user runs a job."""
 
     # TODO: how do we handle multi-collection jobs?
+    id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
     job_type = models.ForeignKey(JobType, on_delete=models.PROTECT)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     quotas = models.ManyToManyField(ArchQuota)
-    estimated_input_bytes = models.PositiveBigIntegerField()
+    input_bytes = models.PositiveBigIntegerField(default=0)
+    sample = models.BooleanField(default=False)
     parameters = models.JSONField(null=False, blank=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField()
 
 
 class JobComplete(models.Model):
     """JobComplete tracks completed JobStarts against Quotas."""
 
-    # TODO: add final state like success/failure/cancelled etc
     job_start = models.ForeignKey(JobStart, on_delete=models.PROTECT)
-    input_bytes = models.PositiveBigIntegerField()
     output_bytes = models.PositiveBigIntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField()
+
+
+class JobEventTypes(models.TextChoices):
+    """ARCH can use different types of collections as inputs for Jobs."""
+
+    QUEUED = "QUEUED", "Queued"
+    RUNNING = "RUNNING", "Running"
+    FINISHED = "FINISHED", "Finished"
+    FAILED = "FAILED", "Failed"
+    CANCELLED = "CANCELLED", "Cancelled"
+
+
+class JobEvent(models.Model):
+    """jobEvent tracks the events that occur during a job run, eg.queued, running, etc."""
+
+    job_start = models.ForeignKey(JobStart, on_delete=models.PROTECT)
+    event_type = models.CharField(choices=JobEventTypes.choices, max_length=16)
+    created_at = models.DateTimeField()

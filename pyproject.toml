@@ -16,6 +16,7 @@ dependencies = [
     "django",
     "django-ninja",
     "psycopg",
+    "uuid6",
 ]
 
 [project.optional-dependencies]
