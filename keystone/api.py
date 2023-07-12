@@ -57,12 +57,12 @@ class JobStartIn(Schema):
     """Request POST payload schema for JobStart registration"""
 
     id: str
-    job_type_name: str
-    job_type_version: str
+    job_type_id: str
     username: str
     input_bytes: int
     sample: bool
     parameters: str
+    commit_hash: str
     created_at: str
 
 
@@ -80,6 +80,7 @@ class JobStartOut(ModelSchema):
             "input_bytes",
             "sample",
             "parameters",
+            "commit_hash",
             "created_at",
         ]
 
@@ -87,9 +88,7 @@ class JobStartOut(ModelSchema):
 @private_api.post("/job/start", response=JobStartOut)
 def register_job_start(request, payload: JobStartIn):
     """Tell Keystone a user has started a job."""
-    job_type = get_object_or_404(
-        JobType, name=payload.job_type_name, version=payload.job_type_version
-    )
+    job_type = get_object_or_404(JobType, id=payload.job_type_id)
     user = get_object_or_404(User, username=payload.username)
     job_start = JobStart.objects.create(
         id=payload.id,
@@ -98,6 +97,7 @@ def register_job_start(request, payload: JobStartIn):
         input_bytes=payload.input_bytes,
         sample=payload.sample,
         parameters=payload.parameters,
+        commit_hash=payload.commit_hash,
         created_at=payload.created_at,
     )
     return job_start
