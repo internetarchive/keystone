@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Q, UniqueConstraint
+from django.db.models import Q
 
 import uuid6
 from .validators import validate_username
@@ -158,23 +158,17 @@ class JobType(models.Model):
     """JobTypes are the things we do in ARCH. We say JobType to disambiguate from
     any particular Job execution."""
 
+    id = models.UUIDField(primary_key=True, default=uuid6.uuid7)
     name = models.CharField(max_length=255)
-    version = models.CharField(max_length=255)
     can_run = models.BooleanField()
     can_publish = models.BooleanField()
     input_quota_eligible = models.BooleanField()
     output_quota_eligible = models.BooleanField()
     download_quota_eligible = models.BooleanField()
-    display_name = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        constraints = [
-            UniqueConstraint(fields=["name", "version"], name="unique_name_version")
-        ]
-
     def __str__(self):
-        return f"{self.name} - {self.version}"
+        return f"{self.id} - {self.name}"
 
 
 class JobStart(models.Model):
@@ -188,6 +182,7 @@ class JobStart(models.Model):
     input_bytes = models.PositiveBigIntegerField(default=0)
     sample = models.BooleanField(default=False)
     parameters = models.JSONField(null=False, blank=False)
+    commit_hash = models.CharField(max_length=255)
     created_at = models.DateTimeField()
 
 

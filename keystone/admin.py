@@ -79,8 +79,8 @@ class JobTypeAdmin(admin.ModelAdmin):
     """Django admin config for JobType"""
 
     list_display = (
+        "id",
         "name",
-        "version",
     )
 
 
@@ -88,7 +88,15 @@ class JobTypeAdmin(admin.ModelAdmin):
 class JobStartAdmin(admin.ModelAdmin):
     """Django admin config for JobStart"""
 
-    list_display = ("id", "job_type", "user", "input_size", "sample", "created_at")
+    list_display = (
+        "id",
+        "job_type",
+        "user",
+        "input_size",
+        "sample",
+        "commit_hash",
+        "created_at",
+    )
 
     @admin.display(description="Input Size", ordering="-input_bytes")
     def input_size(self, job_start, human=True):
