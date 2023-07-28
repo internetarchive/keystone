@@ -1,5 +1,7 @@
+from django.forms import model_to_dict
 from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI, Schema, ModelSchema
+from ninja.responses import codes_4xx
 from ninja.security import APIKeyHeader, django_auth
 
 from config import settings
@@ -7,10 +9,11 @@ from .models import (
     Collection,
     CollectionTypes,
     JobComplete,
+    JobEvent,
     JobStart,
     JobType,
     User,
-    JobEvent,
+    UserRoles,
 )
 
 
@@ -202,3 +205,80 @@ def user_can_run_job(
 
     # TODO: actually implement some checks
     return 200, PermissionResponse(allow=True)
+
+
+class ProxyLoginRequest(Schema):
+    """Take username and password to log user in"""
+
+    username: str
+    password: str
+
+
+class CollectionResponse(ModelSchema):
+    """Represents a KeyStone Collection"""
+
+    collection_type: CollectionTypes
+
+    class Config:
+        """Ninja-required Config class for ModelSchema"""
+
+        model = Collection
+        model_fields = ["id", "name"]
+
+
+class ProxyLoginResponse(Schema):
+    """User model with its permissions and Collections"""
+
+    username: str
+    email: str
+    role: UserRoles
+    fullname: str
+    is_staff: bool
+    is_superuser: bool
+    permissions: list[str]
+    collections: list[CollectionResponse]
+
+
+@private_api.post("/proxy_login", response={200: ProxyLoginResponse, codes_4xx: None})
+def proxy_login(request, payload: ProxyLoginRequest):
+    """ARCH hosts a login form collecting username/password. ARCH posts these
+    to this endpoint where Keystone checks these are valid. ARCH creates a
+    signed-in session when it receives a successful response to this endpoint.
+    """
+    if payload.username.startswith("ks:"):
+        payload.username = payload.username[3:]
+    user = get_object_or_404(User, username=payload.username)
+    if not user.is_active:
+        return 403, None
+    if not user.check_password(payload.password):
+        return 403, None
+    collections = Collection.get_for_user(user)
+    collection_responses = [CollectionResponse.from_orm(c) for c in collections]
+    response = ProxyLoginResponse(
+        **model_to_dict(user),
+        fullname=user.get_full_name(),
+        permissions=user.get_all_permissions(),
+        collections=collection_responses,
+    )
+    return 200, response
+
+
+class ProxyChangePasswordRequest(Schema):
+    """Request parameters for proxy_change_password"""
+
+    username: str
+    old_password: str
+    new_password: str
+
+
+@private_api.post("/proxy_change_password", response={200: None, codes_4xx: None})
+def proxy_change_password(request, payload: ProxyChangePasswordRequest):
+    """ARCH may host a change password form for signed-in users"""
+    user = get_object_or_404(User, username=payload.username)
+    if not user.is_active:
+        return 403, None
+    if not user.check_password(payload.old_password):
+        return 403, None
+    user.set_password(payload.new_password)
+    user.save()
+    return 200, None

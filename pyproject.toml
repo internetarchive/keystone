@@ -15,7 +15,10 @@ description = "Sidecar API for ARCH"
 dependencies = [
     "django",
     "django-ninja",
-    "psycopg",
+    "gunicorn",
+    "jinja2",
+    "psycopg[c]",
+    "python-dotenv",
     "uuid6",
 ]
 

@@ -1,0 +1,20 @@
+{% extends 'registration/base_not_logged_in.html' %}
+
+{% block header_title %}Login{% endblock header_title %}
+{% block content %}
+  <div class='small-4 columns small-centered margin-top two'>
+    <form action="{{ url("login") }}" method="post">
+      {{ csrf_input }}
+      {% if form.errors %}
+        <div class='alert-box'>Your username and password didn't match. Please try again.</div>
+      {% endif %}
+      <label for='user'>Username</label>
+      <input type="text" id='user' name="username" autofocus>
+      <label for='pass'>Password</label>
+      <input type="password" id='pass' name="password">
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class='padding-top padding-bottom half small'>Log In</button>
+      <a href="{{ url('password_reset') }}" class='smaller right margin-top one'>Forgot Password?</a>
+    </form>
+  </div>
+{% endblock %}

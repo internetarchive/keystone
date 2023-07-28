@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% block head %}
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <title>Vault: Digital Repository & Preservation Service</title>
+      <meta name="description" content="">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="{{ static('css/html5-bp/css/normalize.css') }}">
+      <link rel="stylesheet" href="{{ static('css/html5-bp/css/main.css') }}">
+      <link rel="stylesheet" href="{{ static('css/app.css') }}">
+      <link rel="stylesheet" href="{{ static('css/vault.css') }}">
+      <link rel="apple-touch-icon" sizes="57x57" href="{{ static('favicon/apple-57x57-touch-icon.png') }}">
+      <link rel="apple-touch-icon" sizes="60x60" href="{{ static('favicon/apple-60x60-touch-icon.png') }}">
+      <link rel="apple-touch-icon" sizes="72x72" href="{{ static('favicon/apple-72x72-touch-icon.png') }}">
+      <link rel="apple-touch-icon" sizes="76x76" href="{{ static('favicon/apple-76x76-touch-icon.png') }}">
+      <link rel="apple-touch-icon" sizes="114x114" href="{{ static('favicon/apple-114x114-touch-icon.png') }}">
+      <link rel="apple-touch-icon" sizes="120x120" href="{{ static('favicon/apple-120x120-touch-icon.png') }}">
+      <link rel="apple-touch-icon" sizes="144x144" href="{{ static('favicon/apple-144x144-touch-icon.png') }}">
+      <link rel="apple-touch-icon" sizes="152x152" href="{{ static('favicon/apple-152x152-touch-icon.png') }}">
+      <link rel="apple-touch-icon" sizes="180x180" href="{{ static('favicon/apple-180x180-touch-icon.png') }}">
+      <link rel="icon" type="image/png" href="{{ static('favicon/favicon-32x32.png') }}" sizes="32x32">
+      <link rel="icon" type="image/png" href="{{ static('favicon/favicon-194x194.png') }}" sizes="194x194">
+      <link rel="icon" type="image/png" href="{{ static('favicon/favicon-96x96.png') }}" sizes="96x96">
+      <link rel="icon" type="image/png" href="{{ static('favicon/android-chrome-192x192.png') }}" sizes="192x192">
+      <link rel="icon" type="image/png" href="{{ static('favicon/favicon-16x16.png') }}" sizes="16x16">
+      <link rel="manifest" href="{{ static('favicon/manifest.json') }}" crossorigin="use-credentials">
+      <link rel="mask-icon" href="{{ static('favicon/safari-pinned-tab.svg%22%20color%3D%22%235bbad5') }}">
+      <link rel="shortcut icon" href="{{ static('favicon/favicon.ico') }}">
+      <meta name="msapplication-TileColor" content="#da532c">
+      <meta name="msapplication-TileImage" content="{{ static('favicon/mstile-144x144.png') }}">
+      <meta name="msapplication-config" content="{{ static('favicon/browserconfig.xml') }}">
+      <meta class="foundation-mq-topbar">
+      <meta class="foundation-mq-small">
+      <meta class="foundation-mq-medium">
+      <meta class="foundation-mq-large">
+      <script src="{{ static('js/ext/jquery/jquery.min.js') }}"></script>
+
+      {# Upload specific JS not loaded by default #}
+      {% block head_deposit %}{% endblock head_deposit %}
+
+    {% endblock head %}
+  </head>
+
+
+  <body class="fullscreen-body">
+    <noscript style="display:block;font-size:2rem;text-align:center;z-index:999;margin:8rem;padding:1rem;background-color:#700;color:#ccc">
+      javascript required :-\
+    </noscript>
+    <div class="fixed">
+      <div id="top-shim" style="background-color:#2991CC">
+      </div>
+      {% block topnav %}
+        <nav class="sticky top-bar top-bar" scrolltop="false">
+          <ul class="title-area">
+            <li class="name">
+              <h1>
+                {#				<a style="background-color:#2991CC"><img src="{{ static('vault-it-logo.png') }}" alt="Vault Logo"></a>#}
+                <a style="background-color:#2991CC; cursor: default"><img src="{{ static('vault-logo-3.png') }}" alt="Vault Logo"></a>
+              </h1>
+            </li>
+          </ul>
+
+          <section class="top-bar-section" style="left: 0%;">
+            {% block topnav_primary %}
+              <ul class="left">
+                {% if not read_only %}
+                  <li><a href="{{ url('dashboard') }}">Dashboard</a></li>
+                {% endif %}
+                <li><a href="{{ url('collections', args=['']) }}">Collections</a></li>
+                {% if not read_only %}
+                  <li><a href="{{ url('deposit_flow') }}">Deposit</a></li>
+                  <li><a href="{{ url('reports') }}">Reports</a></li>
+                  <li><a href="{{ url('administration') }}">Administration</a></li>
+                {% endif %}
+              </ul>
+            {% endblock topnav_primary %}
+          </section>
+
+          <section class="top-bar-section" style="left: 0%;">
+            {% block topnav_secondary %}
+              <ul id="secondary-menu" class="right show-for-large-up">
+                {% if user.is_authenticated %}
+                  {% if read_only %}
+                    <li class="org-name">{{ user.account.name }}</li>
+                  {% else %}
+                    <li>
+{#                      <a target="_blank" href="{{ url("administration_users") }}">{{ user.organization.name }}</a>#}
+                    </li>
+                  {% endif %}
+                {% endif %}
+                <li><a target="_blank" href="https://support.archive-it.org/hc/en-us/sections/7581093252628-Vault">Help Center</a></li>
+                {% if not user.is_authenticated %}
+                  <li><a href="{{ url("login") }}">Log In</a></li>
+                {% else %}
+                  <li class="has-dropdown not-click" has-dropdown>
+                    <a 	name="_welcome" data-dropdown="user-dropdown"
+                       aria-controls="user-dropdown"  aria-expanded="false" data-options="is_hover:true;">
+                      Welcome, <span>{{ user.username }}</span>
+                    </a>
+                    <ul id="user-dropdown"
+                        class="f-dropdown" data-dropdown-content tabindex="-1"
+                        aria-hidden="true" aria-autoclose="false">
+                      <li><a href="{{ url("password_change") }}">Change Password</a></li>
+                      <li><a href="{{ url("logout_then_login") }}">Logout</a></li>
+                    </ul>
+                  </li>
+                {% endif %}
+              </ul>
+            {% endblock topnav_secondary %}
+          </section>
+        </nav>
+      {% endblock topnav %}
+    </div>
+
+
+    <!--[if lt IE 7]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+<![endif]-->
+
+    <div id="content-row">
+      {% block header %}
+        <header>
+          <div class="row" style="font-size: 0.6875rem; color: #888;">
+            <div class="small-12 columns" style="margin-top: 18px;
+                                                 margin-left: -7px;">
+              {% if breadcrumbs is defined %}
+                <template id="general-breadcrumbs" >
+                  <div><slot name="web-components"></slot></div>
+                </template>
+                <general-breadcrumbs data-breadcrumbs='{{ breadcrumbs | tojson }}' >
+                  <ul slot="web-components" style="font-size: 0.6875rem;">
+                  </ul>
+                </general-breadcrumbs>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="large-12 columns">
+              <div class="bottom medium-8">
+                <h1>
+                  {% block header_title %}Dashboard{% endblock header_title %}
+                </h1>
+              </div>
+            </div>
+          </div>
+        </header>
+      {% endblock header %}
+
+      {% if messages %}
+        <sticky scroll-offset="60" classes="'sub header'" use-placeholder="1" placeholder-classes="'sub header placeholder'">
+          <div class="sub header">
+            {% for message in messages %}
+              <div class="panel primary sub header margin-bottom zero">
+                <div class="row">
+                  <div class="small-6 columns left">
+                    {{ message }}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+      {% endif %}
+
+      <!-- Extra Message -->
+      {% block sticky_message %}
+        <sticky scroll-offset="60" classes="'sub header'" use-placeholder="1" placeholder-classes="'sub header placeholder'">
+          <div class="sub header">
+            <div class="panel darker sub header margin-bottom zero">
+              <div class="row">
+                <div class="small-6 columns left">
+                  Dashboard
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="sub header placeholder" style="height: 41px;">
+          </div>
+        </sticky>
+      {% endblock sticky_message %}
+
+
+      <!-- Subnav -->
+      {% block subnav %}
+      {% endblock subnav %}
+
+
+      <!-- Content -->
+      {% block content %}
+        <div class="row">
+          <div class="small-12 columns">
+            <h2>Base Page</h2>
+          </div>
+        </div>
+      {% endblock content %}
+
+    </div>
+    <!-- end content row -->
+
+    <!-- Footer -->
+    {% block footer %}
+      <div class="footer">
+        <div class="footer-link">
+          &copy; Internet Archive&nbsp;&nbsp;&nbsp;&nbsp;Vault &mdash;
+          {{ VAULT_VERSION }}
+          <small>
+            {{ VAULT_GIT_COMMIT_HASH }}
+          </small>
+        </div>
+        {#	<div class="footer-link">#}
+        {#		<a target="_blank" href="https://support.archive-it.org/">Help Center</a>#}
+        {#	</div>#}
+      </div>
+    {% endblock footer %}
+    <!-- Don't include modal.js on pages that implement their own modal technologies -->
+    {% if not request.path.startswith(('/collections', '/administration/users')) %}
+      <script src="{{ static('js/modal.js') }}"></script>
+    {% endif %}
+  </body>
+</html>

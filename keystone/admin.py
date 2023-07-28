@@ -4,6 +4,24 @@ from django.template.defaultfilters import filesizeformat
 from . import models
 
 
+class CollectionAccountInline(admin.TabularInline):
+    """Add inline Collection table to AccountAdmin"""
+
+    model = models.Collection.accounts.through
+
+
+class CollectionTeamInline(admin.TabularInline):
+    """Add inline Collection table to TeamAdmin"""
+
+    model = models.Collection.teams.through
+
+
+class CollectionUserInline(admin.TabularInline):
+    """Add inline Collection table to UserAdmin"""
+
+    model = models.Collection.users.through
+
+
 @admin.register(models.Account)
 class AccountAdmin(admin.ModelAdmin):
     """Django admin config for Account"""
@@ -12,6 +30,7 @@ class AccountAdmin(admin.ModelAdmin):
         "id",
         "name",
     )
+    inlines = (CollectionAccountInline,)
 
 
 @admin.register(models.Team)
@@ -23,6 +42,7 @@ class TeamAdmin(admin.ModelAdmin):
         "name",
         "account_name",
     )
+    inlines = (CollectionTeamInline,)
 
     @admin.display(description="Account", ordering="account__name")
     def account_name(self, team):
@@ -38,6 +58,7 @@ class UserAdmin(admin.ModelAdmin):
         "username",
         "account_name",
     )
+    inlines = (CollectionUserInline,)
 
     @admin.display(description="Account", ordering="account__name")
     def account_name(self, user):

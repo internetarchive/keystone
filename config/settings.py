@@ -12,6 +12,14 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 from pathlib import Path
 
+from dotenv import dotenv_values
+
+
+env = {
+    **dotenv_values(".env"),
+    **os.environ,  # override loaded values with environment variables
+}
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,17 +28,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv(
+SECRET_KEY = env.get(
     "KEYSTONE_DJANGO_SECRET_KEY",
     "devsecretkeyljkadfadfsjkl9ew0f02iefj20h8310hknsnlasd172yo1lnimposimfn",
 )
-PRIVATE_API_KEY = os.getenv("KEYSTONE_PRIVATE_API_KEY", "supersecret")
+PRIVATE_API_KEY = env.get("KEYSTONE_PRIVATE_API_KEY", "supersecret")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.get("KEYSTONE_DJANGO_DEBUG", "false") == "true"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = (
+    [
+        "localhost",
+        "127.0.0.1",
+        "[::1]",
+        "host.docker.internal",
+    ]
+    + (env.get("KEYSTONE_DJANGO_ALLOWED_HOSTS", "")).split(" ")
+    if env.get("KEYSTONE_DJANGO_ALLOWED_HOSTS")
+    else []
+)
 
+CSRF_TRUSTED_ORIGINS = (
+    env.get("KEYSTONE_DJANGO_CSRF_TRUSTED_ORIGINS", "").split(" ")
+    if env.get("KEYSTONE_DJANGO_CSRF_TRUSTED_ORIGINS")
+    else []
+)
+
+VAULT_TEAM_EMAIL = "avdempsey@archive.org"
 
 # Application definition
 
@@ -58,8 +83,21 @@ ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "BACKEND": "django.template.backends.jinja2.Jinja2",
         "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "environment": "config.jinja2env.environment",
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -81,16 +119,17 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("KEYSTONE_POSTGRES_NAME", "keystone"),
-        "USER": os.environ.get("KEYSTONE_POSTGRES_USER", "keystone"),
-        "PASSWORD": os.environ.get("KEYSTONE_POSTGRES_PASSWORD", "keystone"),
-        "HOST": os.environ.get("KEYSTONE_POSTGRES_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("KEYSTONE_POSTGRES_PORT", "5432"),
+        "NAME": env.get("KEYSTONE_POSTGRES_NAME", "keystone"),
+        "USER": env.get("KEYSTONE_POSTGRES_USER", "keystone"),
+        "PASSWORD": env.get("KEYSTONE_POSTGRES_PASSWORD", "keystone"),
+        "HOST": env.get("KEYSTONE_POSTGRES_HOST", "127.0.0.1"),
+        "PORT": env.get("KEYSTONE_POSTGRES_PORT", "5433"),
         "DISABLE_SERVER_SIDE_CURSORS": True,
     }
 }
 
 AUTH_USER_MODEL = "keystone.User"
+SESSION_COOKIE_NAME = "keystone-session-id"
 
 
 # Password validation
@@ -128,6 +167,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = "/opt/keystone/staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
