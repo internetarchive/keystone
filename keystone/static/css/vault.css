@@ -1,0 +1,553 @@
+.fullscreen-body #content-row {
+  position: fixed;
+  top: 80px;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  max-width: none;
+  overflow-y: auto;
+}
+
+.fullscreen-body .footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  z-index: 100;
+}
+
+
+.dashboard-report-link {
+  text-decoration: underline;
+  color: #0000EE;
+}
+
+#progress_bar {
+  height: 24px;
+  display: none;
+  margin-left: 1em;
+  margin-top: 3px;
+}
+
+#stats {
+  margin-left: 9em;
+}
+
+#cancel_button {
+  background-color: #e84b4b;
+}
+
+#breadcrumbs-container {
+  height: 45px;
+}
+
+#breadcrumbs-container .my-collection {
+  display: inline-block;
+  margin-left: 0px 10px;
+}
+
+#breadcrumbs-container .my-collection a:hover {
+  background-color: rgb(224, 223, 223);
+  border-radius: 3px;
+}
+
+.crumb-elements> a:hover{
+  background-color: rgb(224, 223, 223);
+  border-radius: 3px;
+}
+
+.crumb-elements{
+  display: inline-block;
+  cursor: pointer;
+}
+
+.main-breadcrumbs-list{
+  margin-left: -2px;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+  overflow-y: hidden;
+  margin-right: 36px;
+  position: relative;
+}
+
+.crumb-elements:before {
+  content: '>';
+  font-weight: bold;
+  color: grey;
+  margin: 0px 10px;
+}
+
+/* Breadcrumbs Popover Element*/
+
+#breadcrumbs-popover-content{
+  margin-left: 15px;
+  border-radius: 7px;
+}
+
+#breadcrumbs-popover-content li:hover {
+  background-color: rgb(224, 223, 223);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#breadcrumbs-popover-content a::before{
+  content: '\1f4c1';
+  margin-right: 1rem;
+  vertical-align: 0.15em;
+}
+
+#breadcrumbs-popover-content a {
+  color: black;
+  padding: 3px 3px;
+  text-decoration: none;
+  display: block;
+  font-size: 15px;
+}
+
+/* Move Popover Element*/
+#move-popover-content{
+  width: 300px;
+}
+
+::selection{
+  background: rgb(237, 206, 206);
+}
+
+.move-popover-container-narrow{
+  width: 82px;
+  height: 50px;
+  margin-left: 44px;
+}
+
+.move-popover-container-general{
+  width: 100%;
+  height: 40px;
+}
+
+.view-details-link{
+  margin: 0.5rem 0rem 1rem 1rem;
+}
+
+/* The Modal (background) */
+.modal {
+	display: none;
+	position: fixed;
+	z-index: 1;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	background-color: rgb(0,0,0);
+	background-color: rgba(0,0,0,0.4);
+  }
+
+  /* Modal Content/Box */
+  .modal-content {
+	background-color: #fefefe;
+	margin: 15% auto;
+	padding: 20px;
+	border: 1px solid #888;
+	width: 80%;
+  }
+
+  /* The Close Button */
+  .close {
+	color: #aaa;
+	float: right;
+	font-size: 28px;
+	font-weight: bold;
+  }
+
+  .close:hover,
+  .close:focus {
+	color: black;
+	text-decoration: none;
+	cursor: pointer;
+  }
+
+  .copy-hash-btn{
+    font-size: inherit;
+    width: 91px;
+    height: 22px;
+    margin-bottom: -2px;
+    margin-left: 5px;
+    display: inline-block;
+    margin-top: 9px;
+    vertical-align: super;
+  }
+
+  .copy-img{
+    height: 20px;
+    width: 20px;
+    cursor: pointer;
+  }
+
+  .tooltipElement {
+    position: relative;
+    display: inline-block;
+    width: 91px;
+  }
+
+  .tooltipElement .tooltiptext {
+    visibility: hidden;
+    width: 140px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    z-index: 1;
+    bottom: 150%;
+    opacity: 0;
+    margin-left: -13px;
+    transition: opacity 0.3s;
+  }
+
+  .tooltipElement .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 43%;
+    left: 18%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+  }
+
+  .tooltipElement:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .location-detail{
+    width: 235px;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+
+  vault-split-view {
+    width: 100vw;
+  }
+
+  /* Files View */
+  /* button style reset */
+  vault-files-view button {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    color: #000;
+  }
+
+  vault-files-view button:hover,
+  vault-files-view button:focus {
+    background-color: transparent;
+    color: #000;
+  }
+
+  vault-files-view {
+    display: grid;
+    grid-template-columns: min-content 1fr;
+
+  }
+
+  vault-files-view  div.left-panel {
+    margin-top: 1.5rem;
+  }
+
+  vault-files-view  div.right-panel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #treeDynamic{
+    width: fit-content;
+  }
+
+  #file-tree-navigator-container{
+    width: 200px;
+    overflow-x: auto;
+  }
+
+  vault-files-view #file-tree-navigator-container{
+    padding: 1rem;
+  }
+
+  vault-files-view #files-list-container {
+    border-top: solid #bbb 1px;
+    border-left: solid #bbb 1px;
+    overflow-x: auto;
+    min-height: 100vh;
+  }
+
+  vault-files-view #file-details-container {
+    border: solid #bbb 1px;
+    border-bottom: none;
+    border-right: none;
+    margin-top: 3.3rem;
+  }
+
+  vault-files-view new-cta > button {
+    margin-left: 1rem;
+    font-size: 1rem;
+    line-height: 1rem;
+    font-weight: bold;
+    color: #444;
+    padding: 0.6rem 2rem 0.6rem 1rem;
+    border: solid #ccc 1px;
+    border-radius: 1rem;
+    transition: background-color 0.25s, box-shadow 0.25s;
+  }
+
+  vault-files-view new-cta > button:before {
+    content: '\25EC';
+    margin-right: 1.25rem;
+    display: inline-block;
+    transform: rotate(0.5turn);
+    vertical-align: -0.2em;
+  }
+
+  vault-files-view new-cta > button:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+    box-shadow: 3px 7px 6px 1px #ccc;
+  }
+
+  vault-files-view #breadcrumbs-container {
+    /* Set position=relative for details button abs positioning */
+    position: relative;
+    padding: 0.5rem;
+  }
+
+  vault-files-view  div.right-panel > div.inner-panel {
+    display: grid;
+    grid-template-columns: 1fr min-content;
+  }
+
+  vault-files-list,
+  vault-file-details,
+  ait-file-tree {
+    /* max height is
+    viewport viewheight - (
+      footer height +
+      breadcrumbs height +
+      top nav height)
+      */
+    height: calc(-2rem + -70px + -70px + 100vh);
+    overflow-y: scroll;
+    display: block;
+  }
+
+  vault-files-list ui5-table {
+    display: block;
+  }
+
+  vault-files-list ui5-table-column,
+  vault-files-list ui5-table-cell {
+      white-space: nowrap;
+  }
+
+  vault-files-list ui5-table {
+    padding-bottom: 30px;
+  }
+
+  vault-files-list ui5-table-column::part(column) {
+    color: #fff;
+  }
+
+  vault-files-list ui5-table-cell.name {
+    max-width: 15vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  vault-files-list ui5-table-cell.name.FOLDER::part(cell) {
+    font-weight: bold;
+  }
+
+  vault-files-list ui5-table-cell.name.COLLECTION::part(cell):before,
+  vault-file-details h2 > span.name.COLLECTION:before {
+    content: '\25EC';
+    margin-right: 1rem;
+    display: inline-block;
+    transform: rotate(0.5turn);
+    vertical-align: -0.1em;
+  }
+
+  vault-files-list ui5-table-cell.name.FOLDER::part(cell):before,
+  vault-file-details h2 > span.name.FOLDER:before {
+    content: '\1f4c1';
+    margin-right: 1rem;
+    vertical-align: 0.15em;
+  }
+
+  vault-files-list ui5-table-cell.name.FILE::part(cell):before,
+  vault-file-details h2 > span.name.FILE:before {
+    content: '\1f4c4';
+    margin-right: 1rem;
+  }
+
+  file-details-buttons {
+    display: inline-block;
+    position: absolute;
+    right: 0.2rem;
+  }
+
+  file-details-buttons > ui5-button {
+    font-size: 1.5rem;
+    margin-top: 6px;
+  }
+
+  file-details-buttons > button:hover {
+    font-weight: bold;
+  }
+
+  vault-file-details {
+    width: 300px;
+    padding: 1rem;
+    /* height: calc(100vh - 240px);
+    overflow-y: auto; */
+  }
+
+  vault-file-details > h2 {
+    margin: 0;
+  }
+
+  vault-file-details > h2 > span {
+    display: inline-block;
+  }
+
+  vault-file-details > h2 > span.name {
+    width: calc(100% - 1.5rem);
+  }
+
+  vault-file-details > h2 > button.close {
+    /* Several .close styles are inherited from vault.css */
+    font-weight: normal;
+    padding: 0;
+    background-color: inherit;
+  }
+
+  vault-file-details > div.details,
+  vault-file-details > div.activity {
+    margin-top: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Activity */
+  .activity-title-desc{
+    font-size: 0.8rem;
+  }
+
+  .activity-content{
+    display: grid;
+    grid-template-columns: auto auto;
+  }
+
+  .activity-card{
+    margin-bottom: 1rem;
+    height: 200px;
+  }
+
+  .content-group{
+    margin: 10px 0px 10px 16px;
+  }
+
+  ui5-dialog > div {
+    padding: 1rem;
+  }
+
+/* Global UI5 Component Styles */
+
+ui5-tree {
+  line-height: 1.2rem;
+}
+
+:root {
+  --sapList_AlternatingBackground: transparent !important;
+  --sapList_SelectionBackgroundColor: #fff !important;
+  --sapList_Background: transparent !important;
+  --sapList_HeaderBackground: rgb(42, 40, 44) !important;
+  --sapObjectHeader_Background: transparent !important;
+  --_ui5_tc_header_box_shadow: none !important;
+  --_ui5_list_item_base_height: 1.75rem !important;
+  --sapFontFamily: "Open Sans", Helvetica, Arial, sans-serif !important;
+  --_ui5_list_item_title_size: 0.9rem !important;
+  --_ui5-tree-toggle-box-height: 1rem !important;
+  --_ui5-tree-toggle-box-width: 2rem !important;
+  --_ui5-tree-indent-step: 10px !important;
+  --_ui5_checkbox_width_height: 2rem !important;
+  --_ui5_checkbox_inner_width_height: 1.25rem !important;
+  --ui5-listitem-background-color: transparent !important;
+  --sapList_SelectionBackgroundColor: rgba(0, 0, 0, 0.05) !important;
+  --sapList_SelectionBorderColor: rgba(0, 0, 0, 0.05) !important;
+
+  --spectrum-button-m-primary-fill-texticon-border-radius: 5px;
+  --_ui5_card_header_title_font_weight: bold !important;
+
+  --vault-light-grey: #e3e7e8;
+  --vault-light-blue: #2e7cb2;
+  --vault-button-background-color: #2e7cb2;
+  --vault-button-border: 1px solid #194865;
+  --vault-button-color: white;
+  --vault-button-transition: background-color 0.5s;
+  --vault-button-line-height: 1.2rem;
+  --vault-button-font-size: 0.9rem;
+  --vault-button-hover-background-color: #194865;
+  --vault-button-disabled-background-color: #aaaaaa;
+  --vault-button-disabled-border: 1px solid #555555;
+  --vault-button-disabled-color: black;
+  --vault-button-disabled-cursor: not-allowed;
+  --vault-button-disabled-pointer-events: none;
+
+}
+
+
+/*  Forms */
+
+.errorlist {
+  color: #e84b4b;
+}
+
+.top-bar-section ul > li.org-name {
+  color: #fff;
+  background-color: transparent;
+  line-height: 1.5625rem;
+  padding: 0 0.625rem;
+  font-size: 12px;
+}
+
+/* Dropdown */
+.top-bar-section li.has-dropdown:hover {
+  display: inherit;
+}
+
+.top-bar-section li.has-dropdown:hover >  ul {
+  left: auto;
+  border: none;
+
+}
+
+.top-bar-section li.has-dropdown:hover >  ul.f-dropdown::before,
+.top-bar-section li.has-dropdown:hover >  ul.f-dropdown::after {
+  content: none;
+}
+
+.top-bar-section li.has-dropdown ul li {
+  width:170px;
+  float:none;
+  display:list-item;
+  position: relative;
+}
+
+.top-bar-section li.has-dropdown ul li a {
+  background-color: #333 !important;
+}
+
+.top-bar-section li.has-dropdown ul li a:hover {
+  background-color: #2a282c !important;
+}

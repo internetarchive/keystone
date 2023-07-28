@@ -1,4 +1,4 @@
-PYTHON_VERSION = 3.10
+PYTHON_VERSION = 3.11
 
 # where's the Makefile running? Valid options: LOCAL, CI
 ENV ?= LOCAL
@@ -6,13 +6,13 @@ PYTEST_REPORT ?= pytest.xml
 PYLINT_REPORT ?= pylint.json
 
 venv:
-	python -m venv venv --prompt . && . \
+	python3 -m venv venv --prompt . && . \
 	venv/bin/activate && \
 	pip install -U pip setuptools wheel pip-tools
 
 requirements.txt: venv
+	venv/bin/pip install -U pip setuptools wheel pip-tools
 	venv/bin/pip-compile \
-	--resolver=backtracking \
 	--generate-hashes \
 	--output-file requirements.txt \
 	--strip-extras \
@@ -21,9 +21,9 @@ requirements.txt: venv
 requirements-dev.txt: requirements.txt
 	echo "--constraint $$(pwd)/requirements.txt" | \
 	venv/bin/pip-compile \
-	--resolver=backtracking \
 	--generate-hashes \
 	--output-file requirements-dev.txt \
+	--strip-extras \
 	--extra dev \
 	- \
 	pyproject.toml
@@ -31,6 +31,11 @@ requirements-dev.txt: requirements.txt
 .PHONY: install
 install:
 	venv/bin/pip-sync requirements-dev.txt
+	venv/bin/pip install --no-deps -e .
+
+.PHONY: install-prod
+install-prod:
+	venv/bin/pip-sync requirements.txt
 	venv/bin/pip install --no-deps -e .
 
 .PHONY: test
@@ -65,3 +70,8 @@ format:
 .PHONY: ck-format
 ck-format:
 	venv/bin/black --check .
+
+.PHONY: run-prod-containers
+run-prod-containers:
+	# add BUILDKIT_PROGRESS=plain in front for debugging build issues
+	docker-compose -f docker-compose.prod.yml up -d --build

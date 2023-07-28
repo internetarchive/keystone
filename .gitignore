@@ -4,3 +4,4 @@ keystone.egg-info
 .idea
 *__pycache__
 .python-version
+.env

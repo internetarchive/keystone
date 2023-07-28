@@ -99,15 +99,21 @@ class Collection(models.Model):
 
     name = models.CharField(max_length=255)
     collection_type = models.CharField(choices=CollectionTypes.choices, max_length=16)
-    accounts = models.ManyToManyField(Account)
-    teams = models.ManyToManyField(Team)
-    users = models.ManyToManyField(User)
+    accounts = models.ManyToManyField(Account, blank=True, related_name="collections")
+    teams = models.ManyToManyField(Team, blank=True, related_name="collections")
+    users = models.ManyToManyField(User, blank=True, related_name="collections")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         constraints = [
             choice_constraint(field="collection_type", choices=CollectionTypes)
         ]
+
+    @classmethod
+    def get_for_user(cls, user):
+        """Get all Collections a given user has access to"""
+        collections = {*user.collections.all(), *user.account.collections.all()}
+        return list(collections)
 
     def __str__(self):
         return self.name
