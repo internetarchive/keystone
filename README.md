@@ -18,7 +18,7 @@ git clone git@git.archive.org:webgroup/keystone.git
 cd keystone
 pyenv local 3.11.2
 # in new tab
-docker-compose -f dev/docker-compose.yml up postgres
+docker-compose -f docker-compose.yml up postgres
 # back to original tab
 make venv
 rm .python-version
@@ -50,6 +50,19 @@ docker exec $CONTAINER_ID /opt/keystone/venv/bin/manage.py collectstatic --noinp
 
 If you have issues on the `make run-prod-containers` step try running it this way:
 `BUILDKIT_PROGRESS=plain make run-prod-containers`
+
+The app will now be running at http://127.0.0.1:12342/admin
+
+## Test in Development
+- To test ARCH integration, update the following values in arch/config/config.json:
+```shell
+"keystoneBaseUrl": "http://host.docker.internal:12342",
+"keystonePrivateApiKey": "supersecret",
+```
+- Test using curl, eg.
+``` shell
+curl -X POST http://host.docker.internal:12342/private/api/proxy_login -H "Content-Type: application/json" -H "X-API-KEY: supersecret" -d '{"username":"<username>", "password":"<password>"}'
+```
 
 ## Add Dependencies
 
