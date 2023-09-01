@@ -4,13 +4,13 @@
     {% block head %}
       <meta charset="utf-8">
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <title>Vault: Digital Repository & Preservation Service</title>
+      <title>Keystone</title>
       <meta name="description" content="">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="stylesheet" href="{{ static('css/html5-bp/css/normalize.css') }}">
       <link rel="stylesheet" href="{{ static('css/html5-bp/css/main.css') }}">
       <link rel="stylesheet" href="{{ static('css/app.css') }}">
-      <link rel="stylesheet" href="{{ static('css/vault.css') }}">
+      <link rel="stylesheet" href="{{ static('css/keystone.css') }}">
       <link rel="apple-touch-icon" sizes="57x57" href="{{ static('favicon/apple-57x57-touch-icon.png') }}">
       <link rel="apple-touch-icon" sizes="60x60" href="{{ static('favicon/apple-60x60-touch-icon.png') }}">
       <link rel="apple-touch-icon" sizes="72x72" href="{{ static('favicon/apple-72x72-touch-icon.png') }}">
@@ -45,80 +45,6 @@
 
 
   <body class="fullscreen-body">
-    <noscript style="display:block;font-size:2rem;text-align:center;z-index:999;margin:8rem;padding:1rem;background-color:#700;color:#ccc">
-      javascript required :-\
-    </noscript>
-    <div class="fixed">
-      <div id="top-shim" style="background-color:#2991CC">
-      </div>
-      {% block topnav %}
-        <nav class="sticky top-bar top-bar" scrolltop="false">
-          <ul class="title-area">
-            <li class="name">
-              <h1>
-                {#				<a style="background-color:#2991CC"><img src="{{ static('vault-it-logo.png') }}" alt="Vault Logo"></a>#}
-                <a style="background-color:#2991CC; cursor: default"><img src="{{ static('vault-logo-3.png') }}" alt="Vault Logo"></a>
-              </h1>
-            </li>
-          </ul>
-
-          <section class="top-bar-section" style="left: 0%;">
-            {% block topnav_primary %}
-              <ul class="left">
-                {% if not read_only %}
-                  <li><a href="{{ url('dashboard') }}">Dashboard</a></li>
-                {% endif %}
-                <li><a href="{{ url('collections', args=['']) }}">Collections</a></li>
-                {% if not read_only %}
-                  <li><a href="{{ url('deposit_flow') }}">Deposit</a></li>
-                  <li><a href="{{ url('reports') }}">Reports</a></li>
-                  <li><a href="{{ url('administration') }}">Administration</a></li>
-                {% endif %}
-              </ul>
-            {% endblock topnav_primary %}
-          </section>
-
-          <section class="top-bar-section" style="left: 0%;">
-            {% block topnav_secondary %}
-              <ul id="secondary-menu" class="right show-for-large-up">
-                {% if user.is_authenticated %}
-                  {% if read_only %}
-                    <li class="org-name">{{ user.account.name }}</li>
-                  {% else %}
-                    <li>
-{#                      <a target="_blank" href="{{ url("administration_users") }}">{{ user.organization.name }}</a>#}
-                    </li>
-                  {% endif %}
-                {% endif %}
-                <li><a target="_blank" href="https://support.archive-it.org/hc/en-us/sections/7581093252628-Vault">Help Center</a></li>
-                {% if not user.is_authenticated %}
-                  <li><a href="{{ url("login") }}">Log In</a></li>
-                {% else %}
-                  <li class="has-dropdown not-click" has-dropdown>
-                    <a 	name="_welcome" data-dropdown="user-dropdown"
-                       aria-controls="user-dropdown"  aria-expanded="false" data-options="is_hover:true;">
-                      Welcome, <span>{{ user.username }}</span>
-                    </a>
-                    <ul id="user-dropdown"
-                        class="f-dropdown" data-dropdown-content tabindex="-1"
-                        aria-hidden="true" aria-autoclose="false">
-                      <li><a href="{{ url("password_change") }}">Change Password</a></li>
-                      <li><a href="{{ url("logout_then_login") }}">Logout</a></li>
-                    </ul>
-                  </li>
-                {% endif %}
-              </ul>
-            {% endblock topnav_secondary %}
-          </section>
-        </nav>
-      {% endblock topnav %}
-    </div>
-
-
-    <!--[if lt IE 7]>
-<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-<![endif]-->
-
     <div id="content-row">
       {% block header %}
         <header>
@@ -149,6 +75,7 @@
         </header>
       {% endblock header %}
 
+      <!-- Messages -->
       {% if messages %}
         <sticky scroll-offset="60" classes="'sub header'" use-placeholder="1" placeholder-classes="'sub header placeholder'">
           <div class="sub header">
@@ -165,13 +92,13 @@
       {% endif %}
 
       <!-- Extra Message -->
-      {% block sticky_message %}
+      {% block navigation_menu %}
         <sticky scroll-offset="60" classes="'sub header'" use-placeholder="1" placeholder-classes="'sub header placeholder'">
           <div class="sub header">
             <div class="panel darker sub header margin-bottom zero">
               <div class="row">
                 <div class="small-6 columns left">
-                  Dashboard
+                  {% block navigation_link %}Dashboard{% endblock navigation_link %}
                 </div>
               </div>
             </div>
@@ -179,13 +106,7 @@
           <div class="sub header placeholder" style="height: 41px;">
           </div>
         </sticky>
-      {% endblock sticky_message %}
-
-
-      <!-- Subnav -->
-      {% block subnav %}
-      {% endblock subnav %}
-
+      {% endblock navigation_menu %}
 
       <!-- Content -->
       {% block content %}
@@ -202,21 +123,8 @@
     <!-- Footer -->
     {% block footer %}
       <div class="footer">
-        <div class="footer-link">
-          &copy; Internet Archive&nbsp;&nbsp;&nbsp;&nbsp;Vault &mdash;
-          {{ VAULT_VERSION }}
-          <small>
-            {{ VAULT_GIT_COMMIT_HASH }}
-          </small>
-        </div>
-        {#	<div class="footer-link">#}
-        {#		<a target="_blank" href="https://support.archive-it.org/">Help Center</a>#}
-        {#	</div>#}
+        Keystone
       </div>
     {% endblock footer %}
-    <!-- Don't include modal.js on pages that implement their own modal technologies -->
-    {% if not request.path.startswith(('/collections', '/administration/users')) %}
-      <script src="{{ static('js/modal.js') }}"></script>
-    {% endif %}
   </body>
 </html>

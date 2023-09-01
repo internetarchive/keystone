@@ -20,6 +20,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from keystone import forms as keystone_forms
+from keystone import views
 from keystone.api import private_api, public_api
 
 urlpatterns = [
@@ -66,6 +67,11 @@ urlpatterns = [
         "accounts/logout_then_login",
         auth_views.logout_then_login,
         name="logout_then_login",
+    ),
+    path(
+        "admin/keystone/bulk_add_users",
+        views.bulk_add_users,
+        name="bulk_add_users",
     ),
     path("admin/", admin.site.urls),
     path("api/", public_api.urls),

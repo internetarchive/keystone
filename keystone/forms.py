@@ -29,3 +29,9 @@ class KeystoneSetPasswordForm(SetPasswordForm):
         strip=False,
         help_text=password_validation.password_validators_help_text_html(),
     )
+
+
+class CSVUploadForm(forms.Form):
+    """Form for uploading a csv file"""
+
+    csv_file = forms.FileField(label="Upload CSV")

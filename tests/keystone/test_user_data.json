@@ -1,0 +1,18 @@
+[
+    {
+        "password": "sha1:5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "first_name": "Test",
+        "last_name": "User",
+        "username": "testuser",
+        "email": "test@archive.org",
+        "account_id": "1"
+    },
+    {
+        "password": "sha1:5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "first_name": "Test",
+        "last_name": "User2",
+        "username": "testuser2",
+        "email": "test2@archive.org",
+        "account_id": "1"
+    }
+]

@@ -3,6 +3,7 @@ from pytest import mark
 import pytest  # noqa
 
 from keystone.models import ArchQuota, Account, User, Team, Collection
+from .test_helpers import read_json_file
 
 
 class TestCollection:
@@ -55,3 +56,32 @@ class TestArchQuota:
         assert quota_dict[Account] == account_quota
         assert sorted(quota_dict[Team], key=qsort) == team_quotas
         assert quota_dict[User] == user_quota
+
+
+class TestUser:
+    user_data_json_file = "test_user_data.json"
+    user_data = read_json_file(user_data_json_file)
+
+    @mark.django_db
+    def test_create_users_from_data_dict_list(self):
+        # Creates multiple User records from input data and returns None if transaction is successful
+        account = baker.make(Account, id=1)
+        error_message = User.create_users_from_data_dict_list(TestUser.user_data)
+        users = User.objects.all()
+
+        assert error_message == None
+        assert users.count() == 2
+
+    @mark.django_db
+    def test_create_users_from_data_dict__list_transaction_rollback(self):
+        # Rolls back the transaction and returns an error message if any or all Users already exist
+        account = baker.make(Account, id=1)
+        user = baker.make(
+            User, username=TestUser.user_data[0]["username"], account=account
+        )
+        error_message = User.create_users_from_data_dict_list(TestUser.user_data)
+        users = User.objects.all()
+
+        assert error_message != None
+        assert users.count() == 1
+        assert User.objects.first().username == "testuser"

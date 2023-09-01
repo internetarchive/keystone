@@ -8,6 +8,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
+from django.db import transaction
+from django.db import IntegrityError
 
 import uuid6
 from .validators import validate_username
@@ -66,6 +68,30 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    @staticmethod
+    @transaction.atomic
+    def create_users_from_data_dict_list(user_data):
+        """Create Users from a list of dictionaries of user data"""
+
+        try:
+            with transaction.atomic():
+                for row in user_data:
+                    User.objects.create(
+                        password=row["password"],
+                        first_name=row["first_name"],
+                        last_name=row["last_name"],
+                        username=row["username"],
+                        email=row["email"],
+                        is_staff=False,
+                        is_active=True,
+                        role="USER",
+                        is_superuser=False,
+                        account_id=row["account_id"],
+                    )
+            return None
+        except IntegrityError as e:
+            return str(e)
 
 
 class Team(models.Model):

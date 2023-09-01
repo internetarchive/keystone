@@ -1,0 +1,33 @@
+{% extends "keystone/base.html" %}
+{% block header_title %}Bulk Add Users{% endblock header_title %}
+
+{% block navigation_link %}
+    <a href="/admin/keystone">Keystone home</a>
+    <br>
+    <a href="/admin/keystone/user">View all users</a>
+{% endblock navigation_link %}
+
+{% block content %}
+  <div class="row">
+    <div class="small-12 columns">
+      <h3>Upload a csv of data to create new Keystone users</h3>
+      <ul class="csv_requirements">
+        <li>The csv must contain the following data for each user: password, first_name, last_name, username, email, account_id</li>
+        <li>The csv must include headers</li>
+        <li>Passwords must be in sha-1 hexidecimal format, and be prefixed with 'sha1:'</li>
+        <li>The following fields are hardcoded, and can be changed in the User UI after a user is created:</li>
+          <ul>
+            <li>is_staff = False</li>
+            <li>is_active = True</li>
+            <li>role = "USER"</li>
+            <li>is_superuser = False</li>
+          </ul>
+      </ul>
+      <form method="post" enctype="multipart/form-data">
+          {{ csrf_input }}
+          {{ form }}
+          <button type="submit" class="padding-top padding-bottom half small">Upload</button>
+      </form>
+    </div>
+  </div>
+{% endblock content %}
