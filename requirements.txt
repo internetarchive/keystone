@@ -8,9 +8,9 @@ asgiref==3.7.2 \
     --hash=sha256:89b2ef2247e3b562a16eef663bc0e2e703ec6468e2fa8a5cd61cd449786d4f6e \
     --hash=sha256:9e0ce3aa93a819ba5b45120216b23878cf6e8525eb3848653452b4192b92afed
     # via django
-django==4.2.3 \
-    --hash=sha256:45a747e1c5b3d6df1b141b1481e193b033fd1fdbda3ff52677dc81afdaacbaed \
-    --hash=sha256:f7c7852a5ac5a3da5a8d5b35cc6168f31b605971441798dac845f17ca8028039
+django==4.2.5 \
+    --hash=sha256:5e5c1c9548ffb7796b4a8a4782e9a2e5a3df3615259fc1bfd3ebc73b646146c1 \
+    --hash=sha256:b6b2b5cae821077f137dc4dade696a1c2aa292f892eca28fa8d7bfdf2608ddd4
     # via
     #   django-ninja
     #   keystone (pyproject.toml)
@@ -82,12 +82,12 @@ packaging==23.1 \
     --hash=sha256:994793af429502c4ea2ebf6bf664629d07c1a9fe974af92966e4b8d2df7edc61 \
     --hash=sha256:a392980d2b6cffa644431898be54b0045151319d1e7ec34f0cfed48767dd334f
     # via gunicorn
-psycopg==3.1.9 \
-    --hash=sha256:ab400f207a8c120bafdd8077916d8f6c0106e809401378708485b016508c30c9 \
-    --hash=sha256:fbbac339274d8733ee70ba9822297af3e8871790a26e967b5ea53e30a4b74dcc
+psycopg==3.1.10 \
+    --hash=sha256:15b25741494344c24066dc2479b0f383dd1b82fa5e75612fa4fa5bb30726e9b6 \
+    --hash=sha256:8bbeddae5075c7890b2fa3e3553440376d3c5e28418335dee3c3656b06fa2b52
     # via keystone (pyproject.toml)
-psycopg-c==3.1.9 \
-    --hash=sha256:d160b45b0ee1eb05d78a81538c2bc6868bacb5f421b7190ed65d4681e4552455
+psycopg-c==3.1.10 \
+    --hash=sha256:0c923cfac7a8a3796c915c253f51b7c667358492924cbccecc18df9e79b103e9
     # via psycopg
 pydantic==1.10.12 \
     --hash=sha256:0fe8a415cea8f340e7a9af9c54fc71a649b43e8ca3cc732986116b3cb135d303 \
