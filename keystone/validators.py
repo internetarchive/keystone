@@ -1,5 +1,7 @@
 import re
 from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import PBKDF2PasswordHasher
+from .hashers import PBKDF2WrappedSha1PasswordHasher
 
 
 def validate_username(value):
@@ -13,3 +15,20 @@ def validate_username(value):
             ),
             code="invalid_username",
         )
+
+
+def validate_password(password, password_hash):
+    """Validate that password matches password_hash"""
+
+    supported_hashers = [
+        PBKDF2PasswordHasher(),
+        PBKDF2WrappedSha1PasswordHasher(),
+    ]
+
+    for hasher in supported_hashers:
+        if password_hash.startswith(hasher.algorithm) and hasher.verify(
+            password, password_hash
+        ):
+            return True
+
+    return False

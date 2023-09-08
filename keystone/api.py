@@ -15,6 +15,7 @@ from .models import (
     User,
     UserRoles,
 )
+from .validators import validate_password
 
 
 class ApiKey(APIKeyHeader):
@@ -250,7 +251,7 @@ def proxy_login(request, payload: ProxyLoginRequest):
     user = get_object_or_404(User, username=payload.username)
     if not user.is_active:
         return 403, None
-    if not user.check_password(payload.password):
+    if not validate_password(payload.password, user.password):
         return 403, None
     collections = Collection.get_for_user(user)
     collection_responses = [CollectionResponse.from_orm(c) for c in collections]
@@ -277,7 +278,7 @@ def proxy_change_password(request, payload: ProxyChangePasswordRequest):
     user = get_object_or_404(User, username=payload.username)
     if not user.is_active:
         return 403, None
-    if not user.check_password(payload.old_password):
+    if not user.validate_password(payload.old_password, user.password):
         return 403, None
     user.set_password(payload.new_password)
     user.save()
