@@ -1,7 +1,42 @@
+from typing import Self
 from django.contrib import admin
+from django.contrib import messages
 from django.template.defaultfilters import filesizeformat
 
 from . import models
+from .hashers import PBKDF2WrappedSha1PasswordHasher
+
+
+class WrapPasswordMixin:
+    """Provide a Django admin action to wrap the passwords of selected rows in the
+    User list display."""
+
+    def wrap_sha1_passwords_of_selected_users(
+        self: admin.ModelAdmin | Self, request, queryset
+    ):
+        """wrap sha1 password with with PBKDF2 encoding for selected users"""
+        hasher = PBKDF2WrappedSha1PasswordHasher()
+
+        for user in queryset:
+            if user.password.startswith("sha1"):
+                _algorithm, sha1_hash = user.password.split(":", 1)
+                user.password = hasher.encode_sha1_hash(sha1_hash)
+                user.save(update_fields=["password"])
+                messages.add_message(
+                    request,
+                    messages.INFO,
+                    "Wrapped sha1 password for user: " + user.username,
+                )
+            else:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    "Password is not in sha1: format for user: " + user.username,
+                )
+
+    wrap_sha1_passwords_of_selected_users.short_description = (
+        "Wrap sha1 password with with PBKDF2 encoding for selected users"
+    )
 
 
 class CollectionAccountInline(admin.TabularInline):
@@ -51,7 +86,7 @@ class TeamAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.User)
-class UserAdmin(admin.ModelAdmin):
+class UserAdmin(admin.ModelAdmin, WrapPasswordMixin):
     """Django admin config for User"""
 
     list_display = (
@@ -59,6 +94,7 @@ class UserAdmin(admin.ModelAdmin):
         "account_name",
     )
     inlines = (CollectionUserInline,)
+    actions = ("wrap_sha1_passwords_of_selected_users",)
 
     @admin.display(description="Account", ordering="account__name")
     def account_name(self, user):
