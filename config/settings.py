@@ -15,13 +15,13 @@ from pathlib import Path
 from dotenv import dotenv_values
 
 
-env = {
-    **dotenv_values(".env"),
-    **os.environ,  # override loaded values with environment variables
-}
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = {
+    **dotenv_values(BASE_DIR / ".env"),
+    **os.environ,  # override loaded values with environment variables
+}
 
 
 # Quick-start development settings - unsuitable for production
@@ -173,3 +173,27 @@ STATIC_ROOT = "/opt/keystone/staticfiles"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+	"file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "formatter": "verbose",
+            "filename": env.get("KEYSTONE_LOG_FILE_PATH", "/var/log/keystone.log")
+	},
+    },
+    "loggers": {
+	"root": {
+            "handlers": ["file"]
+        }
+    },
+}
