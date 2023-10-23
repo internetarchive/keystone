@@ -184,16 +184,12 @@ LOGGING = {
         },
     },
     "handlers": {
-	"file": {
+        "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
             "formatter": "verbose",
-            "filename": env.get("KEYSTONE_LOG_FILE_PATH", "/var/log/keystone.log")
-	},
+            "filename": env.get("KEYSTONE_LOG_FILE_PATH", "/var/log/keystone.log"),
+        },
     },
-    "loggers": {
-	"root": {
-            "handlers": ["file"]
-        }
-    },
+    "loggers": {"root": {"handlers": ["file"]}},
 }
