@@ -234,7 +234,7 @@ class UserResponse(Schema):
 
 
 @private_api.get("/user", response={200: UserResponse, codes_4xx: None})
-def user(request, username: str):
+def get_user(request, username: str):
     """Retrieve a user."""
     if username.startswith("ks:"):
         username = username[3:]
@@ -259,13 +259,7 @@ class ProxyLoginRequest(Schema):
     password: str
 
 
-class ProxyLoginResponse(UserResponse):
-    """User model with its permissions and Collections"""
-
-    pass
-
-
-@private_api.post("/proxy_login", response={200: ProxyLoginResponse, codes_4xx: None})
+@private_api.post("/proxy_login", response={200: UserResponse, codes_4xx: None})
 def proxy_login(request, payload: ProxyLoginRequest):
     """ARCH hosts a login form collecting username/password. ARCH posts these
     to this endpoint where Keystone checks these are valid. ARCH creates a
@@ -280,7 +274,7 @@ def proxy_login(request, payload: ProxyLoginRequest):
         return 403, None
     collections = Collection.get_for_user(user)
     collection_responses = [CollectionResponse.from_orm(c) for c in collections]
-    response = ProxyLoginResponse(
+    response = UserResponse(
         **model_to_dict(user),
         fullname=user.get_full_name(),
         permissions=user.get_all_permissions(),
