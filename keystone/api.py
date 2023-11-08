@@ -208,13 +208,6 @@ def user_can_run_job(
     return 200, PermissionResponse(allow=True)
 
 
-class ProxyLoginRequest(Schema):
-    """Take username and password to log user in"""
-
-    username: str
-    password: str
-
-
 class CollectionResponse(ModelSchema):
     """Represents a KeyStone Collection"""
 
@@ -227,7 +220,7 @@ class CollectionResponse(ModelSchema):
         model_fields = ["id", "name"]
 
 
-class ProxyLoginResponse(Schema):
+class UserResponse(Schema):
     """User model with its permissions and Collections"""
 
     username: str
@@ -240,7 +233,33 @@ class ProxyLoginResponse(Schema):
     collections: list[CollectionResponse]
 
 
-@private_api.post("/proxy_login", response={200: ProxyLoginResponse, codes_4xx: None})
+@private_api.get("/user", response={200: UserResponse, codes_4xx: None})
+def get_user(request, username: str):
+    """Retrieve a user."""
+    if username.startswith("ks:"):
+        username = username[3:]
+    user = get_object_or_404(User, username=username)
+    if not user.is_active:
+        return 403, None
+    collections = Collection.get_for_user(user)
+    collection_responses = [CollectionResponse.from_orm(c) for c in collections]
+    response = UserResponse(
+        **model_to_dict(user),
+        fullname=user.get_full_name(),
+        permissions=user.get_all_permissions(),
+        collections=collection_responses,
+    )
+    return 200, response
+
+
+class ProxyLoginRequest(Schema):
+    """Take username and password to log user in"""
+
+    username: str
+    password: str
+
+
+@private_api.post("/proxy_login", response={200: UserResponse, codes_4xx: None})
 def proxy_login(request, payload: ProxyLoginRequest):
     """ARCH hosts a login form collecting username/password. ARCH posts these
     to this endpoint where Keystone checks these are valid. ARCH creates a
@@ -255,7 +274,7 @@ def proxy_login(request, payload: ProxyLoginRequest):
         return 403, None
     collections = Collection.get_for_user(user)
     collection_responses = [CollectionResponse.from_orm(c) for c in collections]
-    response = ProxyLoginResponse(
+    response = UserResponse(
         **model_to_dict(user),
         fullname=user.get_full_name(),
         permissions=user.get_all_permissions(),
