@@ -5,6 +5,8 @@ import requests
 
 from django.contrib import messages
 from django.core import management
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
 from django.shortcuts import render
 from django.http import (
     HttpResponseBadRequest,
@@ -141,3 +143,14 @@ def explore_collections(request):
 
     return render(request, "keystone/explore_collections.html", {"collections": result["response"]["docs"]})
 
+@login_required
+def dashboard(request):
+    return render(request, "keystone/dashboard.html")
+
+@login_required
+def collections(request):
+    return render(request, "keystone/collections.html")
+
+@login_required
+def datasets(request):
+    return render(request, "keystone/datasets.html")

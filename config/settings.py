@@ -23,6 +23,7 @@ env = {
     **os.environ,  # override loaded values with environment variables
 }
 
+DEPLOYMENT_ENVIRONMENT = env.get("KEYSTONE_DEPLOYMENT_ENVIRONMENT", "DEV")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -60,7 +61,7 @@ CSRF_TRUSTED_ORIGINS = (
     else []
 )
 
-VAULT_TEAM_EMAIL = "avdempsey@archive.org"
+ARCH_SUPPORT_TICKET_URL = "https://arch-webservices.zendesk.com/hc/en-us/requests/new"
 
 # Application definition
 
@@ -184,6 +185,9 @@ STATIC_ROOT = "/opt/keystone/staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+LOGIN_URL = "/login"
+LOGIN_REDIRECT_URL = "/"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -203,3 +207,11 @@ LOGGING = {
     },
     "loggers": {"root": {"handlers": ["file"]}},
 }
+
+EMAIL_HOST = env.get("KEYSTONE_EMAIL_HOST")
+DEFAULT_FROM_EMAIL = env.get("KEYSTONE_DEFAULT_FROM_EMAIL")
+
+if DEPLOYMENT_ENVIRONMENT == "DEV":
+    # in development, always send emails to the console rather than sending
+    # actual emails.
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

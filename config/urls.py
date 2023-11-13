@@ -24,6 +24,10 @@ from keystone import views
 from keystone.api import private_api, public_api
 
 urlpatterns = [
+    path("", views.dashboard, name="dashboard"),
+    path("/collections", views.collections, name="collections"),
+    path("/datasets", views.datasets, name="datasets"),
+
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path(
@@ -39,8 +43,12 @@ urlpatterns = [
     path(
         "accounts/password_reset/",
         auth_views.PasswordResetView.as_view(
-            extra_context={"vault_team_email": settings.VAULT_TEAM_EMAIL},
-            extra_email_context={"vault_team_email": settings.VAULT_TEAM_EMAIL},
+            extra_context={
+                "arch_support_ticket_url": settings.ARCH_SUPPORT_TICKET_URL
+            },
+            extra_email_context={
+                "arch_support_ticket_url": settings.ARCH_SUPPORT_TICKET_URL
+            },
             form_class=keystone_forms.KeystonePasswordResetForm,
             template_name="registration/password_reset_form.html",
         ),

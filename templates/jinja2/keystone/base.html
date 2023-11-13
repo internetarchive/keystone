@@ -58,30 +58,31 @@
         <ul class="title-area">
           <li class="name"><h1><a href="/"><img src="{{ static('/img/arch-logo.png') }}" alt="ARCH Logo"></a></h1></li>
         </ul>
-        {% if request.user.is_authenticated %}
         <section class="top-bar-section" style="left: 0%;">
           <ul class="left">
-            <li><a href="/dashboard">Dashboard</a></li>
-            <li><a href="/collections">Collections</a></li>
-            <li><a href="/datasets">Datasets</a></li>
-            {% if request.user.is_staff %}
-            <li><a href="/admin">Admin</a></li>
+            {% if request.user.is_authenticated %}
+            <li><a href="{{ url('dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url('collections') }}">Collections</a></li>
+            <li><a href="{{ url('datasets') }}">Datasets</a></li>
+            {% if request.user.is_staff %}<li><a href="{{ url('admin') }}">Admin</a></li>{% endif %}
             {% endif %}
           </ul>
         </section>
         <section class="top-bar-section" style="left: 0%;">
           <ul id="secondary-menu" class="right show-for-large-up">
             <li><a target="_blank" href="https://arch-webservices.zendesk.com/hc/en-us">Help Center</a></li>
+            {% if request.user.is_authenticated %}
             <li class="has-dropdown not-click" has-dropdown="">
               <a name="_welcome">Welcome, <span>{{ request.user.first_name }}</span></a>
               <ul class="dropdown"top-bar-dropdown=""><li class="title back js-generated"><h5><a href="">Back</a></h5></li>
                 <li><a href="/logout" target="_self">Log Out</a></li>
               </ul>
             </li>
+            {% else %}
             <li><a href="/login">Log In</a></li>
+            {% endif %}
           </ul>
         </section>
-        {% endif %}
       </nav>
     </div>
 

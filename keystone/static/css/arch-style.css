@@ -8,6 +8,11 @@ a:any-link:hover {
   color: #1b4865;
 }
 
+a.button,
+a.button:hover {
+  color: #fff;
+}
+
 .footer-link,
 .footer-link > a {
   color: #444;

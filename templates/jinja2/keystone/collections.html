@@ -1,0 +1,16 @@
+{% set breadcrumbs = (("Collections", "collections"),) %}
+{% extends 'registration/base_not_logged_in.html' %}
+
+{% block header_title %}
+Collections
+{% endblock %}
+
+{% block head_extra %}
+{% endblock %}
+
+<div class="row">
+  <div class="card-container">
+    <arch-collections-card></arch-collections-card>
+    <arch-recent-datasets-card></arch-recent-datasets-card>
+  </div>
+</div>
