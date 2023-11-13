@@ -1,6 +1,9 @@
+{% set breadcrumbs = (("Login", "login"),) %}
 {% extends 'registration/base_not_logged_in.html' %}
 
+{% block page_title_extra %}: Login{% endblock page_title_extra %}
 {% block header_title %}Login{% endblock header_title %}
+
 {% block content %}
   <div class='small-4 columns small-centered margin-top two'>
     <form action="{{ url("login") }}" method="post">
