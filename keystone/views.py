@@ -143,13 +143,16 @@ def explore_collections(request):
 
     return render(request, "keystone/explore_collections.html", {"collections": result["response"]["docs"]})
 
+
 @login_required
 def dashboard(request):
     return render(request, "keystone/dashboard.html")
 
+
 @login_required
 def collections(request):
     return render(request, "keystone/collections.html")
+
 
 @login_required
 def datasets(request):

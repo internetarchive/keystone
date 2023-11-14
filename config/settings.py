@@ -24,6 +24,7 @@ env = {
 }
 
 DEPLOYMENT_ENVIRONMENT = env.get("KEYSTONE_DEPLOYMENT_ENVIRONMENT", "DEV")
+KEYSTONE_GIT_COMMIT_HASH = env.get("KEYSTONE_GIT_COMMIT_HASH", "")[:7]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -99,6 +100,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "keystone.context_processors.keystone_version",
             ],
         },
     },
@@ -112,6 +114,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "keystone.context_processors.keystone_version",
             ],
         },
     },
@@ -177,7 +180,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
+# embed commit hash in asset root to invalidate cache between releases
+STATIC_URL = f"/static/{KEYSTONE_GIT_COMMIT_HASH}/"
 STATIC_ROOT = "/opt/keystone/staticfiles"
 
 # Default primary key field type
