@@ -6,13 +6,15 @@ Dashboard
 {% endblock %}
 
 {% block head_extra %}
-  <script src="{{ static('/js/dist/arch-collections-card-0b2219f0.js') }}" type="module"></script>
-  <script src="{{ static('/js/dist/arch-recent-datasets-card-398b9cde.js') }}" type="module"></script>
+  <script src="{{ static('/js/arch-collections-card.js') }}" type="module"></script>
+  <script src="{{ static('/js/arch-recent-datasets-card.js') }}" type="module"></script>
 {% endblock %}
 
+{% block content %}
 <div class="row">
   <div class="card-container">
     <arch-collections-card></arch-collections-card>
     <arch-recent-datasets-card></arch-recent-datasets-card>
   </div>
 </div>
+{% endblock %}
