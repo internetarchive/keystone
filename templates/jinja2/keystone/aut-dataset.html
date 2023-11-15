@@ -1,0 +1,189 @@
+
+{%
+  set dataset_displayname = (
+    dataset.job_start.collection.name
+    + ": "
+    + dataset.job_start.job_type.name
+    + (" (Sample)" if dataset.job_start.sample else "")
+  )
+%}
+
+{% set breadcrumbs = (("Datasets", "datasets-explore"), (dataset_displayname, ("dataset-detail", dataset.id))) %}
+{% extends 'keystone/base.html' %}
+
+{% block header_title %}
+  {{ dataset_displayname }}
+{% endblock %}
+
+{% block head_extra %}
+{% if dataset.job_start.job_type.can_publish %}
+<script src="{{ static('/js/arch-dataset-publishing-card.js') }}" type="module"></script>
+<script src="{{ static('/js/arch-hover-tooltip.js') }}" type="module"></script>
+{% endif %}
+
+<script src="{{ static('/js/ext/d3.v3.min.js') }}"></script>
+
+<script>
+  function init() {
+    // Initialize previews.
+    Array.from(document.querySelectorAll("div[data-preview-url]"))
+      .forEach(el => {
+        let {previewUrl} = el.dataset;
+        d3.text(previewUrl, data => {
+          const previewCSV = d3.csv.parseRows(data);
+          const previewTbl = d3.select(el)
+                .append("table")
+                .attr("class", "large-12 columns margin-top one csv-preview");
+          previewTbl.append("thead")
+            .append("tr")
+            .selectAll("th")
+            .data(previewCSV[0])
+            .enter().append("th")
+            .text(function(d) {
+              return d;
+            });
+          previewTbl.append("tbody")
+            .selectAll("tr")
+            .data(previewCSV.slice(1))
+            .enter().append("tr")
+
+            .selectAll("td")
+            .data(function(d) { return d; }).enter()
+            .append("td")
+            .text(function(d) { return d; });
+        });
+      });
+
+    // For the time being, just port existing rerun button click handler.
+    document.getElementById("job-rerunbutton").addEventListener("click", async (e) => {
+      const ok = confirm(
+        "You are about to regenerate this dataset which will permanently overwrite the existing version."
+      )
+      if (!ok) {
+        return;
+      }
+      const { target } = e;
+      target.disabled = true;
+      const res = await fetch(
+        "/api/datasets/generate", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "X-CSRFToken": "{{ csrf_token }}" },
+          mode: "cors",
+          body: JSON.stringify({
+            collection_id: {{ dataset.job_start.collection.id }},
+            job_type_id: "{{ dataset.job_start.job_type.id }}",
+            is_sample: {{ dataset.job_start.sample | tojson }},
+            rerun: true
+          }),
+        });
+      if (res.ok) {
+        window.location = "/datasets";
+      } else {
+        target.disabled = false;
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => init());
+</script>
+{% endblock %}
+
+{% block content %}
+<br>
+<br>
+<div class="row">
+  <div class="large-12 columns">
+
+    {% block visualization %}
+    {% endblock %}
+
+    {% if dataset.job_start.job_type.can_publish %}
+    <h2 id="publishing">Publishing</h2>
+    <p>Publish this dataset to <a href="https://archive.org">archive.org</a> for public access.</p>
+    <div class="card">
+      <div class="card-body">
+        <arch-dataset-publishing-card
+          datasetId="{{ dataset.id }}"
+          csrfToken="{{ csrf_token }}"
+        >
+        </arch-dataset-publishing-card>
+      </div>
+    </div>
+    {% endif %}
+
+    <h2 id="datasets">Dataset(s)</h2>
+    <p>
+      {{ dataset.job_start.job_type.description }} For help and information, see: <a href="https://arch-webservices.zendesk.com/hc/en-us/articles/17137082448276" target="_blank">How to download and open ARCH datasets.</a>
+    </p>
+    {% for file in dataset.job_start.jobcomplete.jobfile_set.all(): %}
+    <div class="card">
+      <div class="card-body">
+        <div class="job-card-flex">
+          <div class="dataset-info">
+            <p class="card-text">
+              <strong>File name</strong>: {{ file.filename }}
+              <br />
+              <strong>File size</strong>: {{ file.size_bytes | filesizeformat }}
+              <br />
+              {% if file.line_count != -1: %}
+              <strong>Result count</strong>:  {{ file.line_count }} lines
+              <br />
+              {% endif %}
+              <strong>Date completed</strong>:  {{ file.creation_time.date() }}
+              {% if file.md5_checksum: %}
+              <br />
+              <strong>MD5 Checksum</strong>: {{ file.md5_checksum }}
+              {% endif %}
+            </p>
+          </div>
+
+          <div class="dataset-download">
+            <a href="{{ url('dataset-file-download', args=[dataset.id, file.filename]) }}" target="_blank">
+              <i class="fa fa-cloud-download fa-5x"></i>
+              <p class="card-text center">Download</p>
+            </a>
+            {% if file.size_bytes < 1000000000 %}
+            <a href="{{ url('dataset-file-colab', args=[dataset.id, file.filename]) }}" target="_blank">
+              <img style="padding-top:15px;" src="{{ static('/img/colab-badge.svg') }}" alt="Open In Colab">
+            </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {% if file.line_count > 0 %}
+    <div class="card">
+      <div class="card-body csv-preview">
+        <h2 id="preview" class="card-title">Preview</h2>
+        <div data-preview-url="{{ url('dataset-file-preview', args=[dataset.id, file.filename]) }}"></div>
+        <br />
+        <a class="right" href="{{ url('dataset-file-preview', args=[dataset.id, file.filename]) }}" target="_blank"><arch-hover-tooltip style="color: inherit;" text="Download a csv of only the data listed in the preview">Download Preview Data</arch-hover-tooltip></a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% endfor %}
+
+    <div class="row">
+      <div class="large-12 columns">
+        <h2 id="regenerate">Regenerate</h2>
+        <div class="card" id="card-re-run-job">
+          <div class="card-body">
+            <p>
+              The new dataset will include any content added to the collection since this was last generated.
+              <br />
+              <strong>Regenerating this dataset will permanently overwrite the current version.</strong>
+            </p>
+            <button id="job-rerunbutton">Regenerate Dataset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

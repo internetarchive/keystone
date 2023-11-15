@@ -1,8 +1,10 @@
+import json
 from typing import Self
 import django.contrib.auth.admin
 from django.contrib import admin
 from django.contrib import messages
 from django.template.defaultfilters import filesizeformat
+from django.utils.html import format_html
 
 from . import models
 from .hashers import PBKDF2WrappedSha1PasswordHasher
@@ -186,6 +188,18 @@ class CollectionAdmin(admin.ModelAdmin):
     search_help_text = "Search by Collection ID or Collection Name"
 
 
+@admin.register(models.Dataset)
+class DatasetAdmin(admin.ModelAdmin):
+    """Django admin config for Dataset"""
+
+    list_display = (
+        "job_start",
+        "state",
+        "start_time",
+        "finished_time",
+    )
+
+
 @admin.register(models.ArchQuota)
 class ArchQuotaAdmin(admin.ModelAdmin):
     """Django admin config for ArchQuota"""
@@ -205,6 +219,7 @@ class JobTypeAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
+        "category",
     )
 
 
@@ -222,6 +237,18 @@ class JobStartAdmin(admin.ModelAdmin):
         "created_at",
     )
 
+    fields = [
+        f.name
+        for f in models.JobStart._meta.fields
+        if f.name not in ("id", "parameters")
+    ] + ["parameters_display"]
+
+    readonly_fields = [
+        f.name
+        for f in models.JobStart._meta.fields
+        if f.name not in ("id", "parameters")
+    ] + ["parameters_display"]
+
     @admin.display(description="Input Size", ordering="-input_bytes")
     def input_size(self, job_start, human=True):
         """Get human-friendly format for the size of a Job's input.
@@ -230,6 +257,14 @@ class JobStartAdmin(admin.ModelAdmin):
         if human:
             return filesizeformat(job_start.input_bytes)
         return job_start.input_bytes
+
+    @admin.display(description="Parameters")
+    def parameters_display(self, job_start):
+        """Pretty-format the parameters JSON object."""
+        return format_html(
+            '<pre style="color: #000; font-size: 0.8rem; line-height: 1.1rem;">{}</pre>',
+            json.dumps(job_start.parameters, indent=2),
+        )
 
 
 @admin.register(models.JobComplete)
@@ -241,6 +276,21 @@ class JobCompleteAdmin(admin.ModelAdmin):
         "job_start",
         "output_bytes",
         "created_at",
+    )
+
+
+@admin.register(models.JobFile)
+class JobFileAdmin(admin.ModelAdmin):
+    """Django admin config for JobFile"""
+
+    list_display = (
+        "id",
+        "job_complete",
+        "filename",
+        "file_type",
+        "mime_type",
+        "size_bytes",
+        "creation_time",
     )
 
 

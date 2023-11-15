@@ -3,8 +3,7 @@ import { customElement, property, state, query } from "lit/decorators.js";
 
 import { isoStringToDateString } from "../../lib/helpers";
 import {
-  Collection,
-  Job,
+  Dataset,
   PublishedDatasetInfo,
   PublishedDatasetMetadata,
   PublishedDatasetMetadataApiResponse,
@@ -52,9 +51,8 @@ function getMetadataKeyTitle(k: keyof PublishedDatasetMetadata): string {
 
 @customElement("arch-dataset-publishing-card")
 export class ArchDatasetPublishingCard extends LitElement {
-  @property({ type: String }) collectionId!: Collection["id"];
-  @property({ type: String }) jobId!: Job["id"];
-  @property({ type: Boolean }) isSample!: boolean;
+  @property({ type: String }) datasetId!: Dataset["id"];
+  @property({ type: String }) csrfToken!: string;
 
   @state() pubState: PublishState = PublishState.Loading;
   @state() pubInfo: undefined | PublishedDatasetInfo = undefined;
@@ -70,11 +68,6 @@ export class ArchDatasetPublishingCard extends LitElement {
   connectedCallback() {
     super.connectedCallback();
     void this._fetchInitialData();
-  }
-
-  private get _sampleParam() {
-    /* Return a "sample=[true|false]" URL param string for the current isSample state */
-    return `sample=${this.isSample ? "true" : "false"}`;
   }
 
   private get _metadataFormData() {
@@ -305,9 +298,8 @@ export class ArchDatasetPublishingCard extends LitElement {
 
   private async _fetchPubInfo() {
     /* Attempt to retrieve the info for any existing published dataset */
-    const response = await fetch(
-      `/api/petabox/${this.collectionId}/${this.jobId}?${this._sampleParam}`
-    );
+    const { datasetId } = this;
+    const response = await fetch(`/api/datasets/${datasetId}/publication`);
     if (response.status === 404) {
       return undefined;
     } else {
@@ -320,8 +312,9 @@ export class ArchDatasetPublishingCard extends LitElement {
 
   private async _fetchItemMetadata(itemId: PublishedDatasetInfo["item"]) {
     /* Attempt to retrieve the published item metadata */
+    const { datasetId } = this;
     const response = await fetch(
-      `/api/petabox/${this.collectionId}/metadata/${itemId}`
+      `/api/datasets/${datasetId}/publication/${itemId}`
     );
     if (response.status === 404) {
       return undefined;
@@ -353,19 +346,14 @@ export class ArchDatasetPublishingCard extends LitElement {
   }
 
   private async _publish() {
-    const { collectionId, jobId, _metadataFormData: metadata } = this;
-    await fetch(
-      `/api/runjob/DatasetPublication/${collectionId}?${this._sampleParam}`,
-      {
-        method: "POST",
-        credentials: "same-origin",
-        mode: "cors",
-        body: JSON.stringify({
-          dataset: jobId,
-          metadata,
-        }),
-      }
-    );
+    const { csrfToken, datasetId, _metadataFormData: metadata } = this;
+    await fetch(`/api/datasets/${datasetId}/publication`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRFToken": csrfToken },
+      mode: "cors",
+      body: JSON.stringify(metadata),
+    });
     this.pubState = PublishState.Publishing;
     // Start polling for pub info after a lengthy timeout in order to
     // give the backend time to register the job.
@@ -373,12 +361,13 @@ export class ArchDatasetPublishingCard extends LitElement {
   }
 
   private async _unpublish() {
-    const { collectionId, pubInfo } = this;
+    const { csrfToken, datasetId, pubInfo } = this;
     const { item: itemId } = pubInfo as PublishedDatasetInfo;
     this.pubState = PublishState.Unpublishing;
-    await fetch(`/api/petabox/${collectionId}/delete/${itemId}`, {
-      method: "POST",
+    await fetch(`/api/datasets/${datasetId}/publication/${itemId}`, {
+      method: "DELETE",
       credentials: "same-origin",
+      headers: { "X-CSRFToken": csrfToken },
       mode: "cors",
       body: JSON.stringify({ delete: true }),
     });
@@ -388,7 +377,7 @@ export class ArchDatasetPublishingCard extends LitElement {
   }
 
   private async _saveMetadata() {
-    const { collectionId, pubInfo, _metadataFormData: metadata } = this;
+    const { csrfToken, datasetId, pubInfo, _metadataFormData: metadata } = this;
     const { item: itemId } = pubInfo as PublishedDatasetInfo;
     this.metadata = metadata;
     this.metadataState = MetadataState.Saving;
@@ -398,12 +387,14 @@ export class ArchDatasetPublishingCard extends LitElement {
       Object.fromEntries(orderedMetadataKeys.map((k) => [k, []])),
       metadata
     );
-    await fetch(`/api/petabox/${collectionId}/metadata/${itemId}`, {
+    await fetch(`/api/datasets/${datasetId}/publication/${itemId}`, {
       method: "POST",
       credentials: "same-origin",
+      headers: { "X-CSRFToken": csrfToken },
       mode: "cors",
       body: JSON.stringify(finalMetadata),
     });
+
     this.metadataState = MetadataState.Displaying;
   }
 }

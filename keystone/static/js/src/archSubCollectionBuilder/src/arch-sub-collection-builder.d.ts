@@ -2,6 +2,7 @@ import { LitElement } from "lit";
 import { Collection } from "../../lib/types";
 import "../../archAlert/index";
 export declare class ArchSubCollectionBuilder extends LitElement {
+    csrfToken: string;
     collections: Array<Collection>;
     sourceCollectionIds: Set<Collection["id"]>;
     form: HTMLFormElement;

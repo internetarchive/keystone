@@ -1,7 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import { AvailableJobs, JobState } from "../../lib/types";
+import { AvailableJobsCategory, JobState } from "../../lib/types";
 
 import "./arch-job-card";
 
@@ -9,8 +9,8 @@ import "./arch-job-card";
 export class ArchJobCategorySection extends LitElement {
   @property({ type: Boolean }) collapsed = false;
   @property({ type: String }) collectionId!: string;
-  @property({ type: Object }) jobsCat!: AvailableJobs[0];
-  @property({ type: Object }) jobStates!: Record<string, JobState>;
+  @property({ type: Object }) jobsCat!: AvailableJobsCategory;
+  @property({ type: Object }) jobIdStatesMap!: Record<string, JobState>;
 
   createRenderRoot() {
     /* Disable the shadow root for this component to let in global styles.
@@ -53,7 +53,7 @@ export class ArchJobCategorySection extends LitElement {
               <arch-job-card
                 .collectionId=${this.collectionId}
                 .job=${job}
-                .jobStates=${this.jobStates}
+                .jobIdStatesMap=${this.jobIdStatesMap}
               >
               </arch-job-card>
             `

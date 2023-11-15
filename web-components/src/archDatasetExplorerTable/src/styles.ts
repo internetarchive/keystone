@@ -30,10 +30,6 @@ export default [
       width: 9em;
     }
 
-    data-table > table > thead > tr > th.files {
-      width: 3em;
-    }
-
     data-table > table > thead > tr > th {
       max-width: none;
     }

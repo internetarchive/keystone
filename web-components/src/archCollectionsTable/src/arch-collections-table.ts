@@ -2,12 +2,19 @@ import { PropertyValues } from "lit";
 import { customElement } from "lit/decorators.js";
 
 import { ArchDataTable } from "../../archDataTable/index";
-import { Collection } from "../../lib/types";
+import { CollectionTypeDisplayMap } from "../../lib/constants";
+import {
+  Collection,
+  CollectionType,
+  CustomCollectionMetadata,
+  ProcessingState,
+} from "../../lib/types";
 import { Topics } from "../../lib/pubsub";
 import {
   Paths,
   humanBytes,
   htmlAttrEscape as _,
+  isActiveProcessingState,
   isoStringToDateString,
 } from "../../lib/helpers";
 import Styles from "./styles";
@@ -25,58 +32,88 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
       Topics.CREATE_SUB_COLLECTION,
     ];
     this.apiCollectionEndpoint = "/collections";
+    this.apiItemResponseIsArray = true;
+    this.apiItemTemplate = "/collections?id=:id";
+    this.itemPollPredicate = (item) =>
+      item.collection_type === CollectionType.CUSTOM
+        ? isActiveProcessingState(
+            (item.metadata as CustomCollectionMetadata).state
+          )
+        : false;
+    this.itemPollPeriodSeconds = 3;
 
     /* eslint-disable @typescript-eslint/restrict-template-expressions */
     this.cellRenderers = [
-      (name, collection: Collection) => `
-        <a href="/collections/${_(collection.id)}" title="${_(name as string)}">
-          <span class="highlightable">${name}</span>
-        </a>
-      `,
-      { true: "Yes", false: "No" },
+      (name, collection: Collection) =>
+        collection.collection_type === CollectionType.CUSTOM &&
+        (collection.metadata as CustomCollectionMetadata).state !==
+          ProcessingState.FINISHED
+          ? `<span title="This Custom collection is in the process of being created">${name} <i>(${
+              (collection.metadata as CustomCollectionMetadata).state
+            })</i></span>`
+          : `
+            <a href="/collections/${_(collection.id.toString())}" title="${_(
+              name as string
+            )}">
+              <span class="highlightable">${name}</span>
+            </a>
+          `,
+
+      (collectionType) =>
+        CollectionTypeDisplayMap[collectionType as CollectionType],
+
+      (isPublic) => `${isPublic ? "Yes" : "No"}`,
+
       (lastJobName, collection: Collection) => {
         if (lastJobName === null) {
           return "";
         }
         lastJobName = lastJobName as string;
-        const lastJobId = collection.lastJobId as string;
-        const lastJobSample = collection.lastJobSample as boolean;
-        // Convert the lastJobSample boolean to a Dataset.sample integer.
-        const datasetSample = lastJobSample ? 1 : -1;
-        // NOTE - this manual Dataset ID string composition is brittle
         return `
-          <a href="${Paths.dataset(
-            `${collection.id}:${lastJobId}`,
-            datasetSample
-          )}" title="${_(lastJobName)}">
-            <span class="highlightable">${lastJobName}</span>
+          <a href="${Paths.dataset(`${collection.latest_dataset.id}`)}"
+             title="${_(lastJobName)}">
+            ${lastJobName}
           </a>
         `;
       },
+
       (lastJobTime) =>
         !lastJobTime ? "" : isoStringToDateString(lastJobTime as string),
-      (_, collection: Collection) => {
-        return humanBytes(
-          collection.sortSize === -1 ? 0 : collection.sortSize,
-          1
-        );
-      },
+
+      (_, collection: Collection) =>
+        collection.collection_type === CollectionType.CUSTOM &&
+        (collection.metadata as CustomCollectionMetadata).state !==
+          ProcessingState.FINISHED
+          ? ""
+          : humanBytes(collection.size_bytes, 1),
     ];
     /* eslint-enable @typescript-eslint/restrict-template-expressions */
 
-    this.columnFilterDisplayMaps = [undefined, { true: "Yes", false: "No" }];
-    this.columns = ["name", "public", "lastJobName", "lastJobTime", "sortSize"];
+    this.columnFilterDisplayMaps = [
+      undefined,
+      undefined,
+      { true: "Yes", false: "No" },
+    ];
+    this.columns = [
+      "name",
+      "collection_type",
+      "metadata.is_public",
+      "latest_dataset.name",
+      "latest_dataset.start_time",
+      "size_bytes",
+    ];
     this.columnHeaders = [
       "Name",
+      "Type",
       "Public",
       "Latest Dataset",
       "Dataset Date",
       "Size",
     ];
     this.selectable = true;
-    this.sort = "name";
-    this.sortableColumns = [true, false, true, true, true];
-    this.filterableColumns = [false, true];
+    this.sort = "-id";
+    this.sortableColumns = [true, true, false, false, false, true];
+    this.filterableColumns = [false, true, true];
     this.searchColumns = ["name"];
     this.searchColumnLabels = ["Name"];
     this.singleName = "Collection";

@@ -21,12 +21,41 @@ from django.urls import path
 
 from keystone import forms as keystone_forms
 from keystone import views
-from keystone.api import private_api, public_api
+from keystone.api import private_api, public_api, wasapi_api
+
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
-    path("/collections", views.collections, name="collections"),
-    path("/datasets", views.datasets, name="datasets"),
+    path("collections", views.collections, name="collections"),
+    path(
+        "collections/custom-collection-builder",
+        views.sub_collection_builder,
+        name="sub-collection-builder",
+    ),
+    path(
+        "collections/<int:collection_id>",
+        views.collection_detail,
+        name="collection-detail",
+    ),
+    path("datasets", views.datasets),
+    path("datasets/explore", views.datasets_explore, name="datasets-explore"),
+    path("datasets/generate", views.datasets_generate, name="datasets-generate"),
+    path("datasets/<int:dataset_id>", views.dataset_detail, name="dataset-detail"),
+    path(
+        "datasets/<int:dataset_id>/files/<filename>/preview",
+        views.dataset_file_preview,
+        name="dataset-file-preview",
+    ),
+    path(
+        "datasets/<int:dataset_id>/files/<filename>",
+        views.dataset_file_download,
+        name="dataset-file-download",
+    ),
+    path(
+        "datasets/<int:dataset_id>/files/<filename>/colab",
+        views.dataset_file_colab,
+        name="dataset-file-colab",
+    ),
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path(
@@ -101,4 +130,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", public_api.urls),
     path("private/api/", private_api.urls),
+    path("wasapi/v1/", wasapi_api.urls),
 ]

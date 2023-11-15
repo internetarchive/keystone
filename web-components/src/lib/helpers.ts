@@ -1,5 +1,5 @@
 export * from "./webservices/src/lib/helpers";
-import { Collection, Dataset } from "./types";
+import { Collection, Dataset, ProcessingState } from "./types";
 import { ArchSubCollectionBuilder } from "../archSubCollectionBuilder/index";
 import { ArchGenerateDatasetForm } from "../archGenerateDatasetForm/index";
 
@@ -8,8 +8,7 @@ const _ = encodeURIComponent;
 export const Paths = {
   collection: (id: Collection["id"]) => `/collections/${_(id)}`,
 
-  dataset: (id: Dataset["id"], sample: Dataset["sample"]) =>
-    `/datasets/${_(id)}?sample=${sample > -1 ? "true" : "false"}`,
+  dataset: (id: Dataset["id"]) => `/datasets/${_(id)}`,
 
   generateCollectionDataset: (collectionId: Collection["id"]) =>
     `/datasets/generate?${_(
@@ -26,3 +25,11 @@ export const Paths = {
           )
           .join("&")}`,
 };
+
+export function isActiveProcessingState(state: ProcessingState): boolean {
+  return (
+    state === ProcessingState.SUBMITTED ||
+    state === ProcessingState.QUEUED ||
+    state === ProcessingState.RUNNING
+  );
+}

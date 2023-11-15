@@ -2,10 +2,6 @@ import { css } from "lit";
 
 export default [
   css`
-    data-table > .paginator-wrapper {
-      display: none;
-    }
-
     data-table > table {
       table-layout: fixed;
     }
@@ -28,10 +24,6 @@ export default [
 
     data-table > table > thead > tr > th.finished {
       width: 9em;
-    }
-
-    data-table > table > thead > tr > th.files {
-      width: 3em;
     }
 
     data-table > table > thead > tr > th {

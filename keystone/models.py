@@ -4,14 +4,19 @@ from functools import reduce
 from operator import or_
 
 from django.contrib.auth.models import AbstractUser
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
-from django.db.models import Q
 from django.db import transaction
 from django.db import IntegrityError
+from django.db.models import Q
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 import uuid6
+
+from config import settings
 from .validators import validate_username
 
 
@@ -123,16 +128,22 @@ class CollectionTypes(models.TextChoices):
 class Collection(models.Model):
     """Collections are the main inputs for ARCH jobs."""
 
+    arch_id = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     collection_type = models.CharField(choices=CollectionTypes.choices, max_length=16)
     accounts = models.ManyToManyField(Account, blank=True, related_name="collections")
     teams = models.ManyToManyField(Team, blank=True, related_name="collections")
     users = models.ManyToManyField(User, blank=True, related_name="collections")
     created_at = models.DateTimeField(auto_now_add=True)
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    latest_dataset = models.ForeignKey(
+        "Dataset", blank=True, null=True, on_delete=models.PROTECT
+    )
+    metadata = models.JSONField(encoder=DjangoJSONEncoder, null=True)
 
     class Meta:
         constraints = [
-            choice_constraint(field="collection_type", choices=CollectionTypes)
+            choice_constraint(field="collection_type", choices=CollectionTypes),
         ]
 
     @classmethod
@@ -140,6 +151,25 @@ class Collection(models.Model):
         """Get all Collections a given user has access to"""
         collections = {*user.collections.all(), *user.account.collections.all()}
         return list(collections)
+
+    @classmethod
+    def handle_job_event(cls, job_event):
+        """Update a Custom Collection's metadata.state"""
+        state = job_event.get_job_status()[0]
+        collection = job_event.job_start.collection
+        if collection.collection_type != CollectionTypes.CUSTOM:
+            return
+        collection.metadata["state"] = state
+        collection.save()
+
+    @classmethod
+    def handle_job_complete(cls, job_complete):
+        """Update a Custom Collection's size"""
+        collection = job_complete.job_start.collection
+        if collection.collection_type != CollectionTypes.CUSTOM:
+            return
+        collection.size_bytes = job_complete.output_bytes
+        collection.save()
 
     def __str__(self):
         return self.name
@@ -186,12 +216,21 @@ class ArchQuota(models.Model):
         return quota_dict
 
 
+class JobCategory(models.Model):
+    """JobCategory represents JobType categories."""
+
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
+
+
 class JobType(models.Model):
     """JobTypes are the things we do in ARCH. We say JobType to disambiguate from
     any particular Job execution."""
 
     id = models.UUIDField(primary_key=True, default=uuid6.uuid7)
     name = models.CharField(max_length=255)
+    category = models.ForeignKey(JobCategory, on_delete=models.PROTECT)
+    description = models.TextField()
     can_run = models.BooleanField()
     can_publish = models.BooleanField()
     input_quota_eligible = models.BooleanField()
@@ -203,11 +242,28 @@ class JobType(models.Model):
         return f"{self.id} - {self.name}"
 
 
+class JobEventTypes(models.TextChoices):
+    """ARCH can use different types of collections as inputs for Jobs."""
+
+    # Choices are ordered from less to more advanced state.
+    SUBMITTED = "SUBMITTED", "Submitted"
+    QUEUED = "QUEUED", "Queued"
+    RUNNING = "RUNNING", "Running"
+    FINISHED = "FINISHED", "Finished"
+    FAILED = "FAILED", "Failed"
+    CANCELLED = "CANCELLED", "Cancelled"
+
+    @classmethod
+    def is_terminal(cls, name) -> bool:
+        """Return a bool indicating whether an event type is terminal."""
+        return cls.names.index(name) > cls.names.index(cls.RUNNING)
+
+
 class JobStart(models.Model):
     """There should be a JobStart record each time a user runs a job."""
 
-    # TODO: how do we handle multi-collection jobs?
     id = models.UUIDField(primary_key=True, default=uuid6.uuid7, editable=False)
+    collection = models.ForeignKey(Collection, on_delete=models.PROTECT)
     job_type = models.ForeignKey(JobType, on_delete=models.PROTECT)
     user = models.ForeignKey(User, on_delete=models.PROTECT)
     quotas = models.ManyToManyField(ArchQuota)
@@ -218,22 +274,51 @@ class JobStart(models.Model):
     created_at = models.DateTimeField()
 
 
+@receiver(post_save, sender=JobStart)
+def job_start_post_save(sender, instance, **kwargs):  # pylint: disable=unused-argument
+    """Maybe create a Dataset or Collection instance."""
+    if instance.job_type.can_run:
+        Dataset.handle_job_start(instance)
+
+
 class JobComplete(models.Model):
     """JobComplete tracks completed JobStarts against Quotas."""
 
-    job_start = models.ForeignKey(JobStart, on_delete=models.PROTECT)
+    job_start = models.OneToOneField(JobStart, on_delete=models.PROTECT)
     output_bytes = models.PositiveBigIntegerField()
     created_at = models.DateTimeField()
 
 
-class JobEventTypes(models.TextChoices):
-    """ARCH can use different types of collections as inputs for Jobs."""
+@receiver(post_save, sender=JobComplete)
+def job_complete_post_save(
+    sender, instance, **kwargs
+):  # pylint: disable=unused-argument
+    """Maybe finalize a custom Collection instance in response to a JobComplete."""
+    user_defined_query_type = JobType.objects.get(
+        id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
+    )
+    if instance.job_start.job_type == user_defined_query_type:
+        Collection.handle_job_complete(instance)
 
-    QUEUED = "QUEUED", "Queued"
-    RUNNING = "RUNNING", "Running"
-    FINISHED = "FINISHED", "Finished"
-    FAILED = "FAILED", "Failed"
-    CANCELLED = "CANCELLED", "Cancelled"
+
+class JobFile(models.Model):
+    """A JobFile represents a single derivative file generated by a job run"""
+
+    job_complete = models.ForeignKey(JobComplete, on_delete=models.PROTECT)
+    filename = models.CharField(max_length=255)
+    size_bytes = models.PositiveBigIntegerField()
+    mime_type = models.CharField(max_length=255)
+    line_count = models.IntegerField()
+    file_type = models.CharField(max_length=32)
+    creation_time = models.DateTimeField()
+    md5_checksum = models.CharField(max_length=128, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job_complete", "filename"], name="jobfile_unique"
+            )
+        ]
 
 
 class JobEvent(models.Model):
@@ -242,3 +327,95 @@ class JobEvent(models.Model):
     job_start = models.ForeignKey(JobStart, on_delete=models.PROTECT)
     event_type = models.CharField(choices=JobEventTypes.choices, max_length=16)
     created_at = models.DateTimeField()
+
+    def get_job_status(self):
+        """Return a (state, start_time, finished_time) tuple representing the
+        current state of the associated job."""
+        # Making no assumption that tihs JobEvent represents the most advanced
+        # state of the corresponding JobStart, fetch them all, and filter from there.
+        job_events = JobEvent.objects.filter(job_start=self.job_start).all()
+
+        # Get the most advanced event_type value.
+        state = sorted(
+            [job_event.event_type for job_event in job_events],
+            key=JobEventTypes.names.index,
+        )[-1]
+
+        # If job is queued, set start_time to the QUEUED event created_at value,
+        # otherwise assume that there exists a RUNNING event and use its created_at.
+        start_time_event_type = (
+            JobEventTypes.QUEUED
+            if state == JobEventTypes.QUEUED
+            else JobEventTypes.RUNNING
+        )
+        start_time = next(
+            job_event.created_at
+            for job_event in job_events
+            if job_event.event_type == start_time_event_type
+        )
+
+        # Set finished_time to the created_at value of the first found event
+        # with a terminal status. If no such event exists, set it to None.
+        finished_time = next(
+            (
+                job_event.created_at
+                for job_event in job_events
+                if JobEventTypes.is_terminal(job_event.event_type)
+            ),
+            None,
+        )
+
+        return state, start_time, finished_time
+
+
+@receiver(post_save, sender=JobEvent)
+def job_event_post_save(sender, instance, **kwargs):  # pylint: disable=unused-argument
+    """Maybe update a Dataset or custom Collection instance in response to a JobEvent."""
+    user_defined_query_type = JobType.objects.get(
+        id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
+    )
+    job_type = instance.job_start.job_type
+    if job_type == user_defined_query_type:
+        Collection.handle_job_event(instance)
+    elif job_type.can_run:
+        Dataset.handle_job_event(instance)
+
+
+class Dataset(models.Model):
+    """A Dataset represents an in-progress or completed Job."""
+
+    job_start = models.ForeignKey(JobStart, on_delete=models.PROTECT)
+    state = models.CharField(choices=JobEventTypes.choices, max_length=16)
+    start_time = models.DateTimeField(auto_now_add=True)
+    finished_time = models.DateTimeField(null=True)
+
+    @classmethod
+    def handle_job_start(cls, job_start):
+        """Create a new Dataset for each relevent JobStart."""
+        cls.objects.create(job_start=job_start, state=JobEventTypes.SUBMITTED)
+
+    @classmethod
+    def handle_job_event(cls, job_event):
+        """Update a Dataset in response to a JobEvent save."""
+        state, start_time, finished_time = job_event.get_job_status()
+
+        # Update the Dataset.
+        dataset = cls.objects.get(job_start=job_event.job_start)
+        dataset.state = state
+        dataset.start_time = start_time
+        dataset.finished_time = finished_time
+        dataset.save()
+
+        # Maybe update the corresponding Collection.latest_dateset
+        collection = job_event.job_start.collection
+        if (
+            finished_time is not None
+            and state == JobEventTypes.FINISHED
+            and (
+                collection.latest_dataset is None
+                or collection.latest_dataset.start_time < dataset.start_time
+            )
+        ):
+            dataset.refresh_from_db()
+            collection.latest_dataset = dataset
+            collection.save()

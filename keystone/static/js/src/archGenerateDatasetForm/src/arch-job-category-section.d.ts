@@ -1,11 +1,11 @@
 import { LitElement } from "lit";
-import { AvailableJobs, JobState } from "../../lib/types";
+import { AvailableJobsCategory, JobState } from "../../lib/types";
 import "./arch-job-card";
 export declare class ArchJobCategorySection extends LitElement {
     collapsed: boolean;
     collectionId: string;
-    jobsCat: AvailableJobs[0];
-    jobStates: Record<string, JobState>;
+    jobsCat: AvailableJobsCategory;
+    jobIdStatesMap: Record<string, JobState>;
     createRenderRoot(): this;
     expand(): void;
     collapse(): void;

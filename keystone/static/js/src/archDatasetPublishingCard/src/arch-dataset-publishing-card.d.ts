@@ -1,5 +1,5 @@
 import { LitElement } from "lit";
-import { Collection, Job, PublishedDatasetInfo, PublishedDatasetMetadataApiResponse } from "../../lib/types";
+import { Dataset, PublishedDatasetInfo, PublishedDatasetMetadataApiResponse } from "../../lib/types";
 import "../../archLoadingIndicator/index";
 import "../../archDatasetMetadataForm/index";
 import { ArchDatasetMetadataForm } from "../../archDatasetMetadataForm/index";
@@ -17,9 +17,8 @@ declare enum MetadataState {
     Saving = 2
 }
 export declare class ArchDatasetPublishingCard extends LitElement {
-    collectionId: Collection["id"];
-    jobId: Job["id"];
-    isSample: boolean;
+    datasetId: Dataset["id"];
+    csrfToken: string;
     pubState: PublishState;
     pubInfo: undefined | PublishedDatasetInfo;
     metadataState: MetadataState;
@@ -27,7 +26,6 @@ export declare class ArchDatasetPublishingCard extends LitElement {
     metadataForm: ArchDatasetMetadataForm;
     static styles: import("lit").CSSResult[];
     connectedCallback(): void;
-    private get _sampleParam();
     private get _metadataFormData();
     render(): import("lit-html").TemplateResult<1>;
     private _fetchInitialData;

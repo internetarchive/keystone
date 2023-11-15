@@ -1,4 +1,4 @@
-import{i as t,e as o,c as p,g as e,_ as r,b as s,y as i,a as m}from"./chunk-styles.js";import{t as c}from"./chunk-state.js";import{S as v,x as a,A as h,d as n}from"./chunk-scale-large.js";const u=t`
+import{i as t,e as o,_ as p,s as e,y as r,a as s}from"./chunk-query-assigned-elements.js";import{t as i}from"./chunk-state.js";import{S as m,x as c,A as v,d as a}from"./chunk-scale-large.js";import{i as h,g as n}from"./chunk-styles.js";const u=t`
 :host{--spectrum-overlay-animation-distance:6px;--spectrum-overlay-animation-duration:var(
 --spectrum-animation-duration-100
 );opacity:0;pointer-events:none;transition:transform var(--spectrum-overlay-animation-duration) ease-in-out,opacity var(--spectrum-overlay-animation-duration) ease-in-out,visibility 0s linear var(--spectrum-overlay-animation-duration);visibility:hidden}:host([open]){opacity:1;pointer-events:auto;transition-delay:0s;visibility:visible}:host([open]) .spectrum-Popover--bottom-end,:host([open]) .spectrum-Popover--bottom-left,:host([open]) .spectrum-Popover--bottom-right,:host([open]) .spectrum-Popover--bottom-start,:host([placement*=bottom][open]){--spectrum-overlay-animation-distance:6px;transform:translateY(var(--spectrum-overlay-animation-distance))}:host([open]) .spectrum-Popover--top-end,:host([open]) .spectrum-Popover--top-left,:host([open]) .spectrum-Popover--top-right,:host([open]) .spectrum-Popover--top-start,:host([placement*=top][open]){--spectrum-overlay-animation-distance:6px;transform:translateY(calc(var(--spectrum-overlay-animation-distance)*-1))}:host([dir=rtl][open]) .spectrum-Popover--start,:host([dir=rtl][open]) .spectrum-Popover--start-bottom,:host([dir=rtl][open]) .spectrum-Popover--start-top,:host([open]) .spectrum-Popover--end,:host([open]) .spectrum-Popover--end-bottom,:host([open]) .spectrum-Popover--end-top,:host([open]) .spectrum-Popover--right-bottom,:host([open]) .spectrum-Popover--right-top,:host([placement*=right][open]){--spectrum-overlay-animation-distance:6px;transform:translateX(var(--spectrum-overlay-animation-distance))}:host([dir=rtl][open]) .spectrum-Popover--end,:host([dir=rtl][open]) .spectrum-Popover--end-bottom,:host([dir=rtl][open]) .spectrum-Popover--end-top,:host([open]) .spectrum-Popover--left-bottom,:host([open]) .spectrum-Popover--left-top,:host([open]) .spectrum-Popover--start,:host([open]) .spectrum-Popover--start-bottom,:host([open]) .spectrum-Popover--start-top,:host([placement*=left][open]){--spectrum-overlay-animation-distance:6px;transform:translateX(calc(var(--spectrum-overlay-animation-distance)*-1))}:host{--spectrum-popover-cross-offset:0;--spectrum-popover-background-color:var(
@@ -64,7 +64,7 @@ import{i as t,e as o,c as p,g as e,_ as r,b as s,y as i,a as m}from"./chunk-styl
 );padding:var(
 --mod-popover-dialog-padding,var(--spectrum-popover-dialog-padding,30px 29px)
 )}
-`;var l=Object.defineProperty,d=Object.getOwnPropertyDescriptor,P=(t,o,p,e)=>{for(var r,s=e>1?void 0:e?d(o,p):o,i=t.length-1;i>=0;i--)(r=t[i])&&(s=(e?r(o,p,s):r(s))||s);return e&&s&&l(o,p,s),s};class g extends v{constructor(){super(...arguments),this.dialog=!1,this.open=!1,this.tip=!1}static get styles(){return[u]}renderTip(){return a`
+`;var l=Object.defineProperty,d=Object.getOwnPropertyDescriptor,P=(t,o,p,e)=>{for(var r,s=e>1?void 0:e?d(o,p):o,i=t.length-1;i>=0;i--)(r=t[i])&&(s=(e?r(o,p,s):r(s))||s);return e&&s&&l(o,p,s),s};class g extends m{constructor(){super(...arguments),this.dialog=!1,this.open=!1,this.tip=!1}static get styles(){return[u]}renderTip(){return c`
             <div id="tip" aria-hidden="true">
                 <svg class="tip block" viewBox="0 -0.5 16 9">
                     <path class="triangle" d="M-1,-1 8,8 17,-1"></path>
@@ -73,10 +73,10 @@ import{i as t,e as o,c as p,g as e,_ as r,b as s,y as i,a as m}from"./chunk-styl
                     <path class="triangle" d="M-1,-1 8,8 -1,17"></path>
                 </svg>
             </div>
-        `}update(t){super.update(t)}render(){return a`
+        `}update(t){super.update(t)}render(){return c`
             <slot></slot>
-            ${this.tip?this.renderTip():h}
-        `}}P([o({type:Boolean,reflect:!0})],g.prototype,"dialog",2),P([o({type:Boolean,reflect:!0})],g.prototype,"open",2),P([o({reflect:!0})],g.prototype,"placement",2),P([o({type:Boolean,reflect:!0})],g.prototype,"tip",2),P([p("#tip")],g.prototype,"tipElement",2),n("sp-popover",g);var b=[e,t`
+            ${this.tip?this.renderTip():v}
+        `}}P([o({type:Boolean,reflect:!0})],g.prototype,"dialog",2),P([o({type:Boolean,reflect:!0})],g.prototype,"open",2),P([o({reflect:!0})],g.prototype,"placement",2),P([o({type:Boolean,reflect:!0})],g.prototype,"tip",2),P([h("#tip")],g.prototype,"tipElement",2),a("sp-popover",g);var b=[n,t`
     sp-popover {
       padding: 1rem;
     }
@@ -104,7 +104,7 @@ import{i as t,e as o,c as p,g as e,_ as r,b as s,y as i,a as m}from"./chunk-styl
       text-align: right;
       padding-top: 1rem;
     }
-  `];let f=class extends s{constructor(){super(...arguments),this.header=void 0,this.text=void 0,this.learnMoreUrl=void 0,this.width=12,this.isOpen=!1}render(){const{header:t,text:o,learnMoreUrl:p,width:e}=this;return i`
+  `];let f=class extends e{constructor(){super(...arguments),this.header=void 0,this.text=void 0,this.learnMoreUrl=void 0,this.width=12,this.isOpen=!1}render(){const{header:t,text:o,learnMoreUrl:p,width:e}=this;return r`
       <sp-theme color="light" scale="medium">
         <overlay-trigger
           placement="bottom-end"
@@ -117,22 +117,22 @@ import{i as t,e as o,c as p,g as e,_ as r,b as s,y as i,a as m}from"./chunk-styl
             slot="trigger"
             title="Learn about ${this.header}"
           >
-            ${this.isOpen?i`<strong>&#9432;</strong>`:i`&#9432;`}
+            ${this.isOpen?r`<strong>&#9432;</strong>`:r`&#9432;`}
           </button>
           <sp-popover slot="click-content" position="bottom" tip open>
             <div role="dialog">
-              ${t?i` <h2><span>&#9432;</span>${t}</h2>`:i``}
+              ${t?r` <h2><span>&#9432;</span>${t}</h2>`:r``}
               <div class="text" style="width: ${e}rem">${o||""}</div>
-              ${p?i`
+              ${p?r`
                     <div class="learn-more">
                       <a href="${p}" target="_blank">Learn More</a>
                     </div>
-                  `:i``}
+                  `:r``}
             </div>
           </sp-popover>
         </overlay-trigger>
       </sp-theme>
-    `}};f.styles=b,r([o({type:String})],f.prototype,"header",void 0),r([o({type:String})],f.prototype,"text",void 0),r([o({type:String})],f.prototype,"learnMoreUrl",void 0),r([o({type:Number})],f.prototype,"width",void 0),r([c()],f.prototype,"isOpen",void 0),f=r([m("arch-tooltip")],f);var y=[e,t`
+    `}};f.styles=b,p([o({type:String})],f.prototype,"header",void 0),p([o({type:String})],f.prototype,"text",void 0),p([o({type:String})],f.prototype,"learnMoreUrl",void 0),p([o({type:Number})],f.prototype,"width",void 0),p([i()],f.prototype,"isOpen",void 0),f=p([s("arch-tooltip")],f);var y=[n,t`
     :host {
       display: block;
       background-color: #fff;
@@ -167,19 +167,19 @@ import{i as t,e as o,c as p,g as e,_ as r,b as s,y as i,a as m}from"./chunk-styl
     :host arch-tooltip {
       margin: auto 0 auto 0.5rem;
     }
-  `];let w=class extends s{constructor(){super(...arguments),this.title="Title",this.headerLevel=2,this.ctaText=void 0,this.ctaHref=void 0,this.ctaTooltipHeader=void 0,this.ctaTooltipText=void 0,this.ctaTooltipLearnMoreUrl=void 0}get header(){switch(this.headerLevel){case 1:return i`<h1>${this.title}</h1>`;case 2:return i`<h2>${this.title}</h2>`;case 3:return i`<h3>${this.title}</h3>`;case 4:return i`<h4>${this.title}</h4>`;case 5:return i`<h5>${this.title}</h5>`;default:return i`<h6>${this.title}</h6>`}}render(){const{ctaTooltipHeader:t,ctaTooltipText:o,ctaTooltipLearnMoreUrl:p}=this;return i`
+  `];let w=class extends e{constructor(){super(...arguments),this.title="Title",this.headerLevel=2,this.ctaText=void 0,this.ctaHref=void 0,this.ctaTooltipHeader=void 0,this.ctaTooltipText=void 0,this.ctaTooltipLearnMoreUrl=void 0}get header(){switch(this.headerLevel){case 1:return r`<h1>${this.title}</h1>`;case 2:return r`<h2>${this.title}</h2>`;case 3:return r`<h3>${this.title}</h3>`;case 4:return r`<h4>${this.title}</h4>`;case 5:return r`<h5>${this.title}</h5>`;default:return r`<h6>${this.title}</h6>`}}render(){const{ctaTooltipHeader:t,ctaTooltipText:o,ctaTooltipLearnMoreUrl:p}=this;return r`
       <section>
         <div class="header">
           ${this.header}
-          ${this.ctaText&&this.ctaHref?i`
+          ${this.ctaText&&this.ctaHref?r`
                 <a href="${this.ctaHref}">${this.ctaText}</a>
-                ${t||o||p?i`
+                ${t||o||p?r`
                       <arch-tooltip
                         .header=${t}
                         .text=${o}
                         .learnMoreUrl=${p}
                       ></arch-tooltip>
-                    `:i``}
+                    `:r``}
               `:""}
         </div>
         <hr />
@@ -188,5 +188,5 @@ import{i as t,e as o,c as p,g as e,_ as r,b as s,y as i,a as m}from"./chunk-styl
           <slot name="footer"></slot>
         </div>
       </section>
-    `}};w.styles=y,r([o({type:String})],w.prototype,"title",void 0),r([o({type:Number})],w.prototype,"headerLevel",void 0),r([o({type:String})],w.prototype,"ctaText",void 0),r([o({type:String})],w.prototype,"ctaHref",void 0),r([o({type:String})],w.prototype,"ctaTooltipHeader",void 0),r([o({type:String})],w.prototype,"ctaTooltipText",void 0),r([o({type:String})],w.prototype,"ctaTooltipLearnMoreUrl",void 0),w=r([m("arch-card")],w);
+    `}};w.styles=y,p([o({type:String})],w.prototype,"title",void 0),p([o({type:Number})],w.prototype,"headerLevel",void 0),p([o({type:String})],w.prototype,"ctaText",void 0),p([o({type:String})],w.prototype,"ctaHref",void 0),p([o({type:String})],w.prototype,"ctaTooltipHeader",void 0),p([o({type:String})],w.prototype,"ctaTooltipText",void 0),p([o({type:String})],w.prototype,"ctaTooltipLearnMoreUrl",void 0),w=p([s("arch-card")],w);
 //# sourceMappingURL=chunk-arch-card.js.map

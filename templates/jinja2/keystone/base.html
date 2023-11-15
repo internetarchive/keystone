@@ -26,7 +26,7 @@
 
     <link rel="manifest" href="{{ static('manifest.json') }}" crossorigin="use-credentials">
 
-    <link rel="stylesheet" href="{{ static('/css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="{{ static('/css/arch-style.css') }}">
     <link rel="stylesheet" href="{{ static('/css/bootstrap-cards.css') }}">
     <link rel="stylesheet" href="{{ static('/css/bootstrap-alerts.css') }}">
@@ -38,7 +38,7 @@
     <meta class="foundation-mq-large">
 
     <!-- Safari Custom Elements Polyfill -->
-    <script src="{{ static('/js/ungap-custom-elements-1-1-1-es.js') }}"></script>
+    <script src="{{ static('/js/ext/ungap-custom-elements-1-1-1-es.js') }}"></script>
 
     <!-- Zendesk help widget -->
     <script>/*<![CDATA[*/window.zEmbed||function(e,t){var n,o,d,i,s,a=[],r=document.createElement("iframe");window.zEmbed=function(){a.push(arguments)},window.zE=window.zE||window.zEmbed,r.src="javascript:false",r.title="",r.role="presentation",(r.frameElement||r).style.cssText="display: none",d=document.getElementsByTagName("script"),d=d[d.length-1],d.parentNode.insertBefore(r,d),i=r.contentWindow,s=i.document;try{o=s}catch(c){n=document.domain,r.src='javascript:var d=document.open();d.domain="'+n+'";void(0);',o=s}o.open()._l=function(){var o=this.createElement("script");n&&(this.domain=n),o.id="js-iframe-async",o.src=e,this.t=+new Date,this.zendeskHost=t,this.zEQueue=a,this.body.appendChild(o)},o.write('<body onload="document._l();">'),o.close()}("https://assets.zendesk.com/embeddable_framework/main.js","arch-webservices.zendesk.com");
@@ -63,7 +63,7 @@
             {% if request.user.is_authenticated %}
             <li><a href="{{ url('dashboard') }}">Dashboard</a></li>
             <li><a href="{{ url('collections') }}">Collections</a></li>
-            <li><a href="{{ url('datasets') }}">Datasets</a></li>
+            <li><a href="{{ url('datasets-explore') }}">Datasets</a></li>
             {% if request.user.is_staff %}<li><a href="{{ url('admin:index') }}">Admin</a></li>{% endif %}
             {% endif %}
           </ul>
@@ -91,9 +91,15 @@
         <div class="row">
           <div class="small-12 columns">
             <ul class="breadcrumbs" ncy-breadcrumb="">
-              {% for label, view_name in breadcrumbs %}
+              {% for label, view_spec in breadcrumbs %}
               <li>
-                <a href="{{ url(view_name) }}">{{ label }}</a>
+                {% if isinstance(view_spec, str) %}
+                {# Handle a simple view name spec #}
+                <a href="{{ url(view_spec) }}">{{ label }}</a>
+                {% elif isinstance(view_spec, tuple) %}
+                {# Handle a view spec tuple in the form: (viewNamview_name, *args) #}
+                <a href="{{ url(view_spec[0], args=view_spec[1:]) }}">{{ label }}</a>
+                {% endif %}
               </li>
               {% endfor %}
             </ul>
@@ -110,6 +116,9 @@
           </div>
         </div>
       </header>
+
+      <!-- SubNav Block -->
+      {% block subnav %}{% endblock %}
 
       <!-- Content Block -->
       {% block content %}{% endblock %}

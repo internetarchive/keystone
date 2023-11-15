@@ -1,7 +1,0 @@
-ext
-node_modules
-dist
-**/*.d.ts
-src/generated_api_client/*
-schema.json
-src/legacy/vendor

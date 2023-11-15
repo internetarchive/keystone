@@ -19,6 +19,7 @@ dependencies = [
     "jinja2",
     "psycopg[c]",
     "python-dotenv",
+    "requests",
     "uuid6",
     "requests",
 ]

@@ -1,17 +1,43 @@
 import { JSONSchemaType } from "ajv";
 import { SomeJSONSchema } from "ajv/lib/types/json-schema";
 
+export enum ProcessingState {
+  SUBMITTED = "SUBMITTED",
+  QUEUED = "QUEUED",
+  RUNNING = "RUNNING",
+  FINISHED = "FINISHED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
+}
+
+export type AITCollectionMetadata = {
+  is_public?: boolean;
+  num_seeds?: number;
+  last_crawl_date?: Date;
+};
+
+export type CustomCollectionMetadata = {
+  state: ProcessingState;
+};
+
+export enum CollectionType {
+  AIT = "AIT",
+  SPECIAL = "SPECIAL",
+  CUSTOM = "CUSTOM",
+}
+
 export type Collection = {
-  id: string;
+  id: number;
   name: string;
-  public: boolean;
-  lastJobId?: string;
-  lastJobSample?: boolean;
-  lastJobTime?: Date;
-  size: string;
-  sortSize: number;
-  seeds: number;
-  lastCrawlDate: Date;
+  collection_type: CollectionType;
+  size_bytes: number;
+  dataset_count: number;
+  latest_dataset: {
+    id: number;
+    name: string;
+    start_time: Date;
+  };
+  metadata: AITCollectionMetadata | CustomCollectionMetadata;
 };
 
 export interface CollectionSearchResult {
@@ -49,19 +75,20 @@ export interface CollectionRemovedFromCartDetail {
 }
 
 export type Dataset = {
-  category: string;
-  collectionId: string;
-  collectionName: string;
-  finishedTime?: Date;
+  category_name: string;
+  collection_id: number;
+  collection_name: string;
+  finished_time: Date;
   id: string;
-  isSample: boolean;
-  jobId: string;
+  is_sample: boolean;
+  job_id: string;
   name: string;
-  numFiles: number;
-  sample: number; // -1 (not sample) or > 0 (sample)
-  startTime?: Date;
-  state: string;
+  start_time: Date;
+  state: ProcessingState;
 };
+
+// Datasets objects are also used to convey job state.
+export type JobState = Dataset;
 
 export enum JobId {
   ArsLgaGeneration = "ArsLgaGeneration",
@@ -82,41 +109,21 @@ export enum JobId {
   WordProcessorInformationExtraction = "WordProcessorInformationExtraction",
 }
 
-export type Job = {
+export type AvailableJob = {
   id: JobId;
   name: string;
   description: string;
 };
 
-export type AvailableJobs = Array<{
+export type AvailableJobsCategory = {
   categoryName: string;
   categoryDescription: string;
   categoryImage: string;
   categoryId: string;
-  jobs: Array<Job>;
-}>;
-
-export enum ProcessingState {
-  NotStarted = "Not started",
-  Queued = "Queued",
-  Running = "Running",
-  Finished = "Finished",
-  Failed = "Failed",
-}
-
-export type JobState = {
-  id: string;
-  name: string;
-  sample: number;
-  state: ProcessingState;
-  started: boolean;
-  finished: boolean;
-  failed: boolean;
-  activeStage: string;
-  activeState: ProcessingState;
-  startTime?: string;
-  finishedTime?: string;
+  jobs: Array<AvailableJob>;
 };
+
+export type AvailableJobs = Array<AvailableJobsCategory>;
 
 export type PublishedDatasetInfo = {
   item: string;
@@ -160,7 +167,7 @@ export type PublishedDatasetMetadataJSONSchemaProps = Record<
 
 export type BaseFilteredApiResponse<T> = {
   count: number;
-  results: T;
+  items: T;
 };
 
 type FilteredApiResults<T> = Array<T>;

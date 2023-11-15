@@ -2,15 +2,20 @@ import { PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
 import { ArchDataTable } from "../../archDataTable/index";
+import { BoolDisplayMap, EventTypeDisplayMap } from "../../lib/constants";
 import { Dataset } from "../../lib/types";
 import { Topics } from "../../lib/pubsub";
-import { Paths } from "../../lib/helpers";
+import {
+  Paths,
+  isActiveProcessingState,
+  isoStringToDateString,
+} from "../../lib/helpers";
 import { ProcessingState } from "../../lib/types";
 import Styles from "./styles";
 
 @customElement("arch-collection-details-dataset-table")
 export class ArchCollectionDetailsDatasetTable extends ArchDataTable<Dataset> {
-  @property({ type: String }) collectionId!: string;
+  @property({ type: Number }) collectionId!: number;
 
   @state() columnNameHeaderTooltipMap = {
     category:
@@ -26,43 +31,35 @@ export class ArchCollectionDetailsDatasetTable extends ArchDataTable<Dataset> {
 
     this.apiCollectionEndpoint = "/datasets";
     this.apiItemResponseIsArray = true;
-    this.apiItemTemplate =
-      "/datasets?collectionId=:collectionId&job=:jobId&sample=:isSample";
-    this.itemPollPredicate = (item) => item.state === ProcessingState.Running;
+    this.apiItemTemplate = "/datasets?id=:id";
+    this.itemPollPredicate = (item) => isActiveProcessingState(item.state);
     this.itemPollPeriodSeconds = 3;
-    this.apiStaticParamPairs = [
-      ["collectionId", this.collectionId],
-      ["state!", ProcessingState.NotStarted],
-    ];
+    this.apiStaticParamPairs = [["collection_id", `${this.collectionId}`]];
     this.cellRenderers = [
       (name, dataset) =>
-        dataset.state !== ProcessingState.Finished
-          ? `${name as string}`
-          : `<a href="${Paths.dataset(dataset.id, dataset.sample)}">${
-              name as string
-            }</a>`,
-      undefined,
-      (sample) => ((sample as Dataset["sample"]) === -1 ? "No" : "Yes"),
-      undefined,
-      (startTime) => (startTime as string)?.slice(0, -3),
-      (finishedTime, dataset) =>
-        dataset.state === ProcessingState.Running
+        dataset.state !== ProcessingState.FINISHED
+          ? `${dataset.name}`
+          : `<a href="${Paths.dataset(dataset.id)}">
+               <span class="highlightable">${dataset.name}</span>
+            </a>`,
+      (categoryName) => categoryName as Dataset["category_name"],
+      (isSample) =>
+        BoolDisplayMap[(isSample as Dataset["is_sample"]).toString()],
+      (state) => EventTypeDisplayMap[state as Dataset["state"]],
+      (startTime) => isoStringToDateString(startTime as Dataset["start_time"]),
+      (finishedTime) =>
+        finishedTime === null
           ? ""
-          : (finishedTime as string)?.slice(0, -3),
+          : isoStringToDateString(finishedTime as Dataset["finished_time"]),
     ];
-    this.columnFilterDisplayMaps = [
-      undefined,
-      undefined,
-      { 100: "Yes", [-1]: "No" },
-    ];
+    this.columnFilterDisplayMaps = [undefined, undefined, BoolDisplayMap];
     this.columns = [
       "name",
-      "category",
-      "sample",
+      "category_name",
+      "is_sample",
       "state",
-      "startTime",
-      "finishedTime",
-      "numFiles",
+      "start_time",
+      "finished_time",
     ];
     this.columnHeaders = [
       "Dataset",
@@ -71,14 +68,13 @@ export class ArchCollectionDetailsDatasetTable extends ArchDataTable<Dataset> {
       "State",
       "Started",
       "Finished",
-      "Files",
     ];
-    this.filterableColumns = [true, true, true, true, false, false, false];
+    this.filterableColumns = [true, true, true, true, false, false];
     this.nonSelectionActionLabels = ["Generate a New Dataset"];
     this.nonSelectionActions = [Topics.GENERATE_DATASET];
     this.singleName = "Dataset";
-    this.sort = "-startTime";
-    this.sortableColumns = [true, true, true, true, true, true, true];
+    this.sort = "-start_time";
+    this.sortableColumns = [true, true, true, true, true, true];
     this.pluralName = "Datasets";
   }
 

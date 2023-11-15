@@ -255,9 +255,9 @@ export class ArchDatasetMetadataForm extends LitElement {
           (schema.properties as PublishedDatasetMetadataJSONSchemaProps)[k]
             .type === "array";
         const v = metadata[k];
-        // If key is undefined, populate it with a default value to ensure that the form
+        // If key is undefined or null, populate it with a default value to ensure that the form
         // field will be displayed.
-        if (v === undefined) {
+        if (v === undefined || v === null) {
           if (wantsArray) {
             (metadata[k] as Array<string>) = [""];
           } else {
@@ -268,7 +268,10 @@ export class ArchDatasetMetadataForm extends LitElement {
         // If the value is an array and the schema wants a scalar, unwrap it if it's
         // a single-element array, otherwise throw an error.
         if (!wantsArray && Array.isArray(v)) {
-          if (v.length === 1) {
+          if (v.length === 0) {
+            // Convert the empty array to an empty string.
+            (metadata[k] as string) = "";
+          } else if (v.length === 1) {
             // Unwrap the scalar.
             (metadata[k] as string) = v[0];
           } else {

@@ -21,7 +21,7 @@ export class ArchDataTable<RowT> extends AitDataTable<RowT> {
     super();
     this.apiFactory = API;
     this.loadingMessage = "<arch-loading-indicator></arch-loading-indicator>";
-    this.pageLength = 10;
+    this.pageLength = 50;
   }
 
   addHeaderTooltip(headerName: string, text: string) {

@@ -1,15 +1,22 @@
 import { LitElement, html } from "lit";
-import { customElement, query, queryAll, state } from "lit/decorators.js";
+import {
+  customElement,
+  property,
+  query,
+  queryAll,
+  state,
+} from "lit/decorators.js";
 
 import ArchAPI from "../../lib/ArchAPI";
 import {
+  AvailableJob,
   AvailableJobs,
+  AvailableJobsCategory,
   Collection,
-  FilteredApiResponse,
   JobState,
+  FilteredApiResponse,
   ProcessingState,
 } from "../../lib/types";
-import { SAMPLE_JOB_ID_SUFFIX } from "../../lib/constants";
 import { AlertClass, ArchAlert } from "../../archAlert/index";
 import "./arch-job-category-section";
 import { ArchJobCategorySection } from "./arch-job-category-section";
@@ -17,13 +24,39 @@ import { JobButtonType } from "./arch-job-card";
 
 import Styles from "./styles";
 
+// Define the display order of known categories and jobs.
+const sortedCatNames = ["Collection", "Network", "Text", "File Formats"];
+
+const catNameSortedJobNamesMap: Record<
+  AvailableJobsCategory["categoryName"],
+  Array<AvailableJob["name"]>
+> = {
+  Collection: ["Domain frequency", "Web archive transformation (WAT)"],
+  Network: ["Domain graph", "Image graph", "Longitudinal graph", "Web graph"],
+  Text: ["Named entities", "Plain text of webpages", "Text file information"],
+  "File Formats": [
+    "Audio file information",
+    "Image file information",
+    "PDF file information",
+    "Presentation file information",
+    "Spreadsheet file information",
+    "Video file information",
+    "Word processing file information",
+  ],
+};
+
 @customElement("arch-generate-dataset-form")
 export class ArchGenerateDatasetForm extends LitElement {
+  @property({ type: String }) csrfToken!: string;
+
   @state() collections: null | Array<Collection> = null;
   @state() availableJobs: AvailableJobs = [];
-  @state() sourceCollectionId: string | null = null;
-  @state() jobStates: Record<string, Record<string, JobState>> = {};
-  @state() activePollCollectionId: string | null = null;
+  @state() sourceCollectionId: Collection["id"] | null = null;
+  @state() collectionJobStates: Record<
+    Collection["id"],
+    Record<string, JobState>
+  > = {};
+  @state() activePollCollectionId: Collection["id"] | null = null;
   @state() anyErrors = false;
 
   @query("select[name=source-collection]")
@@ -53,8 +86,9 @@ export class ArchGenerateDatasetForm extends LitElement {
   }
 
   render() {
-    const collectionJobStates =
-      this.sourceCollectionId && this.jobStates[this.sourceCollectionId];
+    const jobIdStatesMap =
+      this.sourceCollectionId &&
+      this.collectionJobStates[this.sourceCollectionId];
     return html`
       <label for="source-collection">Select Source Collection</label>
       <select
@@ -102,7 +136,7 @@ export class ArchGenerateDatasetForm extends LitElement {
           <arch-job-category-section
             .collectionId=${this.sourceCollectionId}
             .jobsCat=${jobsCat}
-            .jobStates=${collectionJobStates}
+            .jobIdStatesMap=${jobIdStatesMap}
             ?collapsed=${i > 0}
           >
           </arch-job-category-section>
@@ -117,13 +151,13 @@ export class ArchGenerateDatasetForm extends LitElement {
     if (!collectionId) {
       url.searchParams.delete(urlCollectionParamName);
     } else {
-      url.searchParams.set(urlCollectionParamName, collectionId);
+      url.searchParams.set(urlCollectionParamName, collectionId.toString());
     }
     history.replaceState(null, "", url.toString());
   }
 
   private async sourceCollectionChangeHandler(e: Event) {
-    const collectionId = (e.target as HTMLSelectElement).value;
+    const collectionId = parseInt((e.target as HTMLSelectElement).value);
     this.setCollectionIdUrlParam(collectionId);
     await this.setSourceCollectionId(collectionId);
     this.requestUpdate();
@@ -133,10 +167,12 @@ export class ArchGenerateDatasetForm extends LitElement {
     /* If collectionId is set, set anyErrors=true if any job failed, otherwise set
      * anyErrors=false
      */
-    const collectionId = this.sourceCollectionId as string;
-    if (collectionId) {
-      for (const jobState of Object.values(this.jobStates[collectionId])) {
-        if (jobState.state === ProcessingState.Failed) {
+    const { sourceCollectionId } = this;
+    if (sourceCollectionId) {
+      for (const jobState of Object.values(
+        this.collectionJobStates[sourceCollectionId]
+      )) {
+        if (jobState.state === ProcessingState.FAILED) {
           this.anyErrors = true;
           return;
         }
@@ -145,13 +181,12 @@ export class ArchGenerateDatasetForm extends LitElement {
     this.anyErrors = false;
   }
 
-  private async setSourceCollectionId(collectionId: string) {
+  private async setSourceCollectionId(collectionId: Collection["id"]) {
     this.sourceCollectionId = collectionId;
     // If a collection is selected, fetch the job states.
     if (collectionId) {
-      this.jobStates[collectionId] = await this.fetchCollectionJobStates(
-        collectionId
-      );
+      this.collectionJobStates[collectionId] =
+        await this.fetchCollectionJobStates(collectionId);
     }
     // Update the visibility of the error alert.
     this.updateAnyErrors();
@@ -160,55 +195,79 @@ export class ArchGenerateDatasetForm extends LitElement {
   private async initCollections() {
     const response =
       (await ArchAPI.collections.get()) as FilteredApiResponse<Collection>;
-    this.collections = response.results;
+    this.collections = response.items;
     // Maybe select an initial Collection.
-    const initialCollectionId = new URLSearchParams(window.location.search).get(
-      ArchGenerateDatasetForm.urlCollectionParamName
+    const initialCollectionId = parseInt(
+      new URLSearchParams(window.location.search).get(
+        ArchGenerateDatasetForm.urlCollectionParamName
+      ) ?? ""
     );
-    if (initialCollectionId) {
+    if (!Number.isNaN(initialCollectionId)) {
       await this.setSourceCollectionId(initialCollectionId);
       this.requestUpdate();
     }
   }
 
   private async initAvailableJobs() {
-    this.availableJobs = (await (
+    const availableJobs = (await (
       await fetch("/api/available-jobs")
     ).json()) as AvailableJobs;
+    // Apply the desired display order.
+    availableJobs
+      .sort((a, b) =>
+        sortedCatNames.indexOf(a.categoryName) >
+        sortedCatNames.indexOf(b.categoryName)
+          ? 1
+          : -1
+      )
+      .map((jobCat) => {
+        jobCat.jobs.sort((a, b) => {
+          const sortedJobNames = catNameSortedJobNamesMap[jobCat.categoryName];
+          return sortedJobNames === undefined
+            ? 0
+            : sortedJobNames.indexOf(a.name) > sortedJobNames.indexOf(b.name)
+            ? 1
+            : -1;
+        });
+        return jobCat;
+      });
+    this.availableJobs = availableJobs;
   }
 
-  private async fetchCollectionJobStates(collectionId: string) {
-    const data = (await (
-      await fetch(`/api/jobstates/${collectionId}?all=true`)
+  private async fetchCollectionJobStates(collectionId: Collection["id"]) {
+    const jobStates = (await (
+      await fetch(`/api/collections/${collectionId}/dataset_states`)
     ).json()) as Array<JobState>;
-    // Transform the array of JobStates into an object keyed by job.id with sample-type
-    // jobs having an appended SAMPLE_JOB_ID_SUFFIX.
     return Object.fromEntries(
-      data.map((x: JobState) => [
-        `${x.id}${x.sample > 0 ? SAMPLE_JOB_ID_SUFFIX : ""}`,
-        x,
+      jobStates.map((jobState) => [
+        `${jobState.job_id}${jobState.is_sample ? "-SAMPLE" : ""}`,
+        jobState,
       ])
-    );
+    ) as Record<string, JobState>;
   }
 
   async pollJobStates() {
-    const collectionId = this.sourceCollectionId as string;
+    const { sourceCollectionId } = this;
     // Stop polling if the selected collection has changed.
-    if (this.activePollCollectionId !== collectionId) {
+    if (
+      sourceCollectionId === null ||
+      this.activePollCollectionId !== sourceCollectionId
+    ) {
       this.activePollCollectionId = null;
       return;
     }
     // Fetch the current collection job states.
-    this.jobStates[collectionId] = await this.fetchCollectionJobStates(
-      collectionId
-    );
+    this.collectionJobStates[sourceCollectionId] =
+      await this.fetchCollectionJobStates(sourceCollectionId);
     // Show the error alert if any jobs failed.
     this.updateAnyErrors();
     // Request a lit component update.
     this.requestUpdate();
     // Keep polling if any jobs remain active.
-    for (const jobState of Object.values(this.jobStates[collectionId])) {
-      if (jobState.state === ProcessingState.Running) {
+    for (const jobState of Object.values(
+      this.collectionJobStates[sourceCollectionId]
+    )) {
+      if (jobState.state === ProcessingState.RUNNING) {
         // A job is active, set a polling timeout and return.
         setTimeout(() => void this.pollJobStates(), 2000);
         return;
@@ -238,11 +297,17 @@ export class ArchGenerateDatasetForm extends LitElement {
   }
 
   private async runJob(jobId: string, sample: boolean) {
-    await fetch(
-      `/api/runjob/${jobId}/${this.sourceCollectionId as string}${
-        sample ? "?sample=true" : ""
-      }`
-    );
+    return fetch("/api/datasets/generate", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "X-CSRFToken": this.csrfToken },
+      mode: "cors",
+      body: JSON.stringify({
+        collection_id: this.sourceCollectionId,
+        job_type_id: jobId,
+        is_sample: sample,
+      }),
+    });
   }
 
   private async clickHandler(e: Event) {
@@ -255,33 +320,26 @@ export class ArchGenerateDatasetForm extends LitElement {
     }
 
     // Handle a job button click.
-    if (target.tagName === "BUTTON") {
-      const {
-        jobId,
-        buttonType,
-        sample: sampleStr,
-      } = target.dataset as {
+    if (
+      target.tagName === "BUTTON" &&
+      target.dataset.buttonType === JobButtonType.Generate
+    ) {
+      // Disable the button.
+      (target as HTMLButtonElement).disabled = true;
+      const { jobId, sample: sampleStr } = target.dataset as {
         jobId: string;
-        buttonType: string;
         sample: string;
       };
       // Cast presence / absence of sample value to bool.
       const sample = sampleStr !== undefined;
-      switch (buttonType) {
-        case JobButtonType.Generate:
-          // Run a job.
-          await this.runJob(jobId, sample);
-          this.emailAlert.show();
-          this.startPolling();
-          break;
-        case JobButtonType.View:
-          // View a dataset.
-          window.location.href = `/datasets/${
-            this.sourceCollectionId as string
-          }:${jobId}${sample ? "?sample=true" : ""}`;
-          break;
+      // Run a job.
+      const res = await this.runJob(jobId, sample);
+      if (!res.ok) {
+        // Re-enable the button on error.
+        (target as HTMLButtonElement).disabled = false;
       }
-      return;
+      this.emailAlert.show();
+      this.startPolling();
     }
   }
 }

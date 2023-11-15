@@ -2,8 +2,13 @@ import { PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import { ArchDataTable } from "../../archDataTable/index";
+import { BoolDisplayMap, EventTypeDisplayMap } from "../../lib/constants";
 import { Dataset, ProcessingState } from "../../lib/types";
-import { Paths } from "../../lib/helpers";
+import {
+  Paths,
+  isActiveProcessingState,
+  isoStringToDateString,
+} from "../../lib/helpers";
 import Styles from "./styles";
 
 @customElement("arch-dataset-explorer-table")
@@ -22,46 +27,45 @@ export class ArchDatasetExplorerTable extends ArchDataTable<Dataset> {
 
     this.apiCollectionEndpoint = "/datasets";
     this.apiItemResponseIsArray = true;
-    this.apiItemTemplate =
-      "/datasets?collectionId=:collectionId&job=:jobId&sample=:isSample";
-    this.itemPollPredicate = (item) => item.state === ProcessingState.Running;
+    this.apiItemTemplate = "/datasets?id=:id";
+    this.itemPollPredicate = (item) => isActiveProcessingState(item.state);
     this.itemPollPeriodSeconds = 3;
-    this.apiStaticParamPairs = [["state!", ProcessingState.NotStarted]];
+    this.apiStaticParamPairs = [];
     this.cellRenderers = [
       (name, dataset) =>
-        dataset.state !== ProcessingState.Finished
+        dataset.state !== ProcessingState.FINISHED
           ? `${dataset.name}`
-          : `<a href="${Paths.dataset(dataset.id, dataset.sample)}">
+          : `<a href="${Paths.dataset(dataset.id)}">
                <span class="highlightable">${dataset.name}</span>
             </a>`,
-      undefined,
+      (categoryName) => categoryName as Dataset["category_name"],
       (collectionName, dataset) =>
-        `<a href="${Paths.collection(dataset.collectionId)}">
+        `<a href="${Paths.collection(dataset.collection_id)}">
            <span class="highlightable">${collectionName as string}</span>
         </a>`,
-      (sample) => ((sample as Dataset["sample"]) === -1 ? "No" : "Yes"),
-      undefined,
-      (startTime) => (startTime as string)?.slice(0, -3),
-      (finishedTime, dataset) =>
-        dataset.state === ProcessingState.Running
+      (isSample) =>
+        BoolDisplayMap[(isSample as Dataset["is_sample"]).toString()],
+      (state) => EventTypeDisplayMap[state as Dataset["state"]],
+      (startTime) => isoStringToDateString(startTime as Dataset["start_time"]),
+      (finishedTime) =>
+        finishedTime === null
           ? ""
-          : (finishedTime as string)?.slice(0, -3),
+          : isoStringToDateString(finishedTime as Dataset["finished_time"]),
     ];
     this.columnFilterDisplayMaps = [
       undefined,
       undefined,
       undefined,
-      { 100: "Yes", [-1]: "No" },
+      BoolDisplayMap,
     ];
     this.columns = [
       "name",
-      "category",
-      "collectionName",
-      "sample",
+      "category_name",
+      "collection_name",
+      "is_sample",
       "state",
-      "startTime",
-      "finishedTime",
-      "numFiles",
+      "start_time",
+      "finished_time",
     ];
     this.columnHeaders = [
       "Dataset",
@@ -71,23 +75,13 @@ export class ArchDatasetExplorerTable extends ArchDataTable<Dataset> {
       "State",
       "Started",
       "Finished",
-      "Files",
     ];
-    this.filterableColumns = [
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
-      false,
-      false,
-    ];
-    this.searchColumns = ["name", "category", "collectionName", "state"];
+    this.filterableColumns = [true, true, true, true, true, false, false];
+    this.searchColumns = ["name", "category_name", "collection_name", "state"];
     this.searchColumnLabels = ["Name", "Category", "Collection", "State"];
     this.singleName = "Dataset";
-    this.sort = "-startTime";
-    this.sortableColumns = [true, true, true, true, true, true, true, true];
+    this.sort = "-start_time";
+    this.sortableColumns = [true, true, true, true, true, true, true];
     this.persistSearchStateInUrl = true;
     this.pluralName = "Datasets";
   }

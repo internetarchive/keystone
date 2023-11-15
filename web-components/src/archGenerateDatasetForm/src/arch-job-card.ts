@@ -1,8 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-import { Job, JobState } from "../../lib/types";
-import { SAMPLE_JOB_ID_SUFFIX } from "../../lib/constants";
+import { AvailableJob, JobState, ProcessingState } from "../../lib/types";
 
 export enum JobButtonType {
   Generate = "generate",
@@ -13,8 +12,8 @@ export enum JobButtonType {
 @customElement("arch-job-card")
 export class ArchJobCard extends LitElement {
   @property() collectionId!: string;
-  @property() job!: Job;
-  @property() jobStates!: Record<string, JobState>;
+  @property() job!: AvailableJob;
+  @property() jobIdStatesMap!: Record<string, JobState>;
 
   createRenderRoot() {
     /* Disable the shadow root for this component to let in global styles.
@@ -22,24 +21,27 @@ export class ArchJobCard extends LitElement {
     return this;
   }
 
-  private jobStateToButtonProps(jobState: JobState | undefined) {
+  private jobStateToButtonProps(
+    jobState: JobState | undefined | null,
+    sample: boolean
+  ) {
     /* Return the [ButtonText, ButtonType, ClassName] tuple for the specificed JobState */
-    if (!jobState) {
+    if (jobState === undefined) {
       return [
         this.collectionId ? "Loading..." : "n/a",
         JobButtonType.Status,
         "job-statebutton",
       ];
     }
-    const sampleStr = jobState.sample > 0 ? "Sample " : "";
-    if (!jobState.started) {
+    const sampleStr = sample ? "Sample " : "";
+    if (jobState === null) {
       return [
         `Generate ${sampleStr}Dataset`,
         JobButtonType.Generate,
         "job-runbutton",
       ];
     }
-    if (jobState.finished) {
+    if (jobState.state === ProcessingState.FINISHED) {
       return [
         `View ${sampleStr}Dataset`,
         JobButtonType.View,
@@ -53,16 +55,20 @@ export class ArchJobCard extends LitElement {
     // Get the current job states.
     const { collectionId, job } = this;
     const { id: jobId } = job;
-    const [sampleJobState, jobState] = !this.jobStates
+    // Use undefined to indicate that a job state is loading, and null to
+    // indicate that no such job run exists.
+    const [sampleJobState, jobState] = !this.jobIdStatesMap
       ? [undefined, undefined]
       : [
-          this.jobStates[`${jobId}${SAMPLE_JOB_ID_SUFFIX}`],
-          this.jobStates[jobId],
+          this.jobIdStatesMap[`${jobId}-SAMPLE`] ?? null,
+          this.jobIdStatesMap[jobId] ?? null,
         ];
     const [sampleButtonText, sampleButtonType, sampleClassName] =
-      this.jobStateToButtonProps(sampleJobState);
-    const [buttonText, buttonType, className] =
-      this.jobStateToButtonProps(jobState);
+      this.jobStateToButtonProps(sampleJobState, true);
+    const [buttonText, buttonType, className] = this.jobStateToButtonProps(
+      jobState,
+      false
+    );
     const title = collectionId
       ? ""
       : "Select a source collection to enable this button";
@@ -75,7 +81,7 @@ export class ArchJobCard extends LitElement {
             ${sampleButtonType === JobButtonType.View
               ? html`
                   <a
-                    href="/datasets/${this.collectionId}:${jobId}?sample=true"
+                    href="/datasets/${(sampleJobState as JobState).id}"
                     class="button ${sampleClassName}"
                   >
                     ${sampleButtonText}
@@ -98,7 +104,7 @@ export class ArchJobCard extends LitElement {
             ${buttonType === JobButtonType.View
               ? html`
                   <a
-                    href="/datasets/${this.collectionId}:${jobId}"
+                    href="/datasets/${(jobState as JobState).id}"
                     class="button ${className}"
                   >
                     ${buttonText}

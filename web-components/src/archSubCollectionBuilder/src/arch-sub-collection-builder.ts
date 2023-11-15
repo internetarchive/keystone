@@ -1,5 +1,5 @@
 import { LitElement, html } from "lit";
-import { customElement, query, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 
 import ArchAPI from "../../lib/ArchAPI";
 import { HtmlStatusCodeRegex, SurtPrefixRegex } from "../../lib/constants";
@@ -36,6 +36,8 @@ function parseDatetimeFieldValue(s: string): string {
 
 @customElement("arch-sub-collection-builder")
 export class ArchSubCollectionBuilder extends LitElement {
+  @property({ type: String }) csrfToken!: string;
+
   @state() collections: Array<Collection> = [];
   @state() sourceCollectionIds: Set<Collection["id"]> = new Set();
 
@@ -52,9 +54,9 @@ export class ArchSubCollectionBuilder extends LitElement {
     await this.initCollections();
     // Select any initial Collections.
     this.sourceCollectionIds = new Set(
-      new URLSearchParams(window.location.search).getAll(
-        ArchSubCollectionBuilder.urlCollectionsParamName
-      )
+      new URLSearchParams(window.location.search)
+        .getAll(ArchSubCollectionBuilder.urlCollectionsParamName)
+        .map((s) => parseInt(s))
     );
   }
 
@@ -238,7 +240,7 @@ export class ArchSubCollectionBuilder extends LitElement {
   private async initCollections() {
     const response =
       (await ArchAPI.collections.get()) as FilteredApiResponse<Collection>;
-    this.collections = response.results;
+    this.collections = response.items;
   }
 
   private setSourceCollectionIdsUrlParam(
@@ -249,7 +251,7 @@ export class ArchSubCollectionBuilder extends LitElement {
     // Unconditionally delete the params in preparation for any params.append()
     url.searchParams.delete(urlCollectionsParamName);
     collectionIds.forEach((collectionId) =>
-      url.searchParams.append(urlCollectionsParamName, collectionId)
+      url.searchParams.append(urlCollectionsParamName, collectionId.toString())
     );
     history.replaceState(null, "", url.toString());
   }
@@ -257,7 +259,7 @@ export class ArchSubCollectionBuilder extends LitElement {
   private sourceCollectionsChangeHandler(e: Event) {
     const collectionIds = Array.from(
       (e.target as HTMLSelectElement).selectedOptions
-    ).map((el) => el.value);
+    ).map((el) => parseInt(el.value));
     this.sourceCollectionIds = new Set(collectionIds);
     this.setSourceCollectionIdsUrlParam(collectionIds);
   }
@@ -379,16 +381,17 @@ export class ArchSubCollectionBuilder extends LitElement {
     }
   }
 
-  private async doPost(
-    urlCollectionId: string,
-    data: Record<string, string | Array<string>>
-  ) {
-    return fetch(`/api/runjob/UserDefinedQuery/${urlCollectionId}`, {
+  private async doPost(data: DecodedFormData) {
+    const { csrfToken } = this;
+    return fetch("/api/collections/custom", {
       method: "POST",
-      body: JSON.stringify(data),
+      credentials: "same-origin",
       headers: {
         "content-type": "application/json",
+        "X-CSRFToken": csrfToken,
       },
+      mode: "cors",
+      body: JSON.stringify(data),
     });
   }
 
@@ -414,30 +417,8 @@ export class ArchSubCollectionBuilder extends LitElement {
       return;
     }
 
-    // Pop data.sources, which will either be a string (for a single selection)
-    // or an string[] (for multiple selections).
-    const sources = formData.sources as Array<string>;
-    // Create a new data object that we'll mold into shape.
-    const finalData = Object.assign({}, formData) as Record<
-      string,
-      string | Array<string>
-    >;
-    delete finalData.sources;
-    // Handle single vs. multiple source collection cases.
-    let urlCollectionId;
-    if (sources.length === 1) {
-      // Specify the single Collection ID as the url param.
-      urlCollectionId = sources[0];
-    } else {
-      // Specify the special "UNION-UDQ" Collection ID as the url param.
-      urlCollectionId = "UNION-UDQ";
-      // Assign sources to data.input which is expected by
-      // DerivationJobConf.jobInPath() for Union-type collections.
-      finalData.input = sources;
-    }
-
     // Make the request.
-    const res = await this.doPost(urlCollectionId, finalData);
+    const res = await this.doPost(formData);
     if (res.ok) {
       // Request was successful - redirect to collections table.
       window.location.href = "/collections";

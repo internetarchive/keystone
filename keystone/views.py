@@ -2,20 +2,31 @@ import functools
 import json
 from io import StringIO
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core import management
-from django.shortcuts import render
 from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotFound,
     JsonResponse,
 )
+from django.shortcuts import (
+    get_object_or_404,
+    redirect,
+    render,
+)
 
+from .arch_api import ArchAPI
+from .context_processors import helpers as ctx_helpers
 from .forms import CSVUploadForm
 from .helpers import parse_csv, parse_solr_facet_data
-from .models import User
+from .models import (
+    Collection,
+    Dataset,
+    User,
+)
 from .solr import SolrClient
 from . import ait_user
 
@@ -108,20 +119,120 @@ def collection_surveyor(request):
 
 @login_required
 def dashboard(request):
-    """Render dashboard"""
+    """Dashboard"""
     return render(request, "keystone/dashboard.html")
 
 
 @login_required
 def collections(request):
-    """Render collections"""
+    """Collections table"""
     return render(request, "keystone/collections.html")
 
 
 @login_required
+def sub_collection_builder(request):
+    """Sub-Collection Builder"""
+    return render(request, "keystone/sub-collection-builder.html")
+
+
+@login_required
+def collection_detail(request, collection_id):
+    """Collection detail view"""
+    collection = get_object_or_404(Collection, id=collection_id, users=request.user)
+    return render(
+        request, "keystone/collection-detail.html", context={"collection": collection}
+    )
+
+
+@login_required
 def datasets(request):
-    """Render datasets"""
-    return render(request, "keystone/datasets.html")
+    """Redirect to datasets-explore view."""
+    return redirect("datasets-explore")
+
+
+@login_required
+def datasets_explore(request):
+    """Datasets explorer table"""
+    return render(request, "keystone/datasets-explore.html")
+
+
+@login_required
+def datasets_generate(request):
+    """Dataset generation form"""
+    return render(request, "keystone/datasets-generate.html")
+
+
+@login_required
+def dataset_detail(request, dataset_id):
+    """Dataset detail page"""
+    dataset = get_object_or_404(Dataset, id=dataset_id)
+
+    template_filename = settings.JOB_TYPE_UUID_NON_AUT_TEMPLATE_FILENAME_MAP.get(
+        str(dataset.job_start.job_type.id), "aut-dataset.html"
+    )
+
+    return render(
+        request, f"keystone/{template_filename}", context={"dataset": dataset}
+    )
+
+
+@login_required
+def dataset_file_preview(request, dataset_id, filename):
+    """Download a Dataset file preview."""
+    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    return ArchAPI.proxy_file_preview_download(
+        request.user,
+        dataset.job_start.collection.arch_id,
+        dataset.job_start.job_type.id,
+        dataset.job_start.sample,
+        filename,
+    )
+
+
+def dataset_file_download(request, dataset_id, filename):
+    """Download a Dataset file."""
+    # Lookup the datset without filtering by user - we'll let ARCH figure out
+    # the download permissions.
+    dataset = get_object_or_404(Dataset, id=dataset_id)
+
+    access_token = request.GET.get("access")
+    if not request.user.is_authenticated and not access_token:
+        return HttpResponseForbidden()
+
+    # If this is an access-token-based request, ensure that the collection ID includes
+    # the username of the user that ran the job so that ARCH can look it up.
+    if not access_token:
+        arch_collection_id = dataset.job_start.collection.arch_id
+    else:
+        collection_type, rest = dataset.job_start.collection.arch_id.split("-", 1)
+        arch_collection_id = (
+            f"{collection_type}-ks:{dataset.job_start.user.username}:{rest}"
+        )
+
+    return ArchAPI.proxy_file_download(
+        request.user,
+        arch_collection_id,
+        dataset.job_start.job_type.id,
+        dataset.job_start.sample,
+        filename,
+        access_token,
+    )
+
+
+@login_required
+def dataset_file_colab(request, dataset_id, filename):
+    """Open a Dataset file in Google Colab."""
+    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    return ArchAPI.proxy_colab_redirect(
+        request.user,
+        dataset.job_start.collection.arch_id,
+        dataset.job_start.job_type.id,
+        dataset.job_start.sample,
+        filename,
+        ctx_helpers(request)["abs_url"](
+            "dataset-file-download", args=[dataset.id, filename]
+        ),
+    )
 
 
 ###############################################################################

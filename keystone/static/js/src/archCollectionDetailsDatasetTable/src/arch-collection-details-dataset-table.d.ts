@@ -2,7 +2,7 @@ import { PropertyValues } from "lit";
 import { ArchDataTable } from "../../archDataTable/index";
 import { Dataset } from "../../lib/types";
 export declare class ArchCollectionDetailsDatasetTable extends ArchDataTable<Dataset> {
-    collectionId: string;
+    collectionId: number;
     columnNameHeaderTooltipMap: {
         category: string;
         sample: string;

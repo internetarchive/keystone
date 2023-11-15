@@ -86,7 +86,7 @@ button.job-runbutton {
     color: #fff;
 }
 
-button.job-rerunbutton {
+#job-rerunbutton {
     color: #fff;
     background-color: #dc3545;
     border-color: #dc3545;
@@ -150,8 +150,8 @@ div.graph-description {
     max-height: 100%;
 }
 
-div#csv-preview {
-    height: 30em;
+.csv-preview [data-preview-url] {
+    max-height: 30em;
     overflow: auto;
 }
 
@@ -224,6 +224,21 @@ div#csv-preview {
     float: left;
     max-height: 5em;
     width: auto;
+}
+
+/*
+ * Collection Detail Page
+ */
+
+#collection-metadata-wrapper {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+
+#public-collection-link {
+  margin-top: 1rem;
+  text-align: center;
 }
 
 /*

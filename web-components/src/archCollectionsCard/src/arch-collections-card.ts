@@ -2,7 +2,7 @@ import { LitElement, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import ArchAPI from "../../lib/ArchAPI";
-import { FilteredApiResponse, Collection, Dataset } from "../../lib/types";
+import { FilteredApiResponse, Collection } from "../../lib/types";
 import { Paths, humanBytes } from "../../lib/helpers";
 
 import "../../archCard/index";
@@ -14,9 +14,6 @@ import styles from "./styles";
 export class ArchCollectionsCard extends LitElement {
   @state() numTotalCollections = 0;
   @state() collections: undefined | Array<Collection> = undefined;
-  @state() collectionDatasetCounts:
-    | undefined
-    | Record<Collection["id"], number> = undefined;
 
   static maxDisplayedCollections = 10;
   static styles = styles;
@@ -24,7 +21,6 @@ export class ArchCollectionsCard extends LitElement {
   constructor() {
     super();
     void this.initCollections();
-    void this.initCollectionDatasetCounts();
   }
 
   render() {
@@ -71,18 +67,9 @@ export class ArchCollectionsCard extends LitElement {
                     ${collection.name}
                   </a>
                 </td>
-                <td class="size">
-                  ${humanBytes(
-                    collection.sortSize === -1 ? 0 : collection.sortSize,
-                    1
-                  )}
-                </td>
+                <td class="size">${humanBytes(collection.size_bytes, 1)}</td>
                 <td class="num-datasets">
-                  ${this.collectionDatasetCounts === undefined
-                    ? html`<arch-loading-indicator></arch-loading-indicator>`
-                    : `${
-                        this.collectionDatasetCounts[collection.id] ?? 0
-                      } Datasets`}
+                  ${collection.dataset_count} Datasets
                 </td>
               </tr>
             `
@@ -133,25 +120,12 @@ export class ArchCollectionsCard extends LitElement {
 
   private async initCollections() {
     const response = (await ArchAPI.collections.get([
-      ["sort", "=", "-lastJobTime"],
+      // TODO
+      //      ["sort", "=", "-lastJobTime"],
       ["limit", "=", ArchCollectionsCard.maxDisplayedCollections],
     ])) as FilteredApiResponse<Collection>;
     this.numTotalCollections = response.count;
-    this.collections = response.results;
-  }
-
-  private async initCollectionDatasetCounts() {
-    const response = (await ArchAPI.datasets.get([
-      ["state", "=", "Finished"],
-    ])) as FilteredApiResponse<Dataset>;
-    const { results: datasets } = response;
-    const counts: typeof this.collectionDatasetCounts = {};
-    for (const dataset of datasets) {
-      const { collectionId } = dataset;
-      counts[collectionId] = (counts[collectionId] ?? 0) + 1;
-    }
-    // Overwrite the state variable to trigger a component update.
-    this.collectionDatasetCounts = counts;
+    this.collections = response.items;
   }
 }
 

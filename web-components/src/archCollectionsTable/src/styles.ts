@@ -6,6 +6,10 @@ export default [
       table-layout: fixed;
     }
 
+    data-table > table > thead > tr > th.type {
+      width: 5em;
+    }
+
     data-table > table > thead > tr > th.public {
       width: 5em;
     }

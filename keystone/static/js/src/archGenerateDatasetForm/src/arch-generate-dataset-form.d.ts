@@ -4,11 +4,12 @@ import { ArchAlert } from "../../archAlert/index";
 import "./arch-job-category-section";
 import { ArchJobCategorySection } from "./arch-job-category-section";
 export declare class ArchGenerateDatasetForm extends LitElement {
+    csrfToken: string;
     collections: null | Array<Collection>;
     availableJobs: AvailableJobs;
-    sourceCollectionId: string | null;
-    jobStates: Record<string, Record<string, JobState>>;
-    activePollCollectionId: string | null;
+    sourceCollectionId: Collection["id"] | null;
+    collectionJobStates: Record<Collection["id"], Record<string, JobState>>;
+    activePollCollectionId: Collection["id"] | null;
     anyErrors: boolean;
     collectionSelector: HTMLSelectElement;
     errorAlert: ArchAlert;

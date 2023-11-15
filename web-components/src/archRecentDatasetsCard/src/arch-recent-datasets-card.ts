@@ -48,23 +48,20 @@ export class ArchRecentDatasetsCard extends LitElement {
           ]
         : datasets.map((dataset) => {
             const name = `${dataset.name}${
-              dataset.sample !== -1 ? " (Sample)" : ""
+              dataset.is_sample ? " (Sample)" : ""
             }`;
             return html`
               <tr>
                 <td class="name">
-                  <a
-                    href="${Paths.dataset(dataset.id, dataset.sample)}"
-                    title="${name}"
-                  >
+                  <a href="${Paths.dataset(dataset.id)}" title="${name}">
                     ${name}
                   </a>
                 </td>
-                <td class="collection" title="${dataset.collectionName}">
-                  ${dataset.collectionName}
+                <td class="collection" title="${dataset.collection_name}">
+                  ${dataset.collection_name}
                 </td>
                 <td class="date">
-                  ${isoStringToDateString(dataset.finishedTime as Date)}
+                  ${isoStringToDateString(dataset.finished_time)}
                 </td>
               </tr>
             `;
@@ -109,12 +106,12 @@ export class ArchRecentDatasetsCard extends LitElement {
 
   private async initDatasets() {
     const response = (await ArchAPI.datasets.get([
-      ["state", "=", "Finished"],
-      ["sort", "=", "-startTime"],
+      ["state", "=", "FINISHED"],
+      ["sort", "=", "-start_time"],
       ["limit", "=", ArchRecentDatasetsCard.maxDisplayedDatasets],
     ])) as FilteredApiResponse<Dataset>;
     this.numTotalDatasets = response.count;
-    this.datasets = response.results;
+    this.datasets = response.items;
   }
 }
 
