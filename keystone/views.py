@@ -1,6 +1,7 @@
 import functools
 import json
 from io import StringIO
+import requests
 
 from django.contrib import messages
 from django.core import management
@@ -16,6 +17,7 @@ from .forms import CSVUploadForm
 from .helpers import parse_csv
 from .models import User
 from . import ait_user
+from .solr import SolrClient
 
 
 ###############################################################################
@@ -118,3 +120,24 @@ def get_ait_account_users_info(request):
     for user_info in user_infos:
         del user_info["password_hash"]
     return JsonResponse(user_infos, safe=False)
+
+@require_staff_or_superuser
+def explore_collections(request):
+    """Explore AIT Collections """
+    # Example usage
+    solr_url = "http://wbgrp-svc515.us.archive.org:8983/solr"
+    core_name = "ait"  # Replace with your Solr core or collection name
+
+    # Initialize the Solr client
+    solr_client = SolrClient(solr_url, core_name)
+
+    # Perform a search query with facets
+    result = solr_client.search(
+        query="*:*",
+        rows=5,
+        fq=["type:Collection", "publiclyVisible:true"],
+        facet_fields=["organizationId"],
+    )
+
+    return render(request, "keystone/explore_collections.html", {"collections": result["response"]["docs"]})
+
