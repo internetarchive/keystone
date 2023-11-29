@@ -11,28 +11,31 @@ class WrapPasswordMixin:
     """Provide a Django admin action to wrap the passwords of selected rows in the
     User list display."""
 
+    @staticmethod
+    def wrap_user_sha1_password(user):
+        """Wrap the User's SHA1 password."""
+        if not user.password.startswith("sha1"):
+            raise ValueError(
+                f"Password is not in sha1: format for user: {user.username}"
+            )
+        _algorithm, sha1_hash = user.password.split(":", 1)
+        user.password = PBKDF2WrappedSha1PasswordHasher().encode_sha1_hash(sha1_hash)
+        user.save(update_fields=["password"])
+
     def wrap_sha1_passwords_of_selected_users(
         self: admin.ModelAdmin | Self, request, queryset
     ):
         """wrap sha1 password with with PBKDF2 encoding for selected users"""
-        hasher = PBKDF2WrappedSha1PasswordHasher()
-
         for user in queryset:
-            if user.password.startswith("sha1"):
-                _algorithm, sha1_hash = user.password.split(":", 1)
-                user.password = hasher.encode_sha1_hash(sha1_hash)
-                user.save(update_fields=["password"])
+            try:
+                WrapPasswordMixin.wrap_user_sha1_password(user)
                 messages.add_message(
                     request,
                     messages.INFO,
                     "Wrapped sha1 password for user: " + user.username,
                 )
-            else:
-                messages.add_message(
-                    request,
-                    messages.ERROR,
-                    "Password is not in sha1: format for user: " + user.username,
-                )
+            except ValueError as e:
+                messages.add_message(request, messages.ERROR, str(e))
 
     wrap_sha1_passwords_of_selected_users.short_description = (
         "Wrap sha1 password with with PBKDF2 encoding for selected users"

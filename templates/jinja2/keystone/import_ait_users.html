@@ -1,0 +1,190 @@
+{% extends "keystone/base.html" %}
+{% block header_title %}Import AIT Users{% endblock header_title %}
+
+{% block navigation_link %}
+    <a href="/admin/keystone">Keystone home</a>
+    <br>
+    <a href="/admin/keystone/user">View all users</a>
+{% endblock navigation_link %}
+
+{% block head %}
+    {{ super() }}
+
+    <script>
+     const show = el => el.classList.remove("hidden");
+     const hide = el => el.classList.add("hidden");
+
+     function init() {
+       const form = document.querySelector("form");
+
+       const importUserWrapper = document.getElementById("importUserWrapper");
+       const userIdInput = importUserWrapper.querySelector("input")
+
+       const importAccountWrapper = document.getElementById("importAccountWrapper");
+       const accountIdInput = importAccountWrapper.querySelector("input")
+
+       const userSelectWrapper = document.getElementById("userSelectWrapper");
+       const userSelectEl = document.getElementById("userSelect");
+
+       const loadUserInfoButton = document.getElementById("loadUserInfo");
+       const importUsersButton = document.getElementById("importUsers");
+
+       const outputWrapper = document.getElementById("outputWrapper");
+
+       let userOrAccount = "";
+
+       form.addEventListener("change", e => {
+         const { target } = e;
+         switch (target.id) {
+           case "oneUser":
+             show(importUserWrapper);
+             hide(importAccountWrapper);
+             hide(userSelectWrapper);
+             hide(outputWrapper);
+             hide(loadUserInfoButton);
+             hide(importUsersButton);
+             userOrAccount = "user";
+             break;
+
+           case "accountUsers":
+             hide(importUserWrapper);
+             show(importAccountWrapper);
+             hide(userSelectWrapper);
+             hide(outputWrapper);
+             hide(loadUserInfoButton);
+             hide(importUsersButton);
+             userOrAccount = "account";
+             break;
+
+           case "userSelect":
+             // Enable/disable import button based on user selection.
+             const anySelected = Array
+               .from(target.children)
+               .filter(el => el.selected)
+               .length > 0;
+             if (anySelected) {
+               show(importUsersButton);
+             } else {
+               hide(importUsersButton);
+             }
+             break;
+         }
+       });
+
+       function userAccountIdInputHandler(e) {
+         if (e.target.value.trim().length > 0) {
+           show(loadUserInfoButton);
+         } else {
+           hide(loadUserInfoButton);
+         }
+       }
+
+       userIdInput.addEventListener("input", e => userAccountIdInputHandler(e));
+       accountIdInput.addEventListener("input", e => userAccountIdInputHandler(e));
+
+       // Load single user button click handler.
+       loadUserInfoButton.addEventListener("click", async (e) => {
+         e.stopPropagation();
+         e.preventDefault();
+         // Remove any existing radio inputs and show loading indicator.
+         show(userSelectWrapper);
+         userSelectEl.querySelectorAll("option").forEach(el => el.remove());
+         const loadingOption = document.createElement("option");
+         loadingOption.textContent = "Loading...";
+         userSelectEl.appendChild(loadingOption);
+         // Fetch the user info.
+         const path =
+           userOrAccount === "user"
+           ? `/admin/keystone/user/get_ait_user_info?user_id=${userIdInput.value}`
+           : `/admin/keystone/user/get_ait_account_users_info?account_id=${accountIdInput.value}`;
+         const response = await fetch(path);
+         loadingOption.remove();
+         if (!response.ok) {
+           alert("Could not retrieve AIT user info. Check the browser console for details.");
+           return
+         }
+         const userInfo = await response.json();
+         for (const user of (userOrAccount === "user" ? [userInfo] : userInfo)) {
+           const option = document.createElement("option");
+           option.value = user.id;
+           option.textContent = user.username;
+           userSelectEl.appendChild(option);
+         }
+       }, true);
+
+       // Import single user button click handler.
+       importUsersButton.addEventListener("click", async (e) => {
+         e.stopPropagation();
+         e.preventDefault();
+         show(outputWrapper);
+         const outputTextarea = outputWrapper.querySelector("textarea");
+         outputTextarea.value = "Importing...";
+         const response = await fetch(
+           `/admin/keystone/user/import_ait_users`, {
+             method: "POST",
+             body: JSON.stringify({
+               userIds: Array
+                 .from(userSelectEl.children)
+                 .filter(el => el.selected)
+                 .map(el => el.value)
+             }),
+             credentials: "same-origin",
+             headers: {
+               "X-CSRFToken": "{{ csrf_token }}"
+             }
+         });
+         if (!response.ok) {
+           outputTextarea.value = await response.text();
+         }
+         const data = await response.json();
+         outputTextarea.value = data.output;
+       }, true);
+     }
+
+     document.addEventListener("DOMContentLoaded", () => init())
+    </script>
+
+{% endblock head %}
+
+{% block content %}
+
+<div class="row">
+  <div class="small-12 columns">
+    <form>
+      Import user(s) by ID or Account ID?
+      <div style="margin-top: 1em; margin-left: 1em;">
+        <input type="radio" id="oneUser" name="userOrAccount" value="one">
+        <label for="oneUser">&nbsp;User ID</label>
+        <input type="radio" id="accountUsers" name="userOrAccount" value="all">
+        <label for="accountUsers">&nbsp;Account ID</label>
+      </div>
+
+      <div id="importUserWrapper" class="hidden">
+        <label for="userId">User ID</label>
+        <input id="userId" type="number">
+      </div>
+
+      <div id="importAccountWrapper" class="hidden">
+        <label for="accountId">Account ID</label>
+        <input id="accountId" type="number">
+      </div>
+
+      <button id="loadUserInfo" class="hidden">Load user info</button>
+
+      <div id="userSelectWrapper" class="hidden">
+        <label>Select user(s) to import</label>
+        <select id="userSelect" style="height: 10rem;" multiple></select>
+      </div>
+
+      <button id="importUsers" class="hidden">Import user(s)</button>
+
+      <div id="outputWrapper" class="hidden">
+        <label for="output">Output</label>
+        <textarea id="output" rows="10"></textarea>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock content %}
