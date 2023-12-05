@@ -103,6 +103,24 @@ class UserAdmin(django.contrib.auth.admin.UserAdmin, WrapPasswordMixin):
     inlines = (CollectionUserInline,)
     actions = ("wrap_sha1_passwords_of_selected_users",)
 
+    # Define the fields to display in the user creation form.
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "username",
+                    "password1",
+                    "password2",
+                    "email",
+                    "account",
+                    "role",
+                ),
+            },
+        ),
+    )
+
     # Customization of django.contrib.auth.admin.UserAdmin.fieldsets
     fieldsets = (
         (
