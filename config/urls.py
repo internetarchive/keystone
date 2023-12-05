@@ -73,6 +73,21 @@ urlpatterns = [
         views.bulk_add_users,
         name="bulk_add_users",
     ),
+    path(
+        "admin/keystone/user/import_ait_users",
+        views.import_ait_users,
+        name="import_ait_users",
+    ),
+    path(
+        "admin/keystone/user/get_ait_user_info",
+        views.get_ait_user_info,
+        name="get_ait_user_info",
+    ),
+    path(
+        "admin/keystone/user/get_ait_account_users_info",
+        views.get_ait_account_users_info,
+        name="get_ait_account_users_info",
+    ),
     path("admin/", admin.site.urls),
     path("api/", public_api.urls),
     path("private/api/", private_api.urls),

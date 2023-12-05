@@ -34,6 +34,11 @@ SECRET_KEY = env.get(
 )
 PRIVATE_API_KEY = env.get("KEYSTONE_PRIVATE_API_KEY", "supersecret")
 
+AIT_DB_HOST = env.get("KEYSTONE_AIT_DB_HOST", "")
+AIT_DB_NAME = env.get("KEYSTONE_AIT_DB_NAME", "")
+AIT_DB_PORT = env.get("KEYSTONE_AIT_DB_PORT", "")
+AIT_DB_USER = env.get("KEYSTONE_AIT_DB_USER", "")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get("KEYSTONE_DJANGO_DEBUG", "false") == "true"
 
@@ -84,7 +89,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.jinja2.Jinja2",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR / "templates/jinja2"],
         "APP_DIRS": True,
         "OPTIONS": {
             "environment": "config.jinja2env.environment",
@@ -99,6 +104,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "APP_DIRS": True,
+        "DIRS": [BASE_DIR / "templates"],
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
