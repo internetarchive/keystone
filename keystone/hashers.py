@@ -24,6 +24,7 @@ class PBKDF2WrappedSha1PasswordHasher(PBKDF2PasswordHasher):
         """Create sha1 hash from password string, encode using PBKDF2PasswordHasher,
         and compare this with encoded"""
         algorithm, _iterations, salt, _sha1_hash = encoded.split("$", 3)
-        assert algorithm == self.algorithm
+        if algorithm != self.algorithm:
+            raise AssertionError
         encoded_input = self.create_sha1_hash_and_encode(password, salt)
         return constant_time_compare(encoded_input, encoded)

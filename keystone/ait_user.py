@@ -23,7 +23,8 @@ USER_COLUMNS = ("id", "account_id", "email", "full_name", "password_hash", "user
 
 def query_users_table(where_col_name, where_col_val):
     """Query the AIT users table by the specified whereclause column and value."""
-    assert where_col_name in ("id", "account_id")
+    if where_col_name not in ("id", "account_id"):
+        raise ValueError(f"unsupported whereclause column: {where_col_name}")
     users = [
         dict(zip(USER_COLUMNS, vs))
         for vs in query_ait_db(
