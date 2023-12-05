@@ -1,4 +1,5 @@
 from typing import Self
+import django.contrib.auth.admin
 from django.contrib import admin
 from django.contrib import messages
 from django.template.defaultfilters import filesizeformat
@@ -86,20 +87,65 @@ class TeamAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.User)
-class UserAdmin(admin.ModelAdmin, WrapPasswordMixin):
+class UserAdmin(django.contrib.auth.admin.UserAdmin, WrapPasswordMixin):
     """Django admin config for User"""
 
     list_display = (
         "username",
-        "account_name",
+        "account",
+        "is_staff",
+        "is_superuser",
+        "is_active",
     )
     inlines = (CollectionUserInline,)
     actions = ("wrap_sha1_passwords_of_selected_users",)
 
-    @admin.display(description="Account", ordering="account__name")
-    def account_name(self, user):
-        """Show the User's Account's name in Django admin list_display"""
-        return user.account
+    # Customization of django.contrib.auth.admin.UserAdmin.fieldsets
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "username",
+                    "password",
+                    "account",  # added
+                )
+            },
+        ),
+        (
+            "Personal info",
+            {
+                "fields": (
+                    "first_name",
+                    "last_name",
+                    "email",
+                )
+            },
+        ),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "role",  # added
+                    "teams",  # added
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        (
+            "Important dates",
+            {
+                "fields": (
+                    "last_login",
+                    "date_joined",
+                )
+            },
+        ),
+    )
 
 
 @admin.register(models.Collection)
