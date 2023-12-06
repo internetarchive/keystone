@@ -57,6 +57,8 @@
              break;
 
            case "userSelect":
+             // Hide output on any change.
+             hide(outputWrapper);
              // Enable/disable import button based on user selection.
              const anySelected = Array
                .from(target.children)
@@ -64,6 +66,8 @@
                .length > 0;
              if (anySelected) {
                show(importUsersButton);
+               // Ensure it's enabled.
+               importUsersButton.disabled = false;
              } else {
                hide(importUsersButton);
              }
@@ -86,6 +90,9 @@
        loadUserInfoButton.addEventListener("click", async (e) => {
          e.stopPropagation();
          e.preventDefault();
+         // Hide the import users button and output.
+         hide(outputWrapper);
+         hide(importUsersButton);
          // Remove any existing radio inputs and show loading indicator.
          show(userSelectWrapper);
          userSelectEl.querySelectorAll("option").forEach(el => el.remove());
@@ -116,6 +123,8 @@
        importUsersButton.addEventListener("click", async (e) => {
          e.stopPropagation();
          e.preventDefault();
+         // Disable the import users button.
+         importUsersButton.disabled = true;
          show(outputWrapper);
          const outputTextarea = outputWrapper.querySelector("textarea");
          outputTextarea.value = "Importing...";
@@ -180,7 +189,7 @@
 
       <div id="outputWrapper" class="hidden">
         <label for="output">Output</label>
-        <textarea id="output" rows="10"></textarea>
+        <textarea id="output" rows="25"></textarea>
       </div>
 
     </form>
