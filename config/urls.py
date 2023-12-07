@@ -79,6 +79,11 @@ urlpatterns = [
         name="bulk_add_users",
     ),
     path(
+        "collection_surveyor",
+        views.collection_surveyor,
+        name="collection_surveyor",
+    ),
+    path(
         "admin/keystone/user/import_ait_users",
         views.import_ait_users,
         name="import_ait_users",

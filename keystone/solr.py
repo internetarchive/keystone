@@ -1,11 +1,13 @@
-import json
 import requests
 
 
 class SolrClient:
+    """Client for Solr"""
+
     def __init__(self, solr_url, core):
         """
-        Initializes the Solr client with the URL of the Solr instance and the core or collection name.
+        Initializes the Solr client with the URL of the Solr
+        instance and the core or collection name.
         :param solr_url: Base URL to the Solr instance.
         :param core: Name of the Solr core or collection.
         """
@@ -20,6 +22,8 @@ class SolrClient:
         :param facet_fields: List of fields to facet on.
         :return: Parsed response from Solr.
         """
+        timeout_seconds = 10
+
         # Construct the search URL
         search_url = f"{self.solr_url}/{self.core}/select"
 
@@ -41,28 +45,7 @@ class SolrClient:
                 params.setdefault("facet.field", []).append(field)
 
         # Make the GET request to the Solr server
-        response = requests.get(search_url, params=params)
+        response = requests.get(search_url, params=params, timeout=timeout_seconds)
 
         # Return the parsed response
         return response.json()
-
-
-
-"""
-# Example usage
-solr_url = "http://wbgrp-svc515.us.archive.org:8983/solr"
-core_name = "ait"  # Replace with your Solr core or collection name
-
-# Initialize the Solr client
-solr_client = SolrClient(solr_url, core_name)
-
-# Perform a search query with facets
-result = solr_client.search(
-    query="*:*",
-    rows=5,
-    fq=["type:Collection", "publiclyVisible:true"],
-    facet_fields=["organizationId"],
-)
-
-print(json.dumps(result))  # Display the result
-"""

@@ -1,0 +1,15 @@
+{% extends "keystone/base.html" %}
+{% block header_title %}Collection Surveyor{% endblock header_title %}
+
+{% block head_extra %}
+  <script src="{{ static('/js/collection-surveyor-search-results.js') }}" type="module"></script>
+{% endblock %}
+
+{% block content %}
+	<div style="">
+		<collection-surveyor-search-results
+			collections='{{collections | tojson}}'
+			facets='{{facets | tojson}}'
+		></collection-surveyor-search-results>
+	</div>
+{% endblock content %}

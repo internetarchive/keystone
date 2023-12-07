@@ -14,16 +14,10 @@ const CHUNK_FILENAME_PREFIX = "chunk-";
 
 export default {
   input: [
-    "./src/archCollectionDetailsDatasetTable/src/arch-collection-details-dataset-table.ts",
-    "./src/archCollectionsCard/src/arch-collections-card.ts",
-    "./src/archCollectionsTable/src/arch-collections-table.ts",
-    "./src/archDatasetExplorerTable/src/arch-dataset-explorer-table.ts",
-    "./src/archDatasetMetadataForm/src/arch-dataset-metadata-form.ts",
-    "./src/archDatasetPublishingCard/src/arch-dataset-publishing-card.ts",
-    "./src/archGenerateDatasetForm/src/arch-generate-dataset-form.ts",
-    "./src/archHoverTooltip/src/arch-hover-tooltip.ts",
-    "./src/archRecentDatasetsCard/src/arch-recent-datasets-card.ts",
-    "./src/archSubCollectionBuilder/src/arch-sub-collection-builder.ts",
+    "./src/collectionSurveyorSearchResults/src/collection-surveyor-search-results.ts",
+    "./src/collectionSurveyorFacet/src/collection-surveyor-facet.ts",
+    "./src/collectionSurveyorPagination/src/collection-surveyor-pagination.ts",
+    "./src/collectionSurveyorCart/src/collection-surveyor-cart.ts",
   ],
   output: {
     dir: "../keystone/static/js",

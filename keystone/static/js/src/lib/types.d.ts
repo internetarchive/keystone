@@ -12,6 +12,31 @@ export type Collection = {
     seeds: number;
     lastCrawlDate: Date;
 };
+export interface CollectionSearchResult {
+    organizationId: number;
+    organizationName: string;
+    collectionName: string;
+    collectionId: number;
+    meta_Description?: string;
+    totalWarcBytes: number;
+}
+export interface CollectionCheckboxEventDetail {
+    collectionSize: string;
+    isChecked: boolean;
+    collectionName: string;
+    collectionId: string;
+}
+export interface CollectionSelectedDetail {
+    collectionSize: string;
+    collectionId: string;
+}
+export interface Facets {
+    [key: string]: Array<string | number>;
+}
+export interface FacetResultMap {
+    name: string;
+    count: number;
+}
 export type Dataset = {
     category: string;
     collectionId: string;
