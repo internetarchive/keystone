@@ -3,6 +3,7 @@ import json
 from io import StringIO
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core import management
 from django.shortcuts import render
 from django.http import (
@@ -13,8 +14,9 @@ from django.http import (
 )
 
 from .forms import CSVUploadForm
-from .helpers import parse_csv
+from .helpers import parse_csv, parse_solr_facet_data
 from .models import User
+from .solr import SolrClient
 from . import ait_user
 
 
@@ -71,6 +73,55 @@ def bulk_add_users(request):
             messages.success(request, "CSV file uploaded and processed successfully.")
 
     return render(request, "keystone/bulk_add_users.html", {"form": CSVUploadForm()})
+
+
+@require_staff_or_superuser
+def collection_surveyor(request):
+    """Explore AIT Collections"""
+    # Example usage
+    solr_url = "http://wbgrp-svc515.us.archive.org:8983/solr"
+    core_name = "ait"  # Replace with your Solr core or collection name
+
+    # Initialize the Solr client
+    solr_client = SolrClient(solr_url, core_name)
+
+    # Perform a search query with facets
+    result = solr_client.search(
+        query="*:*",
+        rows=1000,
+        fq=["type:Collection", "publiclyVisible:true"],
+        facet_fields=["f_organizationName", "f_organizationType", "f_collectionName"],
+    )
+
+    # parse data for each facet field into list of dictionaries
+    parsed_facets = parse_solr_facet_data(result["facet_counts"]["facet_fields"])
+
+    return render(
+        request,
+        "keystone/collection_surveyor.html",
+        {
+            "collections": result["response"]["docs"],
+            "facets": parsed_facets,
+        },
+    )
+
+
+@login_required
+def dashboard(request):
+    """Render dashboard"""
+    return render(request, "keystone/dashboard.html")
+
+
+@login_required
+def collections(request):
+    """Render collections"""
+    return render(request, "keystone/collections.html")
+
+
+@login_required
+def datasets(request):
+    """Render datasets"""
+    return render(request, "keystone/datasets.html")
 
 
 ###############################################################################

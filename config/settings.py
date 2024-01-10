@@ -23,6 +23,8 @@ env = {
     **os.environ,  # override loaded values with environment variables
 }
 
+DEPLOYMENT_ENVIRONMENT = env.get("KEYSTONE_DEPLOYMENT_ENVIRONMENT", "DEV")
+KEYSTONE_GIT_COMMIT_HASH = env.get("KEYSTONE_GIT_COMMIT_HASH", "")[:7]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -60,7 +62,7 @@ CSRF_TRUSTED_ORIGINS = (
     else []
 )
 
-VAULT_TEAM_EMAIL = "avdempsey@archive.org"
+ARCH_SUPPORT_TICKET_URL = "https://arch-webservices.zendesk.com/hc/en-us/requests/new"
 
 # Application definition
 
@@ -98,6 +100,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "keystone.context_processors.keystone_version",
             ],
         },
     },
@@ -111,6 +114,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "keystone.context_processors.keystone_version",
             ],
         },
     },
@@ -176,13 +180,17 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
+# embed commit hash in asset root to invalidate cache between releases
+STATIC_URL = f"/static/{KEYSTONE_GIT_COMMIT_HASH}/"
 STATIC_ROOT = "/opt/keystone/staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGIN_URL = "/login"
+LOGIN_REDIRECT_URL = "/"
 
 LOGGING = {
     "version": 1,
@@ -203,3 +211,11 @@ LOGGING = {
     },
     "loggers": {"root": {"handlers": ["file"]}},
 }
+
+EMAIL_HOST = env.get("KEYSTONE_EMAIL_HOST")
+DEFAULT_FROM_EMAIL = env.get("KEYSTONE_DEFAULT_FROM_EMAIL")
+
+if DEPLOYMENT_ENVIRONMENT == "DEV":
+    # in development, always send emails to the console rather than sending
+    # actual emails.
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

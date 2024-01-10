@@ -1,0 +1,3 @@
+src/legacy/*
+dist/*
+rollup.config.js
