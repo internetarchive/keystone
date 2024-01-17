@@ -64,6 +64,15 @@ CSRF_TRUSTED_ORIGINS = (
 
 ARCH_SUPPORT_TICKET_URL = "https://arch-webservices.zendesk.com/hc/en-us/requests/new"
 
+# Temporary ARCH login URL config to make the ARCH -> Keystone -> ARCH password
+# reset flow work.
+ARCH_LOGIN_URL = (
+    f"{env.get('KEYSTONE_ARCH_API_BASE_URL').removesuffix('/api')}/login"
+    if "KEYSTONE_ARCH_API_BASE_URL" in env
+    else ""
+)
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -100,7 +109,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "keystone.context_processors.keystone_version",
+                "keystone.context_processors.helpers",
             ],
         },
     },
@@ -114,7 +123,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "keystone.context_processors.keystone_version",
+                "keystone.context_processors.helpers",
             ],
         },
     },

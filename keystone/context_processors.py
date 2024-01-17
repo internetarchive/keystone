@@ -1,8 +1,8 @@
 from django.conf import settings
 
 
-def keystone_version(request):
-    """Get keystone version"""
+def helpers(request):
+    """Extra template helpers."""
     return {
-        "KEYSTONE_GIT_COMMIT_HASH": settings.KEYSTONE_GIT_COMMIT_HASH,
+        "settings": settings,
     }
