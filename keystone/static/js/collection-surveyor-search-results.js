@@ -13,10 +13,11 @@ import{e,i as t,_ as i,s as l,y as o,a as c,b as n}from"./chunk-query-assigned-e
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */;let d=class extends l{constructor(){super(...arguments),this.collections=void 0,this.facets={},this.collectionsSelected={},this.currentPage=1,this.itemsPerPage=10}get collectionsLength(){return this.collections?this.collections.length:0}get startIndex(){return(this.currentPage-1)*this.itemsPerPage}get endIndex(){return this.startIndex+this.itemsPerPage}get paginatedResults(){var e;return null===(e=this.collections)||void 0===e?void 0:e.slice(this.startIndex,this.endIndex)}handleUpdateCollectionsSelected(e){const{collectionSize:t,isChecked:i,collectionName:l,collectionId:o}=e.detail;if(i){const e={collectionSize:t,collectionId:o};this.collectionsSelected={...this.collectionsSelected,[l]:e}}else{const{[l]:e,...t}=this.collectionsSelected;this.collectionsSelected={...t}}}handlePageChange(e){this.currentPage=Number(e.detail)}render(){var e;return o`
+ */;let d=class extends l{constructor(){super(...arguments),this.collections=void 0,this.facets={},this.collectionsSelected={},this.currentPage=1,this.itemsPerPage=10}get collectionsLength(){return this.collections?this.collections.length:0}get startIndex(){return(this.currentPage-1)*this.itemsPerPage}get endIndex(){return this.startIndex+this.itemsPerPage}get paginatedResults(){var e;return null===(e=this.collections)||void 0===e?void 0:e.slice(this.startIndex,this.endIndex)}handleUpdateCollectionsSelected(e){const{collectionSize:t,isChecked:i,collectionName:l,collectionId:o}=e.detail;if(i){const e={collectionSize:t,collectionId:o};this.collectionsSelected={...this.collectionsSelected,[l]:e}}else this.removeCollectionFromCollectionsSelected(l)}handleRemoveCollectionFromCart(e){const{collectionName:t}=e.detail;this.removeCollectionFromCollectionsSelected(t)}removeCollectionFromCollectionsSelected(e){const{[e]:t,...i}=this.collectionsSelected;this.collectionsSelected={...i}}handlePageChange(e){this.currentPage=Number(e.detail)}render(){var e;return o`
       <!-- Collections Cart -->
       <collection-surveyor-cart
         .collectionsInCart=${this.collectionsSelected}
+        @collection-removed-from-cart=${this.handleRemoveCollectionFromCart}
       ></collection-surveyor-cart>
 
       <!-- Facets and Collections-->

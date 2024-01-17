@@ -21,6 +21,16 @@ export class CollectionSurveyorCart extends LitElement {
     return collectionSum;
   }
 
+  handleRemoveCollectionFromCart(collectionName: string) {
+    this.dispatchEvent(
+      new CustomEvent("collection-removed-from-cart", {
+        bubbles: true,
+        composed: true,
+        detail: { collectionName },
+      })
+    );
+  }
+
   render() {
     return html`
       <div class="cart-container">
@@ -32,6 +42,12 @@ export class CollectionSurveyorCart extends LitElement {
                 <li>
                   ${collectionName}, Collection ID: ${value.collectionId},
                   Collection Size: ${humanBytes(Number(value.collectionSize))}
+                  <button
+                    @click=${() =>
+                      this.handleRemoveCollectionFromCart(collectionName)}
+                  >
+                    remove
+                  </button>
                 </li>
               `
             )}
@@ -59,6 +75,13 @@ export class CollectionSurveyorCart extends LitElement {
     }
     .totalSizeSelected {
       font-weight: normal;
+    }
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: red;
+      text-decoration: underline;
     }
   `;
 }
