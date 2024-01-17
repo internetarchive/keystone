@@ -1,8 +1,11 @@
-from django.conf import settings
+from django.conf import settings as _settings
 
 
-def helpers(request):
-    """Extra template helpers."""
+def settings(request):
+    """A subset of (non-secret) settings values."""
     return {
-        "settings": settings,
+        "settings": {
+            "KEYSTONE_GIT_COMMIT_HASH": _settings.KEYSTONE_GIT_COMMIT_HASH,
+            "ARCH_LOGIN_URL": _settings.ARCH_LOGIN_URL,
+        }
     }
