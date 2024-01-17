@@ -44,6 +44,10 @@ export interface FacetResultMap {
   count: number;
 }
 
+export interface CollectionRemovedFromCartDetail {
+  collectionName: string;
+}
+
 export type Dataset = {
   category: string;
   collectionId: string;

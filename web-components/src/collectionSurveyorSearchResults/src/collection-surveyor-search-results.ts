@@ -11,6 +11,7 @@ import {
   Facets,
   CollectionCheckboxEventDetail,
   CollectionSelectedDetail,
+  CollectionRemovedFromCartDetail,
 } from "../../lib/types";
 
 import { humanBytes } from "../../lib/webservices/src/lib/helpers";
@@ -67,10 +68,21 @@ export class CollectionSurveyorSearchResults extends LitElement {
         [collectionName]: sizeIdMap,
       };
     } else {
-      // create new collectionsSelected object excluding the deselected collection
-      const { [collectionName]: _, ...rest } = this.collectionsSelected;
-      this.collectionsSelected = { ...rest };
+      this.removeCollectionFromCollectionsSelected(collectionName);
     }
+  }
+
+  // event handler for removing collection from cart
+  handleRemoveCollectionFromCart(event: CustomEvent) {
+    const { collectionName }: CollectionRemovedFromCartDetail =
+      event.detail as CollectionRemovedFromCartDetail;
+    this.removeCollectionFromCollectionsSelected(collectionName);
+  }
+
+  removeCollectionFromCollectionsSelected(collectionName: string) {
+    // create new collectionsSelected object excluding the deselected collection
+    const { [collectionName]: _, ...rest } = this.collectionsSelected;
+    this.collectionsSelected = { ...rest };
   }
 
   // event handler for pagination
@@ -83,6 +95,7 @@ export class CollectionSurveyorSearchResults extends LitElement {
       <!-- Collections Cart -->
       <collection-surveyor-cart
         .collectionsInCart=${this.collectionsSelected}
+        @collection-removed-from-cart=${this.handleRemoveCollectionFromCart}
       ></collection-surveyor-cart>
 
       <!-- Facets and Collections-->

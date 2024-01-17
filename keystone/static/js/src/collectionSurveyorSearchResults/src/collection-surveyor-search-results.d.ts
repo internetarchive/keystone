@@ -16,6 +16,8 @@ export declare class CollectionSurveyorSearchResults extends LitElement {
     private get endIndex();
     private get paginatedResults();
     handleUpdateCollectionsSelected(event: CustomEvent): void;
+    handleRemoveCollectionFromCart(event: CustomEvent): void;
+    removeCollectionFromCollectionsSelected(collectionName: string): void;
     handlePageChange(event: CustomEvent): void;
     render(): import("lit-html").TemplateResult<1>;
     static styles: import("lit").CSSResult;

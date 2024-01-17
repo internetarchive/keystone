@@ -5,6 +5,7 @@ export declare class CollectionSurveyorCart extends LitElement {
         [collectionName: string]: CollectionSelectedDetail;
     };
     private get totalCollectionSizeSelected();
+    handleRemoveCollectionFromCart(collectionName: string): void;
     render(): import("lit-html").TemplateResult<1>;
     static styles: import("lit").CSSResult;
 }
