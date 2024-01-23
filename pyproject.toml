@@ -51,3 +51,6 @@ python_files = [
     "test_*.py",
     "*_tests.py",
 ]
+
+[tool.black]
+target-version = ["py310"]

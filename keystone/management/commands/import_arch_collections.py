@@ -1,19 +1,17 @@
 import re
 from datetime import datetime
 
-import requests
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.db.utils import IntegrityError
 
+from keystone.arch_api import ArchAPI
 from keystone.models import (
     Collection,
     CollectionTypes,
     JobEventTypes,
     User,
 )
-
-from config import settings
 
 
 ARCH_ID_AIT_ID_REGEX = re.compile("^.+[\-:](\d+)$")
@@ -24,16 +22,6 @@ def parse_ait_id(arch_id):
     if not match:
         raise AssertionError(f"Could not parse AIT ID from arch_id: {arch_id}")
     return int(match.group(1))
-
-
-def get_arch_collections(user, settings):
-    return requests.get(
-        f"{settings.ARCH_API_BASE_URL}/collections",
-        headers={
-            "X-API-USER": f"ks:{user.username}",
-            "X-API-KEY": settings.ARCH_SYSTEM_API_KEY,
-        },
-    ).json()["results"]
 
 
 def get_arch_collection_type(arch_c):
@@ -47,7 +35,7 @@ def get_arch_collection_type(arch_c):
 
 
 def import_user_collections(user):
-    for arch_c in get_arch_collections(user, settings):
+    for arch_c in ArchAPI.get_json(user, "collections")["results"]:
         # Create the metadata dict.
         collection_type = get_arch_collection_type(arch_c)
         if collection_type == CollectionTypes.AIT:

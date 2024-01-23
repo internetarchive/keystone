@@ -1,12 +1,12 @@
 from datetime import datetime
 
-import requests
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.db.utils import IntegrityError
 from django.db.models import ObjectDoesNotExist
 from django.db.models.signals import post_save
 
+from keystone.arch_api import ArchAPI
 from keystone.models import (
     Collection,
     Dataset,
@@ -19,28 +19,6 @@ from keystone.models import (
     job_complete_post_save,
 )
 
-from config import settings
-
-
-def get_arch_datasets(user):
-    return requests.get(
-        f"{settings.ARCH_API_BASE_URL}/datasets",
-        headers={
-            "X-API-USER": f"ks:{user.username}",
-            "X-API-KEY": settings.ARCH_SYSTEM_API_KEY,
-        },
-    ).json()["results"]
-
-
-def get_arch_dataset_files(user, arch_dataset_id):
-    return requests.get(
-        f"{settings.ARCH_API_BASE_URL}/datasets/{arch_dataset_id}/files",
-        headers={
-            "X-API-USER": f"ks:{user.username}",
-            "X-API-KEY": settings.ARCH_SYSTEM_API_KEY,
-        },
-    ).json()["results"]
-
 
 def get_or_create_job_start(**kwargs):
     try:
@@ -50,7 +28,7 @@ def get_or_create_job_start(**kwargs):
 
 
 def import_user_datasets(user):
-    for arch_dataset in get_arch_datasets(user):
+    for arch_dataset in ArchAPI.get_json(user, "datasets")["results"]:
         collection = Collection.objects.filter(
             arch_id=arch_dataset["collectionId"]
         ).first()
@@ -97,11 +75,13 @@ for Keystone user ({user.username}). Maybe run import_arch_collections first?
             dataset = Dataset.objects.create(**dataset_kwargs)
             print(f"Imported Dataset ({arch_dataset['id']})")
         else:
-            dataset = Dataset.objects.get(**dataset_kwargs)
+            dataset = Dataset.objects.get(job_start=job_start)
 
         # Import dataset files.
         num_imported_files = 0
-        for f in get_arch_dataset_files(user, arch_dataset["id"]):
+        for f in ArchAPI.get_json(user, f"datasets/{arch_dataset['id']}/files")[
+            "results"
+        ]:
             job_file_kwargs = {
                 "job_complete": job_complete,
                 "filename": f["filename"],
