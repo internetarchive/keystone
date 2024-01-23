@@ -155,7 +155,7 @@ class Collection(models.Model):
     @classmethod
     def handle_job_event(cls, job_event):
         """Update a Custom Collection's metadata.state"""
-        state = job_event.get_job_status()[0]
+        state = job_event.job_start.get_job_status()[0]
         collection = job_event.job_start.collection
         if collection.collection_type != CollectionTypes.CUSTOM:
             return
@@ -273,6 +273,43 @@ class JobStart(models.Model):
     commit_hash = models.CharField(max_length=255)
     created_at = models.DateTimeField()
 
+    def get_job_status(self):
+        """Return a (state, start_time, finished_time) tuple representing the
+        current state of the associated job."""
+        job_events = self.jobevent_set.all()
+
+        # Get the most advanced event_type value.
+        state = sorted(
+            [job_event.event_type for job_event in job_events],
+            key=JobEventTypes.names.index,
+        )[-1]
+
+        # If job is queued, set start_time to the QUEUED event created_at value,
+        # otherwise assume that there exists a RUNNING event and use its created_at.
+        start_time_event_type = (
+            JobEventTypes.QUEUED
+            if state == JobEventTypes.QUEUED
+            else JobEventTypes.RUNNING
+        )
+        start_time = next(
+            job_event.created_at
+            for job_event in job_events
+            if job_event.event_type == start_time_event_type
+        )
+
+        # Set finished_time to the created_at value of the first found event
+        # with a terminal status. If no such event exists, set it to None.
+        finished_time = next(
+            (
+                job_event.created_at
+                for job_event in job_events
+                if JobEventTypes.is_terminal(job_event.event_type)
+            ),
+            None,
+        )
+
+        return state, start_time, finished_time
+
 
 @receiver(post_save, sender=JobStart)
 def job_start_post_save(sender, instance, **kwargs):  # pylint: disable=unused-argument
@@ -328,45 +365,6 @@ class JobEvent(models.Model):
     event_type = models.CharField(choices=JobEventTypes.choices, max_length=16)
     created_at = models.DateTimeField()
 
-    def get_job_status(self):
-        """Return a (state, start_time, finished_time) tuple representing the
-        current state of the associated job."""
-        # Making no assumption that tihs JobEvent represents the most advanced
-        # state of the corresponding JobStart, fetch them all, and filter from there.
-        job_events = JobEvent.objects.filter(job_start=self.job_start).all()
-
-        # Get the most advanced event_type value.
-        state = sorted(
-            [job_event.event_type for job_event in job_events],
-            key=JobEventTypes.names.index,
-        )[-1]
-
-        # If job is queued, set start_time to the QUEUED event created_at value,
-        # otherwise assume that there exists a RUNNING event and use its created_at.
-        start_time_event_type = (
-            JobEventTypes.QUEUED
-            if state == JobEventTypes.QUEUED
-            else JobEventTypes.RUNNING
-        )
-        start_time = next(
-            job_event.created_at
-            for job_event in job_events
-            if job_event.event_type == start_time_event_type
-        )
-
-        # Set finished_time to the created_at value of the first found event
-        # with a terminal status. If no such event exists, set it to None.
-        finished_time = next(
-            (
-                job_event.created_at
-                for job_event in job_events
-                if JobEventTypes.is_terminal(job_event.event_type)
-            ),
-            None,
-        )
-
-        return state, start_time, finished_time
-
 
 @receiver(post_save, sender=JobEvent)
 def job_event_post_save(sender, instance, **kwargs):  # pylint: disable=unused-argument
@@ -397,7 +395,7 @@ class Dataset(models.Model):
     @classmethod
     def handle_job_event(cls, job_event):
         """Update a Dataset in response to a JobEvent save."""
-        state, start_time, finished_time = job_event.get_job_status()
+        state, start_time, finished_time = job_event.job_start.get_job_status()
 
         # Update the Dataset.
         dataset = cls.objects.get(job_start=job_event.job_start)
