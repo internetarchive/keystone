@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
-import re
 from pathlib import Path
 
 from dotenv import dotenv_values
@@ -43,10 +42,11 @@ AIT_DB_NAME = env.get("KEYSTONE_AIT_DB_NAME", "")
 AIT_DB_PORT = env.get("KEYSTONE_AIT_DB_PORT", "")
 AIT_DB_USER = env.get("KEYSTONE_AIT_DB_USER", "")
 
-ARCH_SYSTEM_API_KEY = env.get("KEYSTONE_ARCH_SYSTEM_API_KEY")
-ARCH_API_BASE_URL = env.get("KEYSTONE_ARCH_API_BASE_URL")
-ARCH_FILES_BASE_URL = re.sub("/api$", "/files", ARCH_API_BASE_URL)
-ARCH_WASAPI_BASE_URL = re.sub("/api$", "/wasapi/v1", ARCH_API_BASE_URL)
+ARCH_SYSTEM_API_KEY = env.get("KEYSTONE_ARCH_SYSTEM_API_KEY", "")
+ARCH_BASE_URL = env.get("KEYSTONE_ARCH_BASE_URL", "")
+ARCH_API_BASE_URL = env.get("KEYSTONE_ARCH_API_BASE_URL", "")
+ARCH_FILES_BASE_URL = env.get("KEYSTONE_ARCH_FILES_BASE_URL", "")
+ARCH_WASAPI_BASE_URL = env.get("KEYSTONE_ARCH_WASAPI_BASE_URL", "")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get("KEYSTONE_DJANGO_DEBUG", "false") == "true"
@@ -70,15 +70,6 @@ CSRF_TRUSTED_ORIGINS = (
 )
 
 ARCH_SUPPORT_TICKET_URL = "https://arch-webservices.zendesk.com/hc/en-us/requests/new"
-
-# Temporary ARCH login URL config to make the ARCH -> Keystone -> ARCH password
-# reset flow work.
-ARCH_LOGIN_URL = (
-    f"{env.get('KEYSTONE_ARCH_API_BASE_URL').removesuffix('/api')}/login"
-    if "KEYSTONE_ARCH_API_BASE_URL" in env
-    else ""
-)
-
 
 # Application definition
 

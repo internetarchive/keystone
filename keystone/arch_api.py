@@ -262,7 +262,7 @@ class ArchAPI:
             f"/colab/{collection_id}/{job_id}/{filename}",
             base_url=settings.ARCH_FILES_BASE_URL,
             proxy=True,
-            allow_redirects=False,
+            follow_redirects=False,
             sample=sample,
             file_download_url=file_download_url,
         )

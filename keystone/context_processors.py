@@ -21,7 +21,6 @@ def settings(request):
     return {
         "settings": {
             "KEYSTONE_GIT_COMMIT_HASH": _settings.KEYSTONE_GIT_COMMIT_HASH,
-            "ARCH_LOGIN_URL": _settings.ARCH_LOGIN_URL,
         }
     }
 
