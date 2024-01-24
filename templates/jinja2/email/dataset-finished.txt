@@ -1,0 +1,6 @@
+Hello {{ username }},
+
+ARCH has created your {{ job_name }} dataset from {{ collection_name }}. You may find it here: {{ dataset_url }}
+
+Best,
+The ARCH team

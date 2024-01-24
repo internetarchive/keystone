@@ -1,5 +1,5 @@
 """Core Django models for Keystone."""
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from functools import reduce
 from operator import or_
 
@@ -18,6 +18,10 @@ import uuid6
 
 from config import settings
 from .validators import validate_username
+
+
+# Define a namedtuple to return from JobStart.get_job_status()
+JobStatus = namedtuple("JobStatus", ("state", "start_time", "finished_time"))
 
 
 def choice_constraint(field, choices):
@@ -155,7 +159,7 @@ class Collection(models.Model):
     @classmethod
     def handle_job_event(cls, job_event):
         """Update a Custom Collection's metadata.state"""
-        state = job_event.job_start.get_job_status()[0]
+        state = job_event.job_start.get_job_status().state
         collection = job_event.job_start.collection
         if collection.collection_type != CollectionTypes.CUSTOM:
             return
@@ -308,12 +312,12 @@ class JobStart(models.Model):
             None,
         )
 
-        return state, start_time, finished_time
+        return JobStatus(state, start_time, finished_time)
 
 
 @receiver(post_save, sender=JobStart)
 def job_start_post_save(sender, instance, **kwargs):  # pylint: disable=unused-argument
-    """Maybe create a Dataset or Collection instance."""
+    """Maybe create a Dataset instance."""
     if instance.job_type.can_run:
         Dataset.handle_job_start(instance)
 

@@ -33,6 +33,8 @@ from ninja.security import (
 
 
 from config import settings
+
+from . import jobmail
 from .arch_api import ArchAPI
 from .helpers import (
     dot_to_dunder,
@@ -628,6 +630,18 @@ def register_job_complete(request, payload: JobCompleteIn):
             for f in payload.files
         ]
     )
+
+    # If job finished successfully, send a finished notification email for
+    # dataset and custom collection-type jobs.
+    if job_start.get_job_status().state == JobEventTypes.FINISHED:
+        job_type = job_complete.job_start.job_type
+        if job_type.can_run:
+            jobmail.send_dataset_finished(request, job_complete)
+        elif job_type == JobType.objects.get(
+            id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
+        ):
+            jobmail.send_custom_collection_finished(request, job_complete)
+
     return HTTP_NO_CONTENT, None
 
 
