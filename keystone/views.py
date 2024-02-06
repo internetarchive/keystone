@@ -25,6 +25,7 @@ from .helpers import parse_csv, parse_solr_facet_data
 from .models import (
     Collection,
     Dataset,
+    JobFile,
     User,
 )
 from .solr import SolrClient
@@ -194,24 +195,23 @@ def dataset_file_download(request, dataset_id, filename):
     # Lookup the datset without filtering by user - we'll let ARCH figure out
     # the download permissions.
     dataset = get_object_or_404(Dataset, id=dataset_id)
+    job_file = get_object_or_404(
+        JobFile, job_complete__job_start=dataset.job_start, filename=filename
+    )
 
     access_token = request.GET.get("access")
-    if not request.user.is_authenticated and not access_token:
-        return HttpResponseForbidden()
+    # Lookup the access_token if not specified by the dataset owner.
+    if (access_token is None
+        and request.user.is_authenticated
+        and dataset.job_start.user == request.user):
+        access_token = job_file.access_token
 
-    # If this is an access-token-based request, ensure that the collection ID includes
-    # the username of the user that ran the job so that ARCH can look it up.
-    if not access_token:
-        arch_collection_id = dataset.job_start.collection.arch_id
-    else:
-        collection_type, rest = dataset.job_start.collection.arch_id.split("-", 1)
-        arch_collection_id = (
-            f"{collection_type}-ks:{dataset.job_start.user.username}:{rest}"
-        )
+    if access_token != job_file.access_token:
+        return HttpResponseForbidden()
 
     return ArchAPI.proxy_file_download(
         request.user,
-        arch_collection_id,
+        dataset.job_start.collection.arch_id,
         dataset.job_start.job_type.id,
         dataset.job_start.sample,
         filename,
@@ -223,15 +223,19 @@ def dataset_file_download(request, dataset_id, filename):
 def dataset_file_colab(request, dataset_id, filename):
     """Open a Dataset file in Google Colab."""
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    job_file = get_object_or_404(
+        JobFile, job_complete__job_start=dataset.job_start, filename=filename
+    )
     return ArchAPI.proxy_colab_redirect(
         request.user,
         dataset.job_start.collection.arch_id,
         dataset.job_start.job_type.id,
         dataset.job_start.sample,
         filename,
+        job_file.access_token,
         ctx_helpers(request)["abs_url"](
             "dataset-file-download", args=[dataset.id, filename]
-        ),
+        ) + f"?access={job_file.access_token}",
     )
 
 

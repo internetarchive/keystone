@@ -214,6 +214,7 @@ class DatasetFileSchema(Schema):
     fileType: str
     creationTime: str
     md5Checksum: Optional[str]
+    accessToken: str
 
 
 ###############################################################################
@@ -548,9 +549,10 @@ def register_job_start(request, payload: JobStartIn):
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
     username = payload.username
     # Strip any specified "ks:" username prefix.
-    if username.startswith("ks:"):
-        username = username[3:]
-    user = get_object_or_404(User, username=username)
+    user = get_object_or_404(
+        User,
+        username=username[3:] if username.startswith("ks:") else username
+    )
 
     # If job is a User-Defined Query, create a Collection to represent the
     # eventual output.
@@ -560,10 +562,20 @@ def register_job_start(request, payload: JobStartIn):
         collection = get_object_or_404(Collection, arch_id=payload.collection_id)
     else:
         job_conf = payload.parameters.conf
-        arch_id = "CUSTOM-" + job_conf.outputPath.rsplit("/", 1)[1]
+
+        # Parse the collection name and owning user from the outputPath param,
+        # which has a format like:
+        #  .../{pathsafe_username}/{collection_id}
+        # Example:
+        #  .../ks-test/SPECIAL-test-collection_1707245569769
+        arch_username, arch_collection_id = job_conf.outputPath.rsplit("/", 2)[-2:]
+        arch_username = arch_username.replace('-', ':')
+        arch_id = f"CUSTOM-{arch_username}:{arch_collection_id}"
+
         name = job_conf.params.get("name")
         if name is None:
             return HttpResponseBadRequest("Collection name required for UDQ")
+
         collection = Collection.objects.create(
             arch_id=arch_id,
             name=name,
@@ -624,6 +636,7 @@ def register_job_complete(request, payload: JobCompleteIn):
                 file_type=f.fileType,
                 creation_time=f.creationTime,
                 md5_checksum=f.md5Checksum,
+                access_token=f.accessToken
             )
             for f in payload.files
         ]

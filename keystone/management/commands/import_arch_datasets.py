@@ -91,6 +91,7 @@ for Keystone user ({user.username}). Maybe run import_arch_collections first?
                 "file_type": f["fileType"],
                 "creation_time": datetime.fromisoformat(f["creationTime"]),
                 "md5_checksum": f["md5Checksum"],
+                "access_token": f["accessToken"],
             }
             if not JobFile.objects.filter(**job_file_kwargs).exists():
                 JobFile.objects.create(**job_file_kwargs)

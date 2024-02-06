@@ -103,6 +103,7 @@ class Migration(migrations.Migration):
                 ("file_type", models.CharField(max_length=32)),
                 ("creation_time", models.DateTimeField()),
                 ("md5_checksum", models.CharField(max_length=128, null=True)),
+                ("access_token", models.CharField(max_length=32)),
                 (
                     "job_complete",
                     models.ForeignKey(

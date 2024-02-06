@@ -26,6 +26,7 @@ class ArchRequestError(Exception):
     params: dict
     data: dict
     status_code: int
+    msg: str
 
 
 class ArchAPI:
@@ -64,9 +65,9 @@ class ArchAPI:
     ):
         """Issue an ARCH API request."""
 
-        def error(status_code):
+        def error(status_code, msg):
             raise ArchRequestError(
-                base_url, method, user.username, path, params, data, status_code
+                base_url, method, user.username, path, params, data, status_code, msg
             )
 
         # Convert bool param value to "true"/"false"
@@ -88,11 +89,11 @@ class ArchAPI:
                 allow_redirects=follow_redirects,
             )
         except requests.ConnectionError:
-            error(0)
+            error(0, "connection error")
         except requests.Timeout:
-            error(408)
+            error(408, "connection timeout")
         if not r.ok:
-            error(r.status_code)
+            error(r.status_code, r.text)
         if proxy:
             # Return a Django StreamingHttpResponse object.
             return StreamingHttpResponse(
@@ -104,7 +105,7 @@ class ArchAPI:
             try:
                 return r.json()
             except JSONDecodeError:
-                error(r.status_code)
+                error(r.status_code, "JSON decode error")
         return r.text
 
     @classmethod
@@ -254,12 +255,13 @@ class ArchAPI:
 
     @classmethod
     def proxy_colab_redirect(
-        cls, user, collection_id, job_id, sample, filename, file_download_url
+            cls, user, collection_id, job_id, sample, filename, access_token,
+            file_download_url
     ):
         """Redirect to a Google Colab initialized with the dataset file"""
         return cls.get(
             user,
-            f"/colab/{collection_id}/{job_id}/{filename}",
+            f"/colab/{collection_id}/{job_id}/{filename}?access={access_token}",
             base_url=settings.ARCH_FILES_BASE_URL,
             proxy=True,
             follow_redirects=False,
