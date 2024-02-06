@@ -18,6 +18,7 @@ JSON = "true"
 @dataclass
 class ArchRequestError(Exception):
     """ARCH API Request Exception"""
+    # pylint: disable=too-many-instance-attributes
 
     base_url: str
     method: str
@@ -255,8 +256,14 @@ class ArchAPI:
 
     @classmethod
     def proxy_colab_redirect(
-            cls, user, collection_id, job_id, sample, filename, access_token,
-            file_download_url
+        cls,
+        user,
+        collection_id,
+        job_id,
+        sample,
+        filename,
+        access_token,
+        file_download_url,
     ):
         """Redirect to a Google Colab initialized with the dataset file"""
         return cls.get(

@@ -2,7 +2,6 @@ import http
 from typing import (
     Any,
     List,
-    NamedTuple,
     Optional,
     Tuple,
 )
@@ -12,7 +11,7 @@ from uuid import UUID
 
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, QuerySet
+from django.db.models import Count, Max, QuerySet
 from django.templatetags.static import static
 from ninja.errors import HttpError
 from ninja.pagination import paginate
@@ -550,8 +549,7 @@ def register_job_start(request, payload: JobStartIn):
     username = payload.username
     # Strip any specified "ks:" username prefix.
     user = get_object_or_404(
-        User,
-        username=username[3:] if username.startswith("ks:") else username
+        User, username=username[3:] if username.startswith("ks:") else username
     )
 
     # If job is a User-Defined Query, create a Collection to represent the
@@ -569,7 +567,7 @@ def register_job_start(request, payload: JobStartIn):
         # Example:
         #  .../ks-test/SPECIAL-test-collection_1707245569769
         arch_username, arch_collection_id = job_conf.outputPath.rsplit("/", 2)[-2:]
-        arch_username = arch_username.replace('-', ':')
+        arch_username = arch_username.replace("-", ":")
         arch_id = f"CUSTOM-{arch_username}:{arch_collection_id}"
 
         name = job_conf.params.get("name")
@@ -636,7 +634,7 @@ def register_job_complete(request, payload: JobCompleteIn):
                 file_type=f.fileType,
                 creation_time=f.creationTime,
                 md5_checksum=f.md5Checksum,
-                access_token=f.accessToken
+                access_token=f.accessToken,
             )
             for f in payload.files
         ]
@@ -737,7 +735,22 @@ def collection_dataset_states(request, collection_id: int):
 @paginate
 def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
     """Retrieve the list of Datasets"""
-    queryset = filters.filter(Dataset.objects.filter(job_start__user=request.user))
+
+    # Until ARCH supports writing each new job run to its own location and
+    # not overwriting the previous dataset files, collapse Dataset entries to
+    # just the most recent for each Collection/JobType.
+    queryset = filters.filter(
+        Dataset.objects.filter(
+            id__in=(
+                x["max_id"]
+                for x in Dataset.objects.filter(job_start__user=request.user)
+                .values("job_start__collection_id", "job_start__job_type_id")
+                .annotate(max_id=Max("id"))
+            )
+        )
+    )
+    # queryset = filters.filter(Dataset.objects.filter(job_start__user=request.user))
+
     return apply_sort_param(request, queryset, DatasetSchema)
 
 

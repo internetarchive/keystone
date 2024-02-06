@@ -201,9 +201,11 @@ def dataset_file_download(request, dataset_id, filename):
 
     access_token = request.GET.get("access")
     # Lookup the access_token if not specified by the dataset owner.
-    if (access_token is None
+    if (
+        access_token is None
         and request.user.is_authenticated
-        and dataset.job_start.user == request.user):
+        and dataset.job_start.user == request.user
+    ):
         access_token = job_file.access_token
 
     if access_token != job_file.access_token:
@@ -235,7 +237,8 @@ def dataset_file_colab(request, dataset_id, filename):
         job_file.access_token,
         ctx_helpers(request)["abs_url"](
             "dataset-file-download", args=[dataset.id, filename]
-        ) + f"?access={job_file.access_token}",
+        )
+        + f"?access={job_file.access_token}",
     )
 
 
