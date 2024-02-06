@@ -221,22 +221,20 @@ class DatasetFileSchema(Schema):
 ###############################################################################
 
 
-class JobStartInParametersConfWithParams(NamedTuple):
+class JobStartInParametersConfWithParams(Schema):
     """A JobStartIn.parameters.conf value that include params."""
 
-    collection_id: str
-    input_path: str
-    output_path: str
+    inputSpec: dict
+    outputPath: str
     sample: int
     params: dict
 
 
-class JobStartInParametersConfNoParams(NamedTuple):
+class JobStartInParametersConfNoParams(Schema):
     """A JobStartIn.parameters.conf value that does not include params."""
 
-    collection_id: str
-    input_path: str
-    output_path: str
+    inputSpec: dict
+    outputPath: str
     sample: int
 
 
@@ -562,7 +560,7 @@ def register_job_start(request, payload: JobStartIn):
         collection = get_object_or_404(Collection, arch_id=payload.collection_id)
     else:
         job_conf = payload.parameters.conf
-        arch_id = "CUSTOM-" + job_conf.output_path.rsplit("/", 1)[1]
+        arch_id = "CUSTOM-" + job_conf.outputPath.rsplit("/", 1)[1]
         name = job_conf.params.get("name")
         if name is None:
             return HttpResponseBadRequest("Collection name required for UDQ")
@@ -583,7 +581,7 @@ def register_job_start(request, payload: JobStartIn):
         user=user,
         input_bytes=payload.input_bytes,
         sample=payload.sample,
-        parameters=dict(payload.parameters),
+        parameters=payload.parameters.dict(),
         commit_hash=payload.commit_hash,
         created_at=payload.created_at,
     )
