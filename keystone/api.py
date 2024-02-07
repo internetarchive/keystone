@@ -11,7 +11,7 @@ from uuid import UUID
 
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Max, QuerySet
+from django.db.models import Count, Max, Q, QuerySet
 from django.templatetags.static import static
 from ninja.errors import HttpError
 from ninja.pagination import paginate
@@ -693,10 +693,9 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
     queryset = filters.filter(
         Collection.objects.filter(users=request.user)
         .exclude(
-            metadata__state__in=(
-                JobEventTypes.CANCELLED,
-                JobEventTypes.FAILED,
-            )
+            # Need to do a NULL check first so *__in will work as expected.
+            Q(metadata__state__isnull=False)
+            & Q(metadata__state__in=(JobEventTypes.CANCELLED, JobEventTypes.FAILED))
         )
         .annotate(dataset_count=Count("jobstart__dataset__id"))
     )
