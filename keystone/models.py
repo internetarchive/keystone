@@ -77,6 +77,7 @@ class User(AbstractUser):
 
     @property
     def arch_username(self):
+        """Return the user's corresponding ARCH username."""
         return f"ks:{self.username}"
 
     def __str__(self):
