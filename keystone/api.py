@@ -797,7 +797,17 @@ def list_available_jobs(request):
                 for job in job_cat.jobtype_set.filter(can_run=True)
             ],
         }
-        for job_cat in JobCategory.objects.filter(jobtype__can_run=True).distinct()
+        for job_cat in (
+                JobCategory.objects
+                .filter(jobtype__can_run=True)
+                # Filter out ArchiveSpark* jobs for the time being.
+                .exclude(jobtype__id__in=(
+                    settings.KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION,
+                    settings.KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE,
+                    settings.KnownArchJobUuids.ARCHIVESPARK_NOOP,
+                ))
+                .distinct()
+        )
     ]
 
 

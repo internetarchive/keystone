@@ -82,7 +82,7 @@ class ArchAPI:
                 headers={}
                 if user.is_anonymous
                 else {
-                    "X-API-USER": f"ks:{user.username}",
+                    "X-API-USER": user.arch_username,
                     "X-API-KEY": settings.ARCH_SYSTEM_API_KEY,
                 },
                 json=data,

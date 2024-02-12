@@ -75,6 +75,10 @@ class User(AbstractUser):
         constraints = [choice_constraint(field="role", choices=UserRoles)]
         permissions = [("change_role", "Can change user roles")]
 
+    @property
+    def arch_username(self):
+        return f"ks:{self.username}"
+
     def __str__(self):
         return self.username
 
