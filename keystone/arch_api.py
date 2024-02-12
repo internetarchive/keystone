@@ -18,6 +18,7 @@ JSON = "true"
 @dataclass
 class ArchRequestError(Exception):
     """ARCH API Request Exception"""
+
     # pylint: disable=too-many-instance-attributes
 
     base_url: str
