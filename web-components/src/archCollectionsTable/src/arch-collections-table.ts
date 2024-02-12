@@ -44,20 +44,30 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
 
     /* eslint-disable @typescript-eslint/restrict-template-expressions */
     this.cellRenderers = [
-      (name, collection: Collection) =>
-        collection.collection_type === CollectionType.CUSTOM &&
-        (collection.metadata as CustomCollectionMetadata).state !==
-          ProcessingState.FINISHED
-          ? `<span title="This Custom collection is in the process of being created">${name} <i>(${
-              (collection.metadata as CustomCollectionMetadata).state
-            })</i></span>`
-          : `
+      (name, collection: Collection) => {
+        const nonRunningCustomValue = `
             <a href="/collections/${_(collection.id.toString())}" title="${_(
-              name as string
-            )}">
+          name as string
+        )}">
               <span class="highlightable">${name}</span>
             </a>
-          `,
+        `;
+
+        if (collection.collection_type !== CollectionType.CUSTOM) {
+          return nonRunningCustomValue;
+        }
+
+        const { state } = collection.metadata as CustomCollectionMetadata;
+        if (state === ProcessingState.FINISHED) {
+          return nonRunningCustomValue;
+        }
+
+        return `
+            <span title="This Custom collection is in the process of being created">${name} <i>(${
+          state === ProcessingState.RUNNING ? "CREATING" : state
+        })</i></span>
+        `;
+      },
 
       (collectionType) =>
         CollectionTypeDisplayMap[collectionType as CollectionType],
