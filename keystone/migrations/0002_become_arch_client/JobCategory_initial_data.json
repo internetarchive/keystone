@@ -1,0 +1,50 @@
+[
+  {
+    "model": "keystone.jobcategory",
+    "pk": 1,
+    "fields": {
+      "name": "System",
+      "description": "Internal system jobs that are not meant to be exposed to users."
+    }
+  },
+  {
+    "model": "keystone.jobcategory",
+    "pk": 2,
+    "fields": {
+      "name": "Network",
+      "description": "Explore connections in a web archive visually."
+    }
+  },
+  {
+    "model": "keystone.jobcategory",
+    "pk": 3,
+    "fields": {
+      "name": "Collection",
+      "description": "Discover domain-related patterns and high level information about the documents in a web archive."
+    }
+  },
+  {
+    "model": "keystone.jobcategory",
+    "pk": 4,
+    "fields": {
+      "name": "Text",
+      "description": "Extract and analyze a web archive as text."
+    }
+  },
+  {
+    "model": "keystone.jobcategory",
+    "pk": 5,
+    "fields": {
+      "name": "File Formats",
+      "description": "Find, describe, and use the files contained within a web archive, based on their format."
+    }
+  },
+  {
+    "model": "keystone.jobcategory",
+    "pk": 6,
+    "fields": {
+      "name": "",
+      "description": ""
+    }
+  }
+]
