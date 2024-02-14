@@ -40,6 +40,19 @@ def read_fixture(filename):
         return json.load(f)
 
 
+def create_dummy_job_start_collection_target(apps, schema_editor):
+    """All the new JobStart.collection field needs to be set to something for
+    existing rows, so create a dummy value for them to point to."""
+    Collection = apps.get_model("keystone", "Collection")
+    kwargs = {
+        "id": 1,
+        "name": "Something for the new collection_id field of existing jobstart rows to reference",
+        "collection_type": "SPECIAL",
+    }
+    if not Collection.objects.filter(**kwargs).exists():
+        Collection.objects.create(**kwargs)
+
+
 def load_initial_job_category_data(apps, schema_editor):
     """Bootstrap the JobCategory table so that the new JobType.category fields
     have something to point at."""
@@ -107,6 +120,9 @@ class Migration(migrations.Migration):
             model_name="collection",
             name="size_bytes",
             field=models.PositiveBigIntegerField(default=0),
+        ),
+        migrations.RunPython(
+            create_dummy_job_start_collection_target, lambda apps, schema_editor: None
         ),
         migrations.AddField(
             model_name="jobstart",
