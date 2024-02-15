@@ -328,7 +328,7 @@ class AITCollectionMetadata(Schema):
 
     is_public: bool
     seed_count: int
-    last_crawl_date: datetime
+    last_crawl_date: Optional[datetime]
 
 
 class CustomCollectionMetadata(Schema):
@@ -354,7 +354,7 @@ class CollectionSchema(Schema):
     size_bytes: int
     dataset_count: int
     latest_dataset: LatestDatasetSchema = None
-    metadata: AITCollectionMetadata | CustomCollectionMetadata = None
+    metadata: Optional[AITCollectionMetadata | CustomCollectionMetadata] = None
 
 
 class CollectionFilterSchema(FilterSchema):
