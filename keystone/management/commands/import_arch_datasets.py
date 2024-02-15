@@ -110,10 +110,18 @@ for Keystone user ({user.username}). Maybe run import_arch_collections first?
 class Command(BaseCommand):
     help = "Import ARCH Datasets"
 
+    def add_arguments(self, parser):
+        parser.add_argument("--username", type=str, help="Import for single username")
+
     def handle(self, *args, **options):
         # Disconnect JobStart and JobComplete signal receivers.
         assert post_save.disconnect(job_start_post_save, JobStart)
         assert post_save.disconnect(job_complete_post_save, JobComplete)
+
+        username = options.get("username")
+        if username:
+            import_user_datasets(User.objects.get(username=username))
+            return
 
         for user in User.objects.all():
             import_user_datasets(user)
