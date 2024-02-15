@@ -737,13 +737,13 @@ def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
 
     # Until ARCH supports writing each new job run to its own location and
     # not overwriting the previous dataset files, collapse Dataset entries to
-    # just the most recent for each Collection/JobType.
+    # just the most recent for each Collection/JobType/sample.
     queryset = filters.filter(
         Dataset.objects.filter(
             id__in=(
                 x["max_id"]
                 for x in Dataset.objects.filter(job_start__user=request.user)
-                .values("job_start__collection_id", "job_start__job_type_id")
+                .values("job_start__collection_id", "job_start__job_type_id", "job_start__sample")
                 .annotate(max_id=Max("id"))
             )
         )

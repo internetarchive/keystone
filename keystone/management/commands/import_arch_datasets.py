@@ -29,6 +29,13 @@ def get_or_create_job_start(**kwargs):
 
 def import_user_datasets(user):
     for arch_dataset in ArchAPI.get_json(user, "datasets")["results"]:
+        # Ignore unfinished datasets during import for now since the UUID ARCH
+        # reports in subsequent JobEvent calls won't match the UUID of the
+        # synthetic JobStart that we'd create, and thus the job will never be
+        # updated to it's final state.
+        if arch_dataset["finishedTime"] is None:
+            continue
+
         collection = Collection.objects.filter(
             arch_id=arch_dataset["collectionId"]
         ).first()
