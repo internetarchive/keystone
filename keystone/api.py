@@ -584,17 +584,25 @@ def register_job_start(request, payload: JobStartIn):
         collection.accounts.add(user.account)
         collection.users.add(user)
 
-    job_start = JobStart.objects.create(
-        id=payload.id,
-        job_type=job_type,
-        collection=collection,
-        user=user,
-        input_bytes=payload.input_bytes,
-        sample=payload.sample,
-        parameters=payload.parameters.dict(),
-        commit_hash=payload.commit_hash,
-        created_at=payload.created_at,
-    )
+    parameters = payload.parameters.dict()
+    if parameters["attempt"] > 1:
+        # In the event of a retry, update the existing JobStart's attempt count.
+        job_start = JobStart.objects.get(id=payload.id)
+        job_start.parameters["attempt"] = parameters["attempt"]
+        job_start.save()
+    else:
+        # Not a retry - create a new JobStart.
+        job_start = JobStart.objects.create(
+            id=payload.id,
+            job_type=job_type,
+            collection=collection,
+            user=user,
+            input_bytes=payload.input_bytes,
+            sample=payload.sample,
+            parameters=parameters,
+            commit_hash=payload.commit_hash,
+            created_at=payload.created_at,
+        )
     return job_start
 
 
@@ -618,11 +626,26 @@ def register_job_complete(request, payload: JobCompleteIn):
     cancelled by the user, or some other final state.
     """
     job_start = get_object_or_404(JobStart, id=payload.job_start_id)
-    job_complete = JobComplete.objects.create(
-        job_start=job_start,
-        output_bytes=payload.output_bytes,
-        created_at=payload.created_at,
-    )
+
+    # Get (in the event of a retry) or create a JobComplete.
+    if job_start.parameters["attempt"] > 1:
+        job_complete = JobComplete.objects.get(job_start=job_start)
+        # Maybe update output_bytes.
+        if job_complete.output_bytes != payload.output_bytes:
+            job_complete.output_bytes = payload.output_bytes
+            job_complete.save()
+    else:
+        job_complete = JobComplete.objects.create(
+            job_start=job_start,
+            output_bytes=payload.output_bytes,
+            created_at=payload.created_at,
+        )
+
+    # Abort if job did not finish successfully.
+    if job_start.get_job_status().state != JobEventTypes.FINISHED:
+        return HTTP_NO_CONTENT, None
+
+    # Create the JobFile objects.
     JobFile.objects.bulk_create(
         [
             JobFile(
@@ -640,16 +663,14 @@ def register_job_complete(request, payload: JobCompleteIn):
         ]
     )
 
-    # If job finished successfully, send a finished notification email for
-    # dataset and custom collection-type jobs.
-    if job_start.get_job_status().state == JobEventTypes.FINISHED:
-        job_type = job_complete.job_start.job_type
-        if job_type.can_run:
-            jobmail.send_dataset_finished(request, job_complete)
-        elif job_type == JobType.objects.get(
-            id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
-        ):
-            jobmail.send_custom_collection_finished(request, job_complete)
+    # Send a finished notification email for dataset and custom collection-type jobs.
+    job_type = job_complete.job_start.job_type
+    if job_type.can_run:
+        jobmail.send_dataset_finished(request, job_complete)
+    elif job_type == JobType.objects.get(
+        id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
+    ):
+        jobmail.send_custom_collection_finished(request, job_complete)
 
     return HTTP_NO_CONTENT, None
 
@@ -743,7 +764,11 @@ def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
             id__in=(
                 x["max_id"]
                 for x in Dataset.objects.filter(job_start__user=request.user)
-                .values("job_start__collection_id", "job_start__job_type_id", "job_start__sample")
+                .values(
+                    "job_start__collection_id",
+                    "job_start__job_type_id",
+                    "job_start__sample",
+                )
                 .annotate(max_id=Max("id"))
             )
         )
