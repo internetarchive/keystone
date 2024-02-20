@@ -86,9 +86,10 @@ for Keystone user ({user.username}). Maybe run import_arch_collections first?
 
         # Import dataset files.
         num_imported_files = 0
-        for f in ArchAPI.get_json(user, f"datasets/{arch_dataset['id']}/files")[
-            "results"
-        ]:
+        # Specify a long timeout to account for hashing time.
+        for f in ArchAPI.get_json(
+            user, f"datasets/{arch_dataset['id']}/files", timeout=180
+        )["results"]:
             job_file_kwargs = {
                 "job_complete": job_complete,
                 "filename": f["filename"],

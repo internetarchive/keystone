@@ -63,6 +63,7 @@ class ArchAPI:
         expect_response_body=JSON,
         proxy=False,
         follow_redirects=True,
+        timeout=30,
         **params,
     ):
         """Issue an ARCH API request."""
@@ -86,7 +87,7 @@ class ArchAPI:
                     "X-API-KEY": settings.ARCH_SYSTEM_API_KEY,
                 },
                 json=data,
-                timeout=30,
+                timeout=timeout,
                 stream=proxy,
                 allow_redirects=follow_redirects,
             )
