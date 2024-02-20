@@ -285,19 +285,15 @@ class JobStart(models.Model):
     def get_job_status(self):
         """Return a (state, start_time, finished_time) tuple representing the
         current state of the associated job."""
-        job_events = self.jobevent_set.all()
-
-        # Get the most advanced event_type value.
-        state = sorted(
-            [job_event.event_type for job_event in job_events],
-            key=JobEventTypes.names.index,
-        )[-1]
+        job_events = self.jobevent_set.order_by("-created_at").all()
+        latest_job_event = job_events[0]
+        latest_job_event_type = latest_job_event.event_type
 
         # If job is queued, set start_time to the QUEUED event created_at value,
         # otherwise assume that there exists a RUNNING event and use its created_at.
         start_time_event_type = (
             JobEventTypes.QUEUED
-            if state == JobEventTypes.QUEUED
+            if latest_job_event_type == JobEventTypes.QUEUED
             else JobEventTypes.RUNNING
         )
         start_time = next(
@@ -306,24 +302,21 @@ class JobStart(models.Model):
             if job_event.event_type == start_time_event_type
         )
 
-        # Set finished_time to the created_at value of the first found event
-        # with a terminal status. If no such event exists, set it to None.
-        finished_time = next(
-            (
-                job_event.created_at
-                for job_event in job_events
-                if JobEventTypes.is_terminal(job_event.event_type)
-            ),
-            None,
+        # Set finished_time to the created_at value of latest event if terminal,
+        # or None if not terminal.
+        finished_time = (
+            latest_job_event.created_at
+            if JobEventTypes.is_terminal(latest_job_event_type)
+            else None
         )
 
-        return JobStatus(state, start_time, finished_time)
+        return JobStatus(latest_job_event_type, start_time, finished_time)
 
 
 @receiver(post_save, sender=JobStart)
 def job_start_post_save(sender, instance, **kwargs):  # pylint: disable=unused-argument
     """Maybe create a Dataset instance."""
-    if instance.job_type.can_run:
+    if kwargs["created"] and instance.job_type.can_run:
         Dataset.handle_job_start(instance)
 
 

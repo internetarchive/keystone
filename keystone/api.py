@@ -9,9 +9,10 @@ from typing import (
 from datetime import datetime
 from uuid import UUID
 
+from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Max, Q, QuerySet
+from django.db.models import Count, Q, QuerySet
 from django.templatetags.static import static
 from ninja.errors import HttpError
 from ninja.pagination import paginate
@@ -584,15 +585,10 @@ def register_job_start(request, payload: JobStartIn):
         collection.accounts.add(user.account)
         collection.users.add(user)
 
+    # Create or update a JobStart instance.
     parameters = payload.parameters.dict()
-    if parameters["attempt"] > 1:
-        # In the event of a retry, update the existing JobStart's attempt count.
-        job_start = JobStart.objects.get(id=payload.id)
-        job_start.parameters["attempt"] = parameters["attempt"]
-        job_start.save()
-    else:
-        # Not a retry - create a new JobStart.
-        job_start = JobStart.objects.create(
+    if not JobStart.objects.filter(id=payload.id).exists():
+        return JobStart.objects.create(
             id=payload.id,
             job_type=job_type,
             collection=collection,
@@ -603,6 +599,37 @@ def register_job_start(request, payload: JobStartIn):
             commit_hash=payload.commit_hash,
             created_at=payload.created_at,
         )
+
+    # Note that it's a little confusing that we allow a JobStart
+    # (and JobComplete - see register_job_complete()), to be updated given
+    # that each instance is supposed to represent a unique job run, but ARCH
+    # currently reports the same UUID for jobs submitted via the legacy
+    # /api/runjob/:jobid/:collectionid endpoint for:
+    #  - the initial run
+    #  - additional attempts in the event of run failure
+    #  - manual reruns
+    # and, the outputs of jobs submitted via the legacy endpoint overwrite/clobber
+    # the outputs of any previous run, so it kind of makes sense from Keystone's
+    # perspective for these runs to share the same JobStart UUID.
+    job_start = JobStart.objects.get(id=payload.id)
+    # Return a 400 on fundamental configuration mismatch.
+    if (
+        job_start.job_type != job_type
+        or job_start.collection != collection
+        or job_start.sample != (None and payload.sample)
+    ):
+        raise HttpError(
+            400,
+            f"Payload ({payload}) is incompatible with existing JobStart: "
+            f"{model_to_dict(job_start)}",
+        )
+    # Update the existing object.
+    job_start.user = user
+    job_start.input_bytes = payload.input_bytes
+    job_start.parameters = parameters
+    job_start.commit_hash = payload.commit_hash
+    job_start.save()
+
     return job_start
 
 
@@ -627,19 +654,23 @@ def register_job_complete(request, payload: JobCompleteIn):
     """
     job_start = get_object_or_404(JobStart, id=payload.job_start_id)
 
-    # Get (in the event of a retry) or create a JobComplete.
-    if job_start.parameters["attempt"] > 1:
-        job_complete = JobComplete.objects.get(job_start=job_start)
-        # Maybe update output_bytes.
-        if job_complete.output_bytes != payload.output_bytes:
-            job_complete.output_bytes = payload.output_bytes
-            job_complete.save()
-    else:
+    # Create or update a JobComplete.
+    if not JobComplete.objects.filter(job_start=job_start).exists():
         job_complete = JobComplete.objects.create(
             job_start=job_start,
             output_bytes=payload.output_bytes,
             created_at=payload.created_at,
         )
+    else:
+        # See the note in register_job_start() as to why we allow JobComplete
+        # instances to be updated.
+        job_complete = JobComplete.objects.get(job_start=job_start)
+        # Maybe update output_bytes.
+        if job_complete.output_bytes != payload.output_bytes:
+            job_complete.output_bytes = payload.output_bytes
+            job_complete.save()
+        # Delete any preexisting JobFile objects.
+        JobFile.objects.filter(job_complete=job_complete).delete()
 
     # Abort if job did not finish successfully.
     if job_start.get_job_status().state != JobEventTypes.FINISHED:
@@ -693,12 +724,12 @@ def user_can_run_job(
     user = get_object_or_404(User, username=username)
     # job_type = get_object_or_404(JobType, name=job_type_name, version=job_type_version)
     if not user.has_perms(["keystone.add_job_start"]):
-        return 403, PermissionResponse(allow=False)
+        raise HttpError(403, PermissionResponse(allow=False))
     # collections = get_list_or_404(Collection, name__in=collections)
     # quotas = ArchQuota.fetch_for_user(user)
 
     # TODO: actually implement some checks
-    return 200, PermissionResponse(allow=True)
+    return PermissionResponse(allow=True)
 
 
 ###############################################################################
@@ -755,26 +786,7 @@ def collection_dataset_states(request, collection_id: int):
 @paginate
 def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
     """Retrieve the list of Datasets"""
-
-    # Until ARCH supports writing each new job run to its own location and
-    # not overwriting the previous dataset files, collapse Dataset entries to
-    # just the most recent for each Collection/JobType/sample.
-    queryset = filters.filter(
-        Dataset.objects.filter(
-            id__in=(
-                x["max_id"]
-                for x in Dataset.objects.filter(job_start__user=request.user)
-                .values(
-                    "job_start__collection_id",
-                    "job_start__job_type_id",
-                    "job_start__sample",
-                )
-                .annotate(max_id=Max("id"))
-            )
-        )
-    )
-    # queryset = filters.filter(Dataset.objects.filter(job_start__user=request.user))
-
+    queryset = filters.filter(Dataset.objects.filter(job_start__user=request.user))
     return apply_sort_param(request, queryset, DatasetSchema)
 
 
@@ -854,7 +866,7 @@ def generate_sub_collection(request, payload: SubCollectionCreationRequest):
         Collection.objects.filter(id__in=sources).values_list("arch_id", flat=True)
     )
     if len(arch_ids) != len(sources):
-        return 400, "Invalid collection ID(s)"
+        raise HttpError(400, "Invalid collection ID(s)")
 
     # Handle single vs. multiple source collection cases.
     if len(arch_ids) == 1:
