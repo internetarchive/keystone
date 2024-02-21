@@ -129,7 +129,7 @@ class Team(models.Model):
 class CollectionTypes(models.TextChoices):
     """ARCH can use different types of collections as inputs for Jobs."""
 
-    AIT = "AIT", "AIT"
+    AIT = "AIT", "Archive-It"
     SPECIAL = "SPECIAL", "Special"
     CUSTOM = "CUSTOM", "Custom"
 

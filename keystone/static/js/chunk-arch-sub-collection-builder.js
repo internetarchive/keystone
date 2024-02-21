@@ -1,4 +1,4 @@
-import{i as e,_ as n,e as d,s as o,y as t,a}from"./chunk-query-assigned-elements.js";import{t as s}from"./chunk-state.js";import{g as m,i as l}from"./chunk-styles.js";import{A as i,a as r}from"./chunk-arch-alert.js";const c=/^[1-5]\d\d$/,v="[a-zA-Z0-9\\-]",p=new RegExp(`^${v}+,${v}+(${v}+,?)*((\\))|(\\)/.*))?$`),f={true:"Yes",false:"No"},x={SUBMITTED:"Submitted",QUEUED:"Queued",RUNNING:"Running",FINISHED:"Finished",FAILED:"Failed",CANCELLED:"Cancelled"},u={AIT:"AIT",CUSTOM:"Custom",SPECIAL:"Special"};var g,b=[m,e`
+import{i as e,_ as n,e as d,s as o,y as t,a}from"./chunk-query-assigned-elements.js";import{t as s}from"./chunk-state.js";import{g as m,i as l}from"./chunk-styles.js";import{A as i,a as r}from"./chunk-arch-alert.js";const c=/^[1-5]\d\d$/,v="[a-zA-Z0-9\\-]",p=new RegExp(`^${v}+,${v}+(${v}+,?)*((\\))|(\\)/.*))?$`),f={true:"Yes",false:"No"},x={SUBMITTED:"Submitted",QUEUED:"Queued",RUNNING:"Running",FINISHED:"Finished",FAILED:"Failed",CANCELLED:"Cancelled"},u={AIT:"Archive-It",CUSTOM:"Custom",SPECIAL:"Special"};var g,b=[m,e`
     label {
       margin-top: 1rem;
     }

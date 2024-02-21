@@ -23,7 +23,7 @@ export const EventTypeDisplayMap: Record<ProcessingState, string> = {
 };
 
 export const CollectionTypeDisplayMap: Record<CollectionType, string> = {
-  AIT: "AIT",
+  AIT: "Archive-It",
   CUSTOM: "Custom",
   SPECIAL: "Special",
 };
