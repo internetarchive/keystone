@@ -166,7 +166,7 @@ def datasets_generate(request):
 @login_required
 def dataset_detail(request, dataset_id):
     """Dataset detail page"""
-    dataset = get_object_or_404(Dataset, id=dataset_id)
+    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
 
     template_filename = settings.JOB_TYPE_UUID_NON_AUT_TEMPLATE_FILENAME_MAP.get(
         str(dataset.job_start.job_type.id), "aut-dataset.html"

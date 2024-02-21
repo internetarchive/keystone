@@ -70,6 +70,12 @@
         </section>
         <section class="top-bar-section" style="left: 0%;">
           <ul id="secondary-menu" class="right show-for-large-up">
+            {% if "impersonate_username" in request.session %}
+            <li>
+              <a href="{{ request.path }}?__unimpersonate" id="unimpersonate">Stop Impersonating</a>
+            </li>
+            {% endif %}
+
             <li><a target="_blank" href="https://arch-webservices.zendesk.com/hc/en-us">Help Center</a></li>
             {% if request.user.is_authenticated %}
             <li class="has-dropdown not-click" has-dropdown="">

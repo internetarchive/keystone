@@ -95,6 +95,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "keystone.middleware.ExceptionMiddleware",
+    "keystone.middleware.ImpersonateMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

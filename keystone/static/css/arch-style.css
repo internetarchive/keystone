@@ -324,6 +324,13 @@ div.new-job-link {
     width: 50%;
 }
 
+#unimpersonate {
+    background-color: orange;
+    color: mediumblue;
+    font-weight: bold;
+    border-radius: 8px;
+}
+
 /* Override the default partner-site css center column width */
 .row {
   max-width: 80rem;
