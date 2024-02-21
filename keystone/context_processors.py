@@ -28,8 +28,8 @@ def settings(request):
 def helpers(request):
     """Extra template helpers."""
     return {
-        "abs_url": lambda path, args: request.build_absolute_uri(
-            reverse(path, args=args)
+        "abs_url": (
+            lambda path, args: _settings.PUBLIC_BASE_URL + reverse(path, args=args)
         ),
         "CollectionTypes": CollectionTypes,
     }

@@ -1,6 +1,7 @@
 # pylint: disable=too-many-arguments
 
 from dataclasses import dataclass
+from http import HTTPStatus
 from json import JSONDecodeError
 from logging import getLogger
 
@@ -101,9 +102,9 @@ class ArchAPI:
                 allow_redirects=follow_redirects,
             )
         except requests.ConnectionError:
-            error(0, "connection error")
+            error(HTTPStatus.SERVICE_UNAVAILABLE, "connection error")
         except requests.Timeout:
-            error(408, "connection timeout")
+            error(HTTPStatus.REQUEST_TIMEOUT, "connection timeout")
         if not r.ok:
             error(r.status_code, r.text)
         if proxy:
@@ -168,7 +169,7 @@ class ArchAPI:
         try:
             return cls.get_json(user, f"/datasets/{dataset_id}/sample_viz_data")
         except ArchRequestError as e:
-            if e.status_code != 404:
+            if e.status_code != HTTPStatus.NOT_FOUND:
                 raise
             raise Http404 from e
 
@@ -193,7 +194,7 @@ class ArchAPI:
                 user, f"/petabox/{collection_id}/{job_id}", sample=sample
             )
         except ArchRequestError as e:
-            if e.status_code != 404:
+            if e.status_code != HTTPStatus.NOT_FOUND:
                 raise
             raise Http404 from e
 
@@ -203,7 +204,7 @@ class ArchAPI:
         try:
             return cls.get_json(user, f"/petabox/{collection_id}/metadata/{item_id}")
         except ArchRequestError as e:
-            if e.status_code != 404:
+            if e.status_code != HTTPStatus.NOT_FOUND:
                 raise
             raise Http404 from e
 
@@ -221,7 +222,7 @@ class ArchAPI:
                 expect_response_body=False,
             )
         except ArchRequestError as e:
-            if e.status_code != 404:
+            if e.status_code != HTTPStatus.NOT_FOUND:
                 raise
             raise Http404 from e
 
@@ -236,7 +237,7 @@ class ArchAPI:
                 expect_response_body=False,
             )
         except ArchRequestError as e:
-            if e.status_code != 404:
+            if e.status_code != HTTPStatus.NOT_FOUND:
                 raise
             raise Http404 from e
 

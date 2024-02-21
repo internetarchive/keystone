@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import http
 from typing import (
     Any,
@@ -35,7 +37,10 @@ from ninja.security import (
 from config import settings
 
 from . import jobmail
-from .arch_api import ArchAPI
+from .arch_api import (
+    ArchAPI,
+    ArchRequestError,
+)
 from .helpers import (
     dot_to_dunder,
     find_field_from_lookup,
@@ -188,6 +193,13 @@ public_api = NinjaAPI(
     parser=KeystoneRequestParser(),
 )
 
+
+@public_api.exception_handler(ArchRequestError)
+def public_api_arch_request_error_handler(request, exc):
+    """Convert ArchRequestErrors to HTTP responses."""
+    return exc.to_http_response()
+
+
 private_api = NinjaAPI(
     urls_namespace="private", auth=[ApiKey()], parser=KeystoneRequestParser()
 )
@@ -197,6 +209,12 @@ wasapi_api = NinjaAPI(
     csrf=True,
     auth=[django_auth, BasicAuth()],
 )
+
+
+@wasapi_api.exception_handler(ArchRequestError)
+def wasapi_api_arch_request_error_handler(request, exc):
+    """Convert ArchRequestErrors to HTTP responses."""
+    return exc.to_http_response()
 
 
 ###############################################################################

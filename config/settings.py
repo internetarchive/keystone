@@ -26,6 +26,8 @@ env = {
 DEPLOYMENT_ENVIRONMENT = env.get("KEYSTONE_DEPLOYMENT_ENVIRONMENT", "DEV")
 KEYSTONE_GIT_COMMIT_HASH = env.get("KEYSTONE_GIT_COMMIT_HASH", "")[:7]
 
+PUBLIC_BASE_URL = env.get("KEYSTONE_PUBLIC_BASE_URL", "")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
