@@ -878,7 +878,6 @@ def generate_sub_collection(request, payload: SubCollectionCreationRequest):
         # Assign arch_ids to data.input which is expected by
         # DerivationJobConf.jobInPath() for Union-type collections.
         job_params["input"] = arch_ids
-
     return ArchAPI.create_sub_collection(request.user, collection_id, job_params)
 
 

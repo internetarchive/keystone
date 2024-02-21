@@ -2,10 +2,12 @@
 
 from dataclasses import dataclass
 from json import JSONDecodeError
+from logging import getLogger
 
 import requests
 from django.http import (
     Http404,
+    HttpResponse,
     StreamingHttpResponse,
 )
 
@@ -13,6 +15,8 @@ from config import settings
 
 
 JSON = "true"
+
+log = getLogger()
 
 
 @dataclass
@@ -29,6 +33,11 @@ class ArchRequestError(Exception):
     data: dict
     status_code: int
     msg: str
+
+    def to_http_response(self):
+        """Log the exception and convert it to an HttpResponse object."""
+        log.exception(self)
+        return HttpResponse(self.msg, status=self.status_code)
 
 
 class ArchAPI:
