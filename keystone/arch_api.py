@@ -166,7 +166,7 @@ class ArchAPI:
     @classmethod
     def publish_dataset(cls, user, collection_id, job_id, sample, metadata):
         """Publish a Dataset"""
-        cls.run_job(
+        return cls.run_job(
             user=user,
             collection_id=collection_id,
             job_id="DatasetPublication",
