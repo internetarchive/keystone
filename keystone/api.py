@@ -616,7 +616,7 @@ def register_job_start(request, payload: JobStartIn):
     if (
         job_start.job_type != job_type
         or job_start.collection != collection
-        or job_start.sample != (None and payload.sample)
+        or job_start.sample != payload.sample
     ):
         raise HttpError(
             400,
