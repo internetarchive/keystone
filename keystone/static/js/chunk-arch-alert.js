@@ -50,5 +50,5 @@ const h=2;class u{constructor(t){}get _$AU(){return this._$AM._$AU}_$AT(t,e,s){t
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-    `}hide(){this.setAttribute("hidden","")}show(){this.removeAttribute("hidden")}};$.styles=y,r([i({type:String})],$.prototype,"alertClass",void 0),r([i({type:Boolean})],$.prototype,"hidden",void 0),r([i({type:String})],$.prototype,"message",void 0),$=r([o("arch-alert")],$);export{m as A,d as a};
+    `}hide(){this.setAttribute("hidden","")}show(){this.removeAttribute("hidden")}};$.styles=y,r([i({type:String})],$.prototype,"alertClass",void 0),r([i({type:Boolean})],$.prototype,"hidden",void 0),r([i({type:String})],$.prototype,"message",void 0),$=r([o("arch-alert")],$);export{m as A,d as a,p as o};
 //# sourceMappingURL=chunk-arch-alert.js.map

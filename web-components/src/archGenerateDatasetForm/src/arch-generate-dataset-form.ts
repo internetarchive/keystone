@@ -20,7 +20,7 @@ import {
 import { AlertClass, ArchAlert } from "../../archAlert/index";
 import "./arch-job-category-section";
 import { ArchJobCategorySection } from "./arch-job-category-section";
-import { JobButtonType } from "./arch-job-card";
+import { ArchJobCard, JobButtonType } from "./arch-job-card";
 
 import Styles from "./styles";
 
@@ -324,19 +324,48 @@ export class ArchGenerateDatasetForm extends LitElement {
       target.tagName === "BUTTON" &&
       target.dataset.buttonType === JobButtonType.Generate
     ) {
-      // Disable the button.
-      (target as HTMLButtonElement).disabled = true;
+      // Disable the button and display the starting... indicator.
+      const button = target as HTMLButtonElement;
+      button.disabled = true;
       const { jobId, sample: sampleStr } = target.dataset as {
         jobId: string;
         sample: string;
       };
       // Cast presence / absence of sample value to bool.
       const sample = sampleStr !== undefined;
-      // Run a job.
+      // Update the internal state of this job to SUBMITTED.
+      const { collectionJobStates } = this;
+      let { sourceCollectionId } = this;
+      sourceCollectionId = sourceCollectionId as Collection["id"];
+      const jobStateKey = `${jobId}${sample ? "-SAMPLE" : ""}`;
+      const jobStates = collectionJobStates[sourceCollectionId];
+      // Create a synthetic/dummy JobState object with state = SUBMITTED in order to
+      // cause the ArchJobCard button to update its displayed text. This object will
+      // be overwritten with a real JobState object once polling starts.
+      jobStates[jobStateKey] = {
+        category_name: "",
+        collection_id: sourceCollectionId,
+        collection_name: "",
+        finished_time: new Date(),
+        id: "",
+        is_sample: sample,
+        job_id: jobId,
+        name: "",
+        start_time: new Date(),
+        state: ProcessingState.SUBMITTED,
+      };
+      // Request a manual re-render.
+      const archJobCard = target.closest("arch-job-card") as ArchJobCard;
+      archJobCard.requestUpdate();
+      // Make the request.
       const res = await this.runJob(jobId, sample);
       if (!res.ok) {
         // Re-enable the button on error.
-        (target as HTMLButtonElement).disabled = false;
+        button.disabled = false;
+        // Delete the synthetic JobState object and request a manual re-render.
+        delete jobStates[jobStateKey];
+        archJobCard.requestUpdate();
+        return;
       }
       this.emailAlert.show();
       this.startPolling();

@@ -1,5 +1,8 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
+import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
+
+import "../../lib/webservices/src/aitLoadingSpinner/index";
 
 import { AvailableJob, JobState, ProcessingState } from "../../lib/types";
 
@@ -41,6 +44,13 @@ export class ArchJobCard extends LitElement {
         "job-runbutton",
       ];
     }
+    if (jobState.state === ProcessingState.SUBMITTED) {
+      return [
+        `Starting&nbsp;<ait-loading-spinner style="position: absolute; --ait-loading-spinner-color: #2991CC"></ait-loading-spinner>`,
+        JobButtonType.Status,
+        "job-statebutton",
+      ];
+    }
     if (jobState.state === ProcessingState.FINISHED) {
       return [
         `View ${sampleStr}Dataset`,
@@ -63,9 +73,9 @@ export class ArchJobCard extends LitElement {
           this.jobIdStatesMap[`${jobId}-SAMPLE`] ?? null,
           this.jobIdStatesMap[jobId] ?? null,
         ];
-    const [sampleButtonText, sampleButtonType, sampleClassName] =
+    const [sampleButtonHTML, sampleButtonType, sampleClassName] =
       this.jobStateToButtonProps(sampleJobState, true);
-    const [buttonText, buttonType, className] = this.jobStateToButtonProps(
+    const [buttonHTML, buttonType, className] = this.jobStateToButtonProps(
       jobState,
       false
     );
@@ -84,7 +94,7 @@ export class ArchJobCard extends LitElement {
                     href="/datasets/${(sampleJobState as JobState).id}"
                     class="button ${sampleClassName}"
                   >
-                    ${sampleButtonText}
+                    ${unsafeHTML(sampleButtonHTML)}
                   </a>
                 `
               : html`
@@ -96,7 +106,7 @@ export class ArchJobCard extends LitElement {
                     data-sample=""
                     title="${title}"
                   >
-                    ${sampleButtonText}
+                    ${unsafeHTML(sampleButtonHTML)}
                   </button>
                 `}
           </div>
@@ -107,7 +117,7 @@ export class ArchJobCard extends LitElement {
                     href="/datasets/${(jobState as JobState).id}"
                     class="button ${className}"
                   >
-                    ${buttonText}
+                    ${unsafeHTML(buttonHTML)}
                   </a>
                 `
               : html`
@@ -118,7 +128,7 @@ export class ArchJobCard extends LitElement {
                     data-button-type="${buttonType}"
                     title="${title}"
                   >
-                    ${buttonText}
+                    ${unsafeHTML(buttonHTML)}
                   </button>
                 `}
           </div>

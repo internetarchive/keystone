@@ -1,4 +1,5 @@
 import { LitElement } from "lit";
+import "../../lib/webservices/src/aitLoadingSpinner/index";
 import { AvailableJob, JobState } from "../../lib/types";
 export declare enum JobButtonType {
     Generate = "generate",
