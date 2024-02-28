@@ -1,4 +1,3 @@
-
 {% set breadcrumbs = (("Collections", "collections"), (collection.name, ("collection-detail", collection.id))) %}
 {% set metadata = collection.metadata or {} %}
 
@@ -44,7 +43,7 @@
           {% endif %}
 
           <div>
-            <h3>{{ collection.size_bytes | filesizeformat }}</h3>
+            <h3>{{ collection.size_bytes | filesizeformat(binary=True) }}</h3>
             <p><i class="fa fa-database fa-4x" aria-hidden="true"></i></p>
           </div>
 
