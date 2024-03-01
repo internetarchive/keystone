@@ -84,6 +84,11 @@ urlpatterns = [
         name="collection_surveyor",
     ),
     path(
+        "collection_surveyor/search/",
+        views.collection_surveyor_search,
+        name="collection_surveyor_search",
+    ),
+    path(
         "admin/keystone/user/import_ait_users",
         views.import_ait_users,
         name="import_ait_users",

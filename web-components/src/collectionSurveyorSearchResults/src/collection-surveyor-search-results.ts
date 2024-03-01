@@ -5,16 +5,21 @@ import { eventOptions } from "lit/decorators/event-options.js";
 import "../../collectionSurveyorFacet/index";
 import "../../collectionSurveyorPagination/index";
 import "../../collectionSurveyorCart/index";
+import "../../collectionSurveyorSearchBar/index";
+import "../../collectionSurveyorActiveFilters/index";
 
 import {
   CollectionSearchResult,
   Facets,
   CollectionCheckboxEventDetail,
   CollectionSelectedDetail,
+  SelectedFacets,
+  SolrData,
   CollectionRemovedFromCartDetail,
 } from "../../lib/types";
 
 import { humanBytes } from "../../lib/webservices/src/lib/helpers";
+import { callSearchApi } from "../../lib/api/search";
 
 @customElement("collection-surveyor-search-results")
 export class CollectionSurveyorSearchResults extends LitElement {
@@ -22,13 +27,29 @@ export class CollectionSurveyorSearchResults extends LitElement {
 
   @property({ type: Object }) facets?: Facets = {};
 
+  @property({ type: Boolean }) isLoading = true;
+
   @state() collectionsSelected: {
     [collectionName: string]: CollectionSelectedDetail;
   } = {};
 
+  @state()
+  selectedFacets: SelectedFacets = {
+    f_collectionName: [],
+    f_organizationName: [],
+    f_organizationType: [],
+  };
+
+  @state() searchTerm = "";
+
   @state() currentPage = 1;
 
   @property({ type: Number }) itemsPerPage = 10;
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.search();
+  }
 
   private get collectionsLength() {
     return this.collections ? this.collections.length : 0;
@@ -90,6 +111,74 @@ export class CollectionSurveyorSearchResults extends LitElement {
     this.currentPage = Number(event.detail);
   }
 
+  // event handler for selecting facets
+  handleFacetSelected(event: CustomEvent) {
+    const facetName = (event.detail as { facetName: string }).facetName;
+    const facetFieldName = (
+      event.detail as { facetFieldName: keyof SelectedFacets }
+    ).facetFieldName;
+
+    this.selectedFacets = {
+      ...this.selectedFacets,
+      [facetFieldName]: [...this.selectedFacets[facetFieldName], facetName],
+    };
+
+    this.search();
+  }
+
+  // event handler for deselecting facets
+  handleFacetDeselected(event: CustomEvent) {
+    const facetName = (event.detail as { facetName: string }).facetName;
+    const facetFieldName = (
+      event.detail as { facetFieldName: keyof SelectedFacets }
+    ).facetFieldName;
+
+    // create new selectedFacets object, which is needed to update state and re-render
+    this.selectedFacets = {
+      ...this.selectedFacets,
+      [facetFieldName]: this.selectedFacets[facetFieldName].filter(
+        (value) => value !== facetName
+      ),
+    };
+
+    this.search();
+  }
+
+  private get filterQuery(): string[] {
+    return Object.entries(this.selectedFacets).flatMap(
+      ([facetFieldName, facetValues]: [string, string[]]) => {
+        // remove f_ prefix, eg. f_collectionName => collectionName
+        const searchableFieldName = facetFieldName.slice(2);
+
+        return facetValues.map(
+          (facetValue: string) => `${searchableFieldName}:"${facetValue}"`
+        );
+      }
+    );
+  }
+
+  // event handler for search term
+  private handleSearchClicked(event: CustomEvent) {
+    const searchText = (event.detail as { searchText: string }).searchText;
+    this.searchTerm = searchText;
+
+    this.search();
+  }
+
+  private search(): void {
+    this.isLoading = true;
+
+    callSearchApi(this.searchTerm, this.filterQuery)
+      .then((data: SolrData) => {
+        this.collections = data.collections;
+        this.facets = data.facets;
+        this.isLoading = false;
+      })
+      .catch((error) => {
+        this.isLoading = false;
+      });
+  }
+
   render() {
     return html`
       <!-- Collections Cart -->
@@ -98,55 +187,96 @@ export class CollectionSurveyorSearchResults extends LitElement {
         @collection-removed-from-cart=${this.handleRemoveCollectionFromCart}
       ></collection-surveyor-cart>
 
+      <!-- Search Bar -->
+      <collection-surveyor-search-bar
+        .searchText=${this.searchTerm}
+        @search-clicked="${this.handleSearchClicked}"
+      ></collection-surveyor-search-bar>
+
       <!-- Facets and Collections-->
       <div class="facets-and-collections-container">
-        <!-- Facets  -->
-        <div class="facets-container">
-          <div>
-            <h4>Narrow Your Results</h4>
-            ${this.facets
-              ? html` ${Object.entries(this.facets).map(
-                  ([key, value]) => html`
-                    <collection-surveyor-facet
-                      .facetField=${key}
-                      .facetFieldResults=${value}
-                    ></collection-surveyor-facet>
-                  `
-                )}`
-              : html`<p>No facets available</p>`}
+        <!-- Loading icon -->
+          <div class="loading">
+            ${this.isLoading ? html`<div class="spinner"></div>` : html``}
           </div>
-        </div>
 
-        <!-- Collections -->
-        <div class="collections-container">
-          <!-- Pagination top of page -->
-          <collection-surveyor-pagination
-            .currentPage="${this.currentPage}"
-            .totalResults="${this.collectionsLength}"
-            .itemsPerPage="${this.itemsPerPage}"
-            @page-changed="${this.handlePageChange}"
-          ></collection-surveyor-pagination>
+        ${
+          this.collectionsLength !== 0
+            ? html`
+                <!-- Facets  -->
+                <div class="facets-container">
+                  <div>
+                    <h4>Narrow Your Results</h4>
+                    ${this.facets
+                      ? html` ${Object.entries(this.facets).map(
+                          ([key, value]) => html`
+                            <collection-surveyor-facet
+                              .facetField=${key}
+                              .facetFieldResults=${value}
+                              .selectedfacetFieldResults=${this.selectedFacets[
+                                key as keyof SelectedFacets
+                              ]}
+                              @facet-selected=${this.handleFacetSelected}
+                              @facet-deselected=${this.handleFacetDeselected}
+                            ></collection-surveyor-facet>
+                          `
+                        )}`
+                      : html`<p>No facets available</p>`}
+                  </div>
+                </div>
 
-          <!-- Collections -->
-          ${this.paginatedResults?.map(
-            (collection) => html`
-              <collection-surveyor-search-result
-                .collection=${collection}
-                .isChecked=${collection.collectionName in
-                this.collectionsSelected}
-                @update-collections-selected="${this
-                  .handleUpdateCollectionsSelected}"
-              ></collection-surveyor-search-result>
-            `
-          )}
+                <!-- Collections -->
+                <div class="collections-container">
+                  <!-- Active Filters -->
+                  <collection-surveyor-active-filters
+                    .activeFilters=${this.selectedFacets}
+                    @facet-deselected=${this.handleFacetDeselected}
+                  ></collection-surveyor-active-filters>
 
-          <!-- Pagination bottom of page -->
-          <collection-surveyor-pagination
-            .currentPage="${this.currentPage}"
-            .totalResults="${this.collectionsLength}"
-            .itemsPerPage="${this.itemsPerPage}"
-            @page-changed="${this.handlePageChange}"
-          ></collection-surveyor-pagination>
+                  <!-- Pagination top of page -->
+                  <collection-surveyor-pagination
+                    .currentPage="${this.currentPage}"
+                    .totalResults="${this.collectionsLength}"
+                    .itemsPerPage="${this.itemsPerPage}"
+                    @page-changed="${this.handlePageChange}"
+                  ></collection-surveyor-pagination>
+
+                  <!-- Collections -->
+                  ${this.paginatedResults?.map(
+                    (collection) => html`
+                      <collection-surveyor-search-result
+                        .collection=${collection}
+                        .isChecked=${collection.collectionName in
+                        this.collectionsSelected}
+                        @update-collections-selected="${this
+                          .handleUpdateCollectionsSelected}"
+                      ></collection-surveyor-search-result>
+                    `
+                  )}
+
+                  <!-- Pagination bottom of page -->
+                  <collection-surveyor-pagination
+                    .currentPage="${this.currentPage}"
+                    .totalResults="${this.collectionsLength}"
+                    .itemsPerPage="${this.itemsPerPage}"
+                    @page-changed="${this.handlePageChange}"
+                  ></collection-surveyor-pagination>
+                </div>
+              `
+            : html``
+        }
+
+        ${
+          this.collectionsLength === 0 && !this.isLoading
+            ? html`
+                <div class="no-results-message">
+                  <h2>No Results Found For Your Search</h2>
+                  <p>Try a new search or clear your previous search</p>
+                  <p></p>
+                </div>
+              `
+            : html``
+        }
         </div>
       </div>
     `;
@@ -156,13 +286,13 @@ export class CollectionSurveyorSearchResults extends LitElement {
     .facets-and-collections-container {
       display: flex;
       background-color: rgb(248, 248, 248);
+      position: relative;
     }
 
     .facets-container {
       display: flex;
-      padding: 10px;
-      padding-left: 50px;
-      max-width: 400px;
+      padding: 10px 30px 10px 50px;
+      width: 40%;
     }
 
     .collections-container {
@@ -171,6 +301,32 @@ export class CollectionSurveyorSearchResults extends LitElement {
       padding: 10px;
       padding-right: 50px;
       width: -webkit-fill-available;
+    }
+
+    .no-results-message {
+      margin: auto;
+      text-align: center;
+    }
+
+    .loading {
+      height: 100px;
+      padding-left: 50%;
+      position: absolute;
+    }
+
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #333;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
   `;
 }
