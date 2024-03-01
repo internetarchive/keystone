@@ -37,6 +37,15 @@ export interface FacetResultMap {
     name: string;
     count: number;
 }
+export interface SelectedFacets {
+    f_collectionName: string[];
+    f_organizationName: string[];
+    f_organizationType: string[];
+}
+export interface SolrData {
+    collections: CollectionSearchResult[];
+    facets: Facets;
+}
 export interface CollectionRemovedFromCartDetail {
     collectionName: string;
 }

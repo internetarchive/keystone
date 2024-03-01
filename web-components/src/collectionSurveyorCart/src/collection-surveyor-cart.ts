@@ -4,6 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 import { CollectionSelectedDetail } from "../../lib/types";
 
 import { humanBytes } from "../../lib/webservices/src/lib/helpers";
+import { EventHelpers } from "../../lib/eventHelpers";
 
 @customElement("collection-surveyor-cart")
 export class CollectionSurveyorCart extends LitElement {
@@ -22,12 +23,12 @@ export class CollectionSurveyorCart extends LitElement {
   }
 
   handleRemoveCollectionFromCart(collectionName: string) {
+    this.emitEvent("collection-removed-from-cart", { collectionName });
+  }
+
+  private emitEvent(eventName: string, detail = {}) {
     this.dispatchEvent(
-      new CustomEvent("collection-removed-from-cart", {
-        bubbles: true,
-        composed: true,
-        detail: { collectionName },
-      })
+      EventHelpers.createEvent(eventName, detail ? { detail } : {})
     );
   }
 
