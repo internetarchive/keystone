@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core import management
+from django.forms import SelectMultiple
 from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
@@ -23,13 +24,15 @@ from .context_processors import helpers as ctx_helpers
 from .forms import CSVUploadForm
 from .helpers import parse_csv, parse_solr_facet_data
 from .models import (
+    Account,
     Collection,
     Dataset,
     JobFile,
+    Team,
     User,
 )
 from .solr import SolrClient
-from . import ait_user
+from . import ait
 
 
 ###############################################################################
@@ -270,7 +273,7 @@ def get_ait_user_info(request):
     user_id = request.GET.get("user_id")
     if user_id is None:
         return HttpResponseBadRequest("user_id required")
-    user_info = ait_user.get_ait_user_info(user_id)
+    user_info = ait.get_ait_user_info(user_id)
     # Remove password_hash.
     del user_info["password_hash"]
     return JsonResponse(user_info, safe=False)
@@ -282,8 +285,72 @@ def get_ait_account_users_info(request):
     account_id = request.GET.get("account_id")
     if account_id is None:
         return HttpResponseBadRequest("account_id required")
-    user_infos = ait_user.get_ait_account_users_info(account_id)
+    user_infos = ait.get_ait_account_users_info(account_id)
     # Remove password_hash.
     for user_info in user_infos:
         del user_info["password_hash"]
     return JsonResponse(user_infos, safe=False)
+
+
+###############################################################################
+# AIT Collection Import
+###############################################################################
+
+
+@require_staff_or_superuser
+def import_ait_collections(request):
+    """Import AIT collections by invoking the import_ait_collections management command
+    and return the command's STDOUT as the JSON response {"output": <stdout>}
+    """
+    if request.method == "GET":
+        return render(
+            request,
+            "keystone/import_ait_collections.html",
+            context={
+                "account_id_name_pairs": [
+                    (x.id, x.name) for x in Account.objects.all()
+                ],
+                "team_id_name_pairs": [(x.id, x.name) for x in Team.objects.all()],
+                "user_id_name_pairs": [(x.id, x.username) for x in User.objects.all()],
+                "SelectMultiple": SelectMultiple,
+            },
+        )
+
+    if request.method == "POST":
+        data = json.loads(request.body)
+        collection_ids = data["collectionIds"]
+        account_ids = data["accountIds"]
+        team_ids = data["teamIds"]
+        user_ids = data["userIds"]
+        sio = StringIO()
+        management.call_command(
+            "import_ait_collections",
+            collection_ids,
+            authorize_keystone_account_ids=account_ids,
+            authorize_keystone_team_ids=team_ids,
+            authorize_keystone_user_ids=user_ids,
+            stdout=sio,
+        )
+        return JsonResponse({"output": sio.getvalue()})
+
+    return HttpResponseNotFound()
+
+
+@require_staff_or_superuser
+def get_ait_collection_info(request):
+    """Return a specific AIT collection dict."""
+    collection_id = request.GET.get("collection_id")
+    if collection_id is None:
+        return HttpResponseBadRequest("collection_id required")
+    collection_info = ait.get_ait_collection_info(collection_id)
+    return JsonResponse(collection_info, safe=False)
+
+
+@require_staff_or_superuser
+def get_ait_account_collections_info(request):
+    """Return a list of AIT account collection dicts."""
+    account_id = request.GET.get("account_id")
+    if account_id is None:
+        return HttpResponseBadRequest("account_id required")
+    collection_infos = ait.get_ait_account_collections_info(account_id)
+    return JsonResponse(collection_infos, safe=False)

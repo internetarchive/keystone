@@ -90,12 +90,14 @@ class ArchAPI:
                 method=method,
                 url=f"{base_url}/{path.removeprefix('/')}",
                 params=params,
-                headers={}
-                if user.is_anonymous
-                else {
-                    "X-API-USER": user.arch_username,
-                    "X-API-KEY": settings.ARCH_SYSTEM_API_KEY,
-                },
+                headers=(
+                    {}
+                    if user.is_anonymous
+                    else {
+                        "X-API-USER": user.arch_username,
+                        "X-API-KEY": settings.ARCH_SYSTEM_API_KEY,
+                    }
+                ),
                 json=data,
                 timeout=timeout,
                 stream=proxy,

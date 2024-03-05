@@ -1,12 +1,6 @@
 {% extends "keystone/base.html" %}
 {% block header_title %}Import AIT Users{% endblock header_title %}
 
-{% block navigation_link %}
-    <a href="/admin/keystone">Keystone home</a>
-    <br>
-    <a href="/admin/keystone/user">View all users</a>
-{% endblock navigation_link %}
-
 {% block head %}
     {{ super() }}
 
@@ -143,7 +137,7 @@
              }
          });
          if (!response.ok) {
-           outputTextarea.value = await response.text();
+           outputTextarea.value = "Something went wrong. Check the Keystone log for details."
          }
          const data = await response.json();
          outputTextarea.value = data.output;
@@ -159,23 +153,23 @@
 
 <div class="row">
   <div class="small-12 columns">
-    <form>
+    <form style="margin-top: 1rem">
       Import user(s) by ID or Account ID?
       <div style="margin-top: 1em; margin-left: 1em;">
-        <input type="radio" id="oneUser" name="userOrAccount" value="one">
+        <input type="radio" id="oneUser" name="userOrAccount" value="one" autocomplete="off">
         <label for="oneUser">&nbsp;User ID</label>
-        <input type="radio" id="accountUsers" name="userOrAccount" value="all">
+        <input type="radio" id="accountUsers" name="userOrAccount" value="all" autocomplete="off">
         <label for="accountUsers">&nbsp;Account ID</label>
       </div>
 
       <div id="importUserWrapper" class="hidden">
         <label for="userId">User ID</label>
-        <input id="userId" type="number">
+        <input id="userId" type="number" autocomplete="off">
       </div>
 
       <div id="importAccountWrapper" class="hidden">
         <label for="accountId">Account ID</label>
-        <input id="accountId" type="number">
+        <input id="accountId" type="number" autocomplete="off">
       </div>
 
       <button id="loadUserInfo" class="hidden">Load user info</button>
