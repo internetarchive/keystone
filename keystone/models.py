@@ -1,4 +1,5 @@
 """Core Django models for Keystone."""
+
 from collections import defaultdict, namedtuple
 from functools import reduce
 from operator import or_
