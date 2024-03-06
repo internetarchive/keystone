@@ -1,6 +1,12 @@
 import { JSONSchemaType } from "ajv";
 import { SomeJSONSchema } from "ajv/lib/types/json-schema";
 
+export { SomeJSONSchema };
+
+import { ArchJobCard } from "../archGenerateDatasetForm/src/arch-job-card";
+
+export type ValueOf<T> = T[keyof T];
+
 export enum ProcessingState {
   SUBMITTED = "SUBMITTED",
   QUEUED = "QUEUED",
@@ -79,13 +85,34 @@ export type Dataset = {
   collection_id: number;
   collection_name: string;
   finished_time: Date;
-  id: string;
+  id: number;
   is_sample: boolean;
   job_id: string;
   name: string;
   start_time: Date;
   state: ProcessingState;
 };
+
+type DatasetStartTimeString = string;
+
+export type JobIdStatesMap = Record<
+  Dataset["job_id"],
+  Array<[Dataset["id"], DatasetStartTimeString, Dataset["state"]]>
+>;
+
+// AvailableJob parameters types
+
+type GlobalJobParameters = {
+  sample: boolean;
+};
+
+type NamedEntityExtractionParameters = GlobalJobParameters & {
+  language: string;
+};
+
+export type JobParameters = NamedEntityExtractionParameters;
+export type JobParametersKey = keyof JobParameters;
+export type JobParametersValue = JobParameters[JobParametersKey];
 
 // Datasets objects are also used to convey job state.
 export type JobState = Dataset;
@@ -113,6 +140,7 @@ export type AvailableJob = {
   id: JobId;
   name: string;
   description: string;
+  parameters_schema: JSONSchemaType<JobParameters>;
 };
 
 export type AvailableJobsCategory = {
@@ -152,8 +180,10 @@ export type PublishedDatasetMetadata = {
   title?: string;
 };
 
+export type PublishedDatasetMetadataKey = keyof PublishedDatasetMetadata;
+
 export type PublishedDatasetMetadataValue =
-  PublishedDatasetMetadata[keyof PublishedDatasetMetadata];
+  PublishedDatasetMetadata[PublishedDatasetMetadataKey];
 
 export type PublishedDatasetMetadataJSONSchema =
   JSONSchemaType<PublishedDatasetMetadata>;
@@ -193,3 +223,15 @@ export type ApiParams<T> = Array<
 >;
 
 export type ApiPath = "/collections" | "/datasets";
+
+// Custom Events
+
+export type GenerateDatasetDetail = {
+  archJobCard: ArchJobCard;
+};
+
+export type GlobalModalDetail = {
+  elementToFocusOnClose: HTMLElement;
+  title: string;
+  message: string;
+};

@@ -1,2 +1,2 @@
-import"./chunk-query-assigned-elements.js";import"./chunk-state.js";import"./chunk-styles.js";import"./chunk-query-all.js";import"./chunk-arch-alert.js";export{A as ArchGenerateDatasetForm}from"./chunk-arch-generate-dataset-form.js";
+import"./chunk-query-assigned-elements.js";import"./chunk-state.js";import"./chunk-styles.js";import"./chunk-arch-json-schema-form.js";export{A as ArchGenerateDatasetForm}from"./chunk-helpers2.js";import"./chunk-scale-large.js";import"./chunk-arch-sub-collection-builder.js";import"./chunk-define-element.js";import"./chunk-directive.js";import"./chunk-helpers.js";
 //# sourceMappingURL=arch-generate-dataset-form.js.map

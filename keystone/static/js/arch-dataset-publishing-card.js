@@ -1,4 +1,4 @@
-import{i as t,_ as a,e as i,s as e,y as s,a as d}from"./chunk-query-assigned-elements.js";import{t as n}from"./chunk-state.js";import{g as o,d as r,i as h}from"./chunk-styles.js";import{i as l}from"./chunk-helpers.js";import"./chunk-arch-generate-dataset-form.js";import"./chunk-arch-sub-collection-builder.js";import"./chunk-arch-loading-indicator.js";import{_ as c}from"./chunk-arch-dataset-metadata-form.js";import"./chunk-query-all.js";import"./chunk-arch-alert.js";var u=[o,t`
+import{i as t,_ as e,e as i,s as a,y as s,a as n}from"./chunk-query-assigned-elements.js";import{t as o}from"./chunk-state.js";import{g as r,d,i as l}from"./chunk-styles.js";import{i as c}from"./chunk-helpers.js";import"./chunk-helpers2.js";import"./chunk-arch-sub-collection-builder.js";import"./chunk-arch-loading-indicator.js";import"./arch-dataset-metadata-form.js";import"./chunk-arch-json-schema-form.js";import"./chunk-define-element.js";import"./chunk-scale-large.js";import"./chunk-directive.js";var h=[r,t`
     :host > div.container {
       display: flex;
     }
@@ -32,7 +32,7 @@ import{i as t,_ as a,e as i,s as e,y as s,a as d}from"./chunk-query-assigned-ele
     }
 
     div.metadata-edit {
-      background-color: ${r};
+      background-color: ${d};
       border-radius: 8px;
       padding: 1rem 1.5rem;
     }
@@ -49,17 +49,17 @@ import{i as t,_ as a,e as i,s as e,y as s,a as d}from"./chunk-query-assigned-ele
     div.form-buttons {
       text-align: right;
     }
-  `];const m=c,b=m.propertiesOrder;var p,f;!function(t){t[t.Loading=0]="Loading",t[t.Unpublished=1]="Unpublished",t[t.PrePublish=2]="PrePublish",t[t.Publishing=3]="Publishing",t[t.Published=4]="Published",t[t.Unpublishing=5]="Unpublishing"}(p||(p={})),function(t){t[t.Displaying=0]="Displaying",t[t.Editing=1]="Editing",t[t.Saving=2]="Saving"}(f||(f={}));const g=Object.keys(m.properties).sort(((t,a)=>b.indexOf(t)<b.indexOf(a)?-1:1));let v=class extends e{constructor(){super(...arguments),this.pubState=p.Loading,this.pubInfo=void 0,this.metadataState=f.Displaying,this.metadata=void 0}connectedCallback(){super.connectedCallback(),this._fetchInitialData()}get _metadataFormData(){var t;const a={},i=Array.from(new FormData(this.metadataForm.form).entries()).filter((([,t])=>""!==t.trim())).map((([t,a])=>[t,a.replaceAll("\t"," ").replaceAll("\n","<br>")]));for(const[e,s]of i)a[e]=(null!==(t=a[e])&&void 0!==t?t:[]).concat(s);return a}render(){const{pubState:t}=this;if(t===p.Loading)return s`<arch-loading-indicator></arch-loading-indicator>`;const{metadata:a}=this,i=this.pubInfo;return s`
+  `],u="https://arch.archive-it.org/js/pub-metadata-schema.json",m="http://json-schema.org/draft-07/schema",p="Published Dataset Metadata",b="object",g=["title","description","creator","subject","licenseurl"],f={title:{type:"string",description:"A title for this dataset.",minLength:8,maxLength:100,nullable:!0,title:"Title"},description:{type:"string",description:"A description of this dataset.",minLength:8,maxLength:1e3,nullable:!0,title:"Description"},creator:{description:"The name(s) of the author(s) of this dataset.",items:{type:"string",minLength:8,maxLength:64},nullable:!0,type:"array",title:"Author(s)",uniqueItems:!0},subject:{description:"A list of keywords that describe this dataset.",items:{type:"string",minLength:4,maxLength:16},nullable:!0,type:"array",title:"Keyword(s)",uniqueItems:!0},licenseurl:{type:"string",description:"The license to apply to this dataset.",nullable:!0,title:"Access Rights",oneOf:[{const:"https://creativecommons.org/licenses/by/4.0/",title:"CC BY",description:"This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, so long as attribution is given to the creator. The license allows for commercial use."},{const:"https://creativecommons.org/licenses/by-sa/4.0/",title:"CC BY-SA",description:"This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, so long as attribution is given to the creator. The license allows for commercial use. If you remix, adapt, or build upon the material, you must license the modified material under identical terms."},{const:"https://creativecommons.org/licenses/by-nc/4.0/",title:"CC BY-NC",description:"This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format for noncommercial purposes only, and only so long as attribution is given to the creator."},{const:"https://creativecommons.org/licenses/by-nc-sa/4.0/",title:"CC BY-NC-SA",description:"This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format for noncommercial purposes only, and only so long as attribution is given to the creator. If you remix, adapt, or build upon the material, you must license the modified material under identical terms."},{const:"https://creativecommons.org/licenses/by-nd/4.0/",title:"CC BY-ND",description:"This license allows reusers to copy and distribute the material in any medium or format in unadapted form only, and only so long as attribution is given to the creator. The license allows for commercial use."},{const:"https://creativecommons.org/licenses/by-nc-nd/4.0/",title:"CC BY-NC-ND",description:"This license allows reusers to copy and distribute the material in any medium or format in unadapted form only, for noncommercial purposes only, and only so long as attribution is given to the creator."},{const:"https://creativecommons.org/publicdomain/zero/1.0/",title:"CC0",description:"Public Domain"}]}},y={$id:u,$schema:m,title:p,type:b,propertiesOrder:g,properties:f},v=Object.freeze({__proto__:null,$id:u,$schema:m,title:p,type:b,propertiesOrder:g,properties:f,default:y});const P=v,S=P.propertiesOrder;var $,k;!function(t){t[t.Loading=0]="Loading",t[t.Unpublished=1]="Unpublished",t[t.PrePublish=2]="PrePublish",t[t.Publishing=3]="Publishing",t[t.Published=4]="Published",t[t.Unpublishing=5]="Unpublishing"}($||($={})),function(t){t[t.Displaying=0]="Displaying",t[t.Editing=1]="Editing",t[t.Saving=2]="Saving"}(k||(k={}));const w=Object.keys(P.properties).sort(((t,e)=>S.indexOf(t)<S.indexOf(e)?-1:1));let I=class extends a{constructor(){super(...arguments),this.pubState=$.Loading,this.pubInfo=void 0,this.metadataState=k.Displaying,this.metadata=void 0}connectedCallback(){super.connectedCallback(),this._fetchInitialData()}get _metadataFormData(){var t;const e={},i=Array.from(new FormData(this.metadataForm.form).entries()).filter((([,t])=>""!==t.trim())).map((([t,e])=>[t,e.replaceAll("\t"," ").replaceAll("\n","<br>")]));for(const[a,s]of i)e[a]=(null!==(t=e[a])&&void 0!==t?t:[]).concat(s);return e}render(){const{pubState:t}=this;if(t===$.Loading)return s`<arch-loading-indicator></arch-loading-indicator>`;const{metadata:e}=this,i=this.pubInfo;return s`
       <div class="container">
         <div class="detail">
           <dl>
             <div>
               <dt>Last Published</dt>
               <dd>
-                ${t===p.Published?l(i.time):"never"}
+                ${t===$.Published?c(i.time):"never"}
               </dd>
             </div>
-            ${t!==p.Published?s``:s`
+            ${t!==$.Published?s``:s`
                   <div>
                     <dt>ARK</dt>
                     <dd>
@@ -73,11 +73,11 @@ import{i as t,_ as a,e as i,s as e,y as s,a as d}from"./chunk-query-assigned-ele
 
           <!-- Metadata section header -->
           <h2>
-            ${t<p.PrePublish||t===p.Publishing?"":t===p.PrePublish?s`<i>Enter Metadata</i>`:"Metadata"}
-            ${t<p.Published||this.metadataState===f.Editing?"":s`
+            ${t<$.PrePublish||t===$.Publishing?"":t===$.PrePublish?s`<i>Enter Metadata</i>`:"Metadata"}
+            ${t<$.Published||this.metadataState===k.Editing?"":s`
                   <button
                     class="text"
-                    @click=${()=>this.metadataState=f.Editing}
+                    @click=${()=>this.metadataState=k.Editing}
                   >
                     (edit)
                   </button>
@@ -87,14 +87,14 @@ import{i as t,_ as a,e as i,s as e,y as s,a as d}from"./chunk-query-assigned-ele
           <!-- Metadata display list -->
           <div
             class="metadata-display"
-            ?hidden=${t<p.Published||this.metadataState===f.Editing}
+            ?hidden=${t<$.Published||this.metadataState===k.Editing}
           >
-            ${void 0===a?s`<arch-loading-indicator></arch-loading-indicator>`:0===Object.keys(a).length?s`<i>none</i>`:s`
+            ${void 0===e?s`<arch-loading-indicator></arch-loading-indicator>`:0===Object.keys(e).length?s`<i>none</i>`:s`
                   <dl>
-                    ${g.filter((t=>void 0!==a[t])).map((t=>{const i=function(t){return m.properties[t].title}(t);let e=a[t];return Array.isArray(e)||(e=[e]),s`
+                    ${w.filter((t=>void 0!==e[t])).map((t=>{const i=function(t){return P.properties[t].title}(t);let a=e[t];return Array.isArray(a)||(a=[a]),s`
                           <div>
                             <dt>${i}</dt>
-                            ${e.map((t=>s`<dd>${t}</dd>`))}
+                            ${a.map((t=>s`<dd>${t}</dd>`))}
                           </div>
                         `}))}
                   </dl>
@@ -104,23 +104,24 @@ import{i as t,_ as a,e as i,s as e,y as s,a as d}from"./chunk-query-assigned-ele
           <!-- Metadata edit form -->
           <div
             class="metadata-edit"
-            ?hidden=${t!==p.PrePublish&&this.metadataState!==f.Editing&&this.metadataState!==f.Saving}
+            ?hidden=${t!==$.PrePublish&&this.metadataState!==k.Editing&&this.metadataState!==k.Saving}
           >
-            ${t!==p.PrePublish&&this.metadataState!==f.Editing&&this.metadataState!==f.Saving?s``:s`
+            ${t!==$.PrePublish&&this.metadataState!==k.Editing&&this.metadataState!==k.Saving?s``:s`
                   <arch-dataset-metadata-form
-                    metadata="${JSON.stringify(null!=a?a:"")}"
+                    .schema=${v}
+                    .data=${null!=e?e:{}}
                   >
                   </arch-dataset-metadata-form>
                 `}
             <br />
             <div
-              ?hidden=${t===p.PrePublish}
+              ?hidden=${t===$.PrePublish}
               class="form-buttons"
             >
               <button
                 type="button"
-                @click=${()=>this.metadataState=f.Displaying}
-                ?disabled=${this.metadataState===f.Saving}
+                @click=${()=>this.metadataState=k.Displaying}
+                ?disabled=${this.metadataState===k.Saving}
               >
                 Cancel
               </button>
@@ -128,9 +129,9 @@ import{i as t,_ as a,e as i,s as e,y as s,a as d}from"./chunk-query-assigned-ele
                 type="button"
                 class="primary"
                 @click=${()=>this._saveMetadata()}
-                ?disabled=${this.metadataState===f.Saving}
+                ?disabled=${this.metadataState===k.Saving}
               >
-                ${this.metadataState===f.Saving?s`<arch-loading-indicator
+                ${this.metadataState===k.Saving?s`<arch-loading-indicator
                       style="--color: #fff"
                       text="Saving"
                     ></arch-loading-indicator>`:s`Save`}
@@ -141,19 +142,19 @@ import{i as t,_ as a,e as i,s as e,y as s,a as d}from"./chunk-query-assigned-ele
 
         <button
           class="cancel"
-          @click=${()=>this.pubState=p.Unpublished}
-          ?hidden=${t!==p.PrePublish}
+          @click=${()=>this.pubState=$.Unpublished}
+          ?hidden=${t!==$.PrePublish}
         >
           Cancel
         </button>
 
         <button
-          class="${t===p.Unpublished?"primary":t===p.PrePublish?"success":t===p.Published?"danger":""}"
-          ?disabled=${t===p.Publishing||t===p.Unpublishing}
+          class="${t===$.Unpublished?"primary":t===$.PrePublish?"success":t===$.Published?"danger":""}"
+          ?disabled=${t===$.Publishing||t===$.Unpublishing}
           @click=${this._publishButtonClickHandler}
         >
-          ${t===p.Unpublished?"Publish":t===p.PrePublish?"Publish Now":t===p.Publishing?"Publish in progress...":t===p.Published?"Unpublish":t===p.Unpublishing?"Unpublishing...":""}
+          ${t===$.Unpublished?"Publish":t===$.PrePublish?"Publish Now":t===$.Publishing?"Publish in progress...":t===$.Published?"Unpublish":t===$.Unpublishing?"Unpublishing...":""}
         </button>
       </div>
-    `}async _fetchInitialData(){const t=await this._fetchPubInfo();return t?!1===t.complete?(this.pubState=p.Publishing,void setTimeout((()=>{this._fetchInitialData()}),3e3)):(this.pubInfo=t,this.pubState=p.Published,void this._pollItemMetadata()):(this.pubState=p.Unpublished,void(this.metadata={}))}async _pollItemMetadata(){const{pubState:t}=this,a=this.pubInfo,i=await this._fetchItemMetadata(a.item);void 0===i&&t===p.Published&&setTimeout((()=>{this._pollItemMetadata()}),3e3),this.metadata=i}async _fetchPubInfo(){const{datasetId:t}=this,a=await fetch(`/api/datasets/${t}/publication`);if(404!==a.status){const t=await a.json();return t.time=new Date(t.time),t}}async _fetchItemMetadata(t){const{datasetId:a}=this,i=await fetch(`/api/datasets/${a}/publication/${t}`);if(404!==i.status)return await i.json()}_publishButtonClickHandler(){const t=this.metadataForm;switch(this.pubState){case p.Unpublished:this.pubState=p.PrePublish;break;case p.PrePublish:t.form.checkValidity()?this._publish():t.form.reportValidity();break;case p.Published:window.confirm("Are you sure you want to unpublish this dataset?")&&this._unpublish()}}async _publish(){const{csrfToken:t,datasetId:a,_metadataFormData:i}=this;await fetch(`/api/datasets/${a}/publication`,{method:"POST",credentials:"same-origin",headers:{"X-CSRFToken":t},mode:"cors",body:JSON.stringify(i)}),this.pubState=p.Publishing,setTimeout((()=>{this._fetchInitialData()}),3e4)}async _unpublish(){const{csrfToken:t,datasetId:a,pubInfo:i}=this,{item:e}=i;this.pubState=p.Unpublishing,await fetch(`/api/datasets/${a}/publication/${e}`,{method:"DELETE",credentials:"same-origin",headers:{"X-CSRFToken":t},mode:"cors",body:JSON.stringify({delete:!0})}),this.pubState=p.Unpublished,this._fetchInitialData()}async _saveMetadata(){const{csrfToken:t,datasetId:a,pubInfo:i,_metadataFormData:e}=this,{item:s}=i;this.metadata=e,this.metadataState=f.Saving;const d=Object.assign(Object.fromEntries(g.map((t=>[t,[]]))),e);await fetch(`/api/datasets/${a}/publication/${s}`,{method:"POST",credentials:"same-origin",headers:{"X-CSRFToken":t},mode:"cors",body:JSON.stringify(d)}),this.metadataState=f.Displaying}};v.styles=u,a([i({type:String})],v.prototype,"datasetId",void 0),a([i({type:String})],v.prototype,"csrfToken",void 0),a([n()],v.prototype,"pubState",void 0),a([n()],v.prototype,"pubInfo",void 0),a([n()],v.prototype,"metadataState",void 0),a([n()],v.prototype,"metadata",void 0),a([h("arch-dataset-metadata-form")],v.prototype,"metadataForm",void 0),v=a([d("arch-dataset-publishing-card")],v);export{v as ArchDatasetPublishingCard};
+    `}async _fetchInitialData(){const t=await this._fetchPubInfo();return t?!1===t.complete?(this.pubState=$.Publishing,void setTimeout((()=>{this._fetchInitialData()}),3e3)):(this.pubInfo=t,this.pubState=$.Published,void this._pollItemMetadata()):(this.pubState=$.Unpublished,void(this.metadata={}))}async _pollItemMetadata(){const{pubState:t}=this,e=this.pubInfo,i=await this._fetchItemMetadata(e.item);void 0===i&&t===$.Published&&setTimeout((()=>{this._pollItemMetadata()}),3e3),this.metadata=i}async _fetchPubInfo(){const{datasetId:t}=this,e=await fetch(`/api/datasets/${t}/publication`);if(404!==e.status){const t=await e.json();return t.time=new Date(t.time),t}}async _fetchItemMetadata(t){const{datasetId:e}=this,i=await fetch(`/api/datasets/${e}/publication/${t}`);if(404!==i.status)return await i.json()}_publishButtonClickHandler(){const t=this.metadataForm;switch(this.pubState){case $.Unpublished:this.pubState=$.PrePublish;break;case $.PrePublish:t.form.checkValidity()?this._publish():t.form.reportValidity();break;case $.Published:window.confirm("Are you sure you want to unpublish this dataset?")&&this._unpublish()}}async _publish(){const{csrfToken:t,datasetId:e,_metadataFormData:i}=this;await fetch(`/api/datasets/${e}/publication`,{method:"POST",credentials:"same-origin",headers:{"X-CSRFToken":t},mode:"cors",body:JSON.stringify(i)}),this.pubState=$.Publishing,setTimeout((()=>{this._fetchInitialData()}),3e4)}async _unpublish(){const{csrfToken:t,datasetId:e,pubInfo:i}=this,{item:a}=i;this.pubState=$.Unpublishing,await fetch(`/api/datasets/${e}/publication/${a}`,{method:"DELETE",credentials:"same-origin",headers:{"X-CSRFToken":t},mode:"cors",body:JSON.stringify({delete:!0})}),this.pubState=$.Unpublished,this._fetchInitialData()}async _saveMetadata(){const{csrfToken:t,datasetId:e,pubInfo:i,_metadataFormData:a}=this,{item:s}=i;this.metadata=a,this.metadataState=k.Saving;const n=Object.assign(Object.fromEntries(w.map((t=>[t,[]]))),a);await fetch(`/api/datasets/${e}/publication/${s}`,{method:"POST",credentials:"same-origin",headers:{"X-CSRFToken":t},mode:"cors",body:JSON.stringify(n)}),this.metadataState=k.Displaying}};I.styles=h,e([i({type:String})],I.prototype,"datasetId",void 0),e([i({type:String})],I.prototype,"csrfToken",void 0),e([o()],I.prototype,"pubState",void 0),e([o()],I.prototype,"pubInfo",void 0),e([o()],I.prototype,"metadataState",void 0),e([o()],I.prototype,"metadata",void 0),e([l("arch-dataset-metadata-form")],I.prototype,"metadataForm",void 0),I=e([n("arch-dataset-publishing-card")],I);export{I as ArchDatasetPublishingCard};
 //# sourceMappingURL=arch-dataset-publishing-card.js.map

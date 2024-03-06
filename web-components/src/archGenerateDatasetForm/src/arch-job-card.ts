@@ -1,139 +1,159 @@
 import { LitElement, html } from "lit";
-import { customElement, property } from "lit/decorators.js";
-import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 
-import "../../lib/webservices/src/aitLoadingSpinner/index";
+import { customElement, property, query, state } from "lit/decorators.js";
 
-import { AvailableJob, JobState, ProcessingState } from "../../lib/types";
+import {
+  AvailableJob,
+  JobIdStatesMap,
+  JobParameters,
+  ProcessingState,
+  SomeJSONSchema,
+} from "../../lib/types";
 
-export enum JobButtonType {
-  Generate = "generate",
-  View = "view",
-  Status = "status",
-}
+import { Paths, isoStringToDateString } from "../../lib/helpers";
+
+import { ArchJobButton } from "./arch-job-button";
+import "./arch-job-button";
+import styles from "./arch-job-card-styles";
 
 @customElement("arch-job-card")
 export class ArchJobCard extends LitElement {
-  @property() collectionId!: string;
+  @property({ type: Number }) collectionId!: number;
+  @property({ type: String }) collectionName!: string;
   @property() job!: AvailableJob;
-  @property() jobIdStatesMap!: Record<string, JobState>;
+  @property() jobIdStatesMap!: JobIdStatesMap;
 
-  createRenderRoot() {
-    /* Disable the shadow root for this component to let in global styles.
-       https://stackoverflow.com/a/55213037 */
-    return this;
+  @state() jobParameters: object | JobParameters = {};
+
+  @query("arch-job-button") jobButton!: ArchJobButton;
+
+  static styles = styles;
+
+  static DefaultParametersSchema: SomeJSONSchema = {
+    type: "object",
+    required: [],
+    properties: {},
+  };
+
+  private extendParamsSchemaWithDefaultOptions(
+    schema: AvailableJob["parameters_schema"]
+  ): AvailableJob["parameters_schema"] {
+    schema = schema ?? ArchJobCard.DefaultParametersSchema;
+    return Object.assign(schema, {
+      properties: Object.assign(
+        schema.properties as Record<string, SomeJSONSchema>,
+        {
+          sample: {
+            type: "boolean",
+            title: "Sample",
+            default: true,
+            description:
+              "Generate a sample dataset from a small subset of records",
+          },
+        }
+      ),
+    });
   }
 
-  private jobStateToButtonProps(
-    jobState: JobState | undefined | null,
-    sample: boolean
-  ) {
-    /* Return the [ButtonText, ButtonType, ClassName] tuple for the specificed JobState */
-    if (jobState === undefined) {
-      return [
-        this.collectionId ? "Loading..." : "n/a",
-        JobButtonType.Status,
-        "job-statebutton",
-      ];
+  get historicalDatasetsUrl() {
+    const { collectionId, job } = this;
+    return `${Paths.collection(collectionId)}?column-name=${encodeURIComponent(
+      job.name
+    )}`;
+  }
+
+  renderHistory() {
+    const { jobIdStatesMap, job } = this;
+    const stateTuples = jobIdStatesMap && jobIdStatesMap[job.id];
+    if (stateTuples === undefined || stateTuples.length === 0) {
+      return html`
+        <h4>History</h4>
+        <p class="history">
+          No datasets of this type have been generated for this collection.
+        </p>
+      `;
     }
-    const sampleStr = sample ? "Sample " : "";
-    if (jobState === null) {
-      return [
-        `Generate ${sampleStr}Dataset`,
-        JobButtonType.Generate,
-        "job-runbutton",
-      ];
+    const finishedStates = stateTuples.filter(
+      ([, , state]) => state === ProcessingState.FINISHED
+    );
+    if (finishedStates.length === 0) {
+      return html`
+        <h4>History</h4>
+        <p class="history">
+          No datasets of this type have been completed for this collection.
+        </p>
+      `;
     }
-    if (jobState.state === ProcessingState.SUBMITTED) {
-      return [
-        `Starting&nbsp;<ait-loading-spinner style="position: absolute; --ait-loading-spinner-color: #2991CC"></ait-loading-spinner>`,
-        JobButtonType.Status,
-        "job-statebutton",
-      ];
-    }
-    if (jobState.state === ProcessingState.FINISHED) {
-      return [
-        `View ${sampleStr}Dataset`,
-        JobButtonType.View,
-        "job-resultsbutton",
-      ];
-    }
-    return [jobState.state, JobButtonType.Status, "job-statebutton"];
+    const hasMulti = finishedStates.length > 1;
+    return html`
+      <h4>History</h4>
+      <p class="history">
+        You've generated this dataset
+        <a href="${this.historicalDatasetsUrl}" target="_blank">
+          <strong
+            >${finishedStates.length}&nbsp;time${hasMulti ? "s" : ""}</strong
+          >
+        </a>
+        for this collection, most recently on
+        <a href="${Paths.dataset(finishedStates[0][0])}">
+          <strong>${isoStringToDateString(finishedStates[0][1])}</strong> </a
+        >.
+      </p>
+    `;
+  }
+
+  renderConfigureJob() {
+    const { job } = this;
+    return html`
+      <h4>Configure Job</h4>
+      <arch-job-parameters-form
+        .schema=${this.extendParamsSchemaWithDefaultOptions(
+          job.parameters_schema
+        )}
+        .data=${this.jobParameters as JobParameters}
+      ></arch-job-parameters-form>
+    `;
+  }
+
+  emitGenerateDataset(e: Event) {
+    e.stopPropagation();
+    this.dispatchEvent(
+      new CustomEvent("generate-dataset", {
+        detail: { archJobCard: this },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   render() {
     // Get the current job states.
-    const { collectionId, job } = this;
+    const { collectionId, collectionName, job, jobIdStatesMap } = this;
     const { id: jobId } = job;
     // Use undefined to indicate that a job state is loading, and null to
     // indicate that no such job run exists.
-    const [sampleJobState, jobState] = !this.jobIdStatesMap
-      ? [undefined, undefined]
-      : [
-          this.jobIdStatesMap[`${jobId}-SAMPLE`] ?? null,
-          this.jobIdStatesMap[jobId] ?? null,
-        ];
-    const [sampleButtonHTML, sampleButtonType, sampleClassName] =
-      this.jobStateToButtonProps(sampleJobState, true);
-    const [buttonHTML, buttonType, className] = this.jobStateToButtonProps(
-      jobState,
-      false
-    );
-    const title = collectionId
-      ? ""
-      : "Select a source collection to enable this button";
-    return html` <div class="card">
-      <div class="card-body">
-        <h2 class="card-title">${job.name}</h2>
-        <p class="card-text">${job.description}</p>
-        <div class="job-card-flex">
-          <div class="job-card-sample">
-            ${sampleButtonType === JobButtonType.View
-              ? html`
-                  <a
-                    href="/datasets/${(sampleJobState as JobState).id}"
-                    class="button ${sampleClassName}"
-                  >
-                    ${unsafeHTML(sampleButtonHTML)}
-                  </a>
-                `
-              : html`
-                  <button
-                    class="job-button ${sampleClassName}"
-                    style="display: block"
-                    data-job-id="${jobId}"
-                    data-button-type="${sampleButtonType}"
-                    data-sample=""
-                    title="${title}"
-                  >
-                    ${unsafeHTML(sampleButtonHTML)}
-                  </button>
-                `}
-          </div>
-          <div class="job-card-full">
-            ${buttonType === JobButtonType.View
-              ? html`
-                  <a
-                    href="/datasets/${(jobState as JobState).id}"
-                    class="button ${className}"
-                  >
-                    ${unsafeHTML(buttonHTML)}
-                  </a>
-                `
-              : html`
-                  <button
-                    class="job-button ${className}"
-                    style="display: block"
-                    data-job-id="${jobId}"
-                    data-button-type="${buttonType}"
-                    title="${title}"
-                  >
-                    ${unsafeHTML(buttonHTML)}
-                  </button>
-                `}
-          </div>
-        </div>
-      </div>
+    const stateTuples = !this.jobIdStatesMap
+      ? undefined
+      : jobIdStatesMap[jobId] ?? null;
+
+    return html` <div>
+      <h3>${job.name}</h3>
+      <p>${job.description}</p>
+      ${collectionId === null
+        ? html`<p class="alert alert-info">
+            Select a Source Collection above to display the options for
+            generating a Dataset of this type.
+          </p>`
+        : html`
+            ${this.renderHistory()} ${this.renderConfigureJob()}
+            <arch-job-button
+              .jobName=${job.name}
+              .collectionName=${collectionName}
+              .jobStateTuples=${stateTuples}
+              @submit=${this.emitGenerateDataset.bind(this)}
+            >
+            </arch-job-button>
+          `}
     </div>`;
   }
 }

@@ -17,9 +17,8 @@ export default [
       line-height: 1.2em;
     }
 
-    button[type="submit"] {
-      font-size: 1rem;
-      padding: 0.8rem 1.2rem;
+    arch-sub-collection-builder-submit-button {
+      display: block;
       margin-top: 1rem;
     }
 

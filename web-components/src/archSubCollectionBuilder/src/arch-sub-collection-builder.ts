@@ -2,13 +2,25 @@ import { LitElement, html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 
 import ArchAPI from "../../lib/ArchAPI";
-import { HtmlStatusCodeRegex, SurtPrefixRegex } from "../../lib/constants";
-import { Collection, FilteredApiResponse } from "../../lib/types";
+import {
+  HtmlStatusCodeRegex,
+  SurtPrefixRegex,
+  UrlCollectionsParamName,
+} from "../../lib/constants";
+import { Paths, identity } from "../../lib/helpers";
+import { Collection, FilteredApiResponse, ValueOf } from "../../lib/types";
 import { AlertClass } from "../../archAlert/index";
+import { ArchGlobalModal } from "../../archGlobalModal";
 import "../../archAlert/index";
 
+import "./arch-sub-collection-builder-submit-button";
 import styles from "./styles";
-import { DecodedFormData } from "./types";
+import {
+  DecodedFormData,
+  FormFieldName,
+  FormFieldValue,
+  ParsedFormFieldValue,
+} from "./types";
 
 // https://www.iana.org/assignments/media-types/media-types.xhtml
 import ValidMediaTypeSubTypesMap from "./mediaTypes.js";
@@ -24,10 +36,16 @@ function splitFieldValue(s: string): Array<string> {
     .filter((x) => x !== "");
 }
 
-function parseDatetimeFieldValue(s: string): string {
-  // Convert datetime-local input string (yyyy-MM-ddTHH:mm) to timestamp string (yyyyMMddHHmmSS).
+function prepareDatetimeFieldValue(isoDateStr: string): string {
+  // Convert Date to ARCH timestamp string (yyyyMMddHHmmSS).
+  const d = new Date(isoDateStr);
+  const yearStr = d.getFullYear();
+  const monthStr = (d.getMonth() + 1).toString().padStart(2, "0");
+  const dateStr = d.getDate().toString().padStart(2, "0");
+  const hoursStr = d.getHours().toString().padStart(2, "0");
+  const minutesStr = d.getMinutes().toString().padStart(2, "0");
   // The form input only provides for minute resolution, so append 00 for the seconds.
-  return s === "" ? s : s.replaceAll(/[^\d]/g, "") + "00";
+  return `${yearStr}${monthStr}${dateStr}${hoursStr}${minutesStr}00`;
 }
 
 /*
@@ -40,12 +58,14 @@ export class ArchSubCollectionBuilder extends LitElement {
 
   @state() collections: Array<Collection> = [];
   @state() sourceCollectionIds: Set<Collection["id"]> = new Set();
+  @state() data: undefined | DecodedFormData = undefined;
 
   @query("form") form!: HTMLFormElement;
   @query("select#source") sourceSelect!: HTMLSelectElement;
+  @query("arch-sub-collection-builder-submit-button")
+  submitButton!: HTMLElement;
 
   static styles = styles;
-  static urlCollectionsParamName = "cid[]";
 
   async connectedCallback() {
     super.connectedCallback();
@@ -55,7 +75,7 @@ export class ArchSubCollectionBuilder extends LitElement {
     // Select any initial Collections.
     this.sourceCollectionIds = new Set(
       new URLSearchParams(window.location.search)
-        .getAll(ArchSubCollectionBuilder.urlCollectionsParamName)
+        .getAll(UrlCollectionsParamName)
         .map((s) => parseInt(s))
     );
   }
@@ -221,13 +241,13 @@ export class ArchSubCollectionBuilder extends LitElement {
           placeholder="text/html|application/pdf"
         />
         <br />
-        <button
-          type="submit"
-          class="primary"
-          @click=${this.createSubCollection}
+        <arch-sub-collection-builder-submit-button
+          .validateForm=${this.validateForm.bind(this)}
+          .collections=${this.collections}
+          .data=${this.data}
+          @submit=${this.createSubCollection}
         >
-          Create Custom Collection
-        </button>
+        </arch-sub-collection-builder-submit-button>
       </form>
     `;
   }
@@ -235,6 +255,7 @@ export class ArchSubCollectionBuilder extends LitElement {
   private inputHandler(e: Event) {
     // Clear any custom validity message on input value change.
     (e.target as HTMLInputElement | HTMLSelectElement).setCustomValidity("");
+    this.data = this.formData;
   }
 
   private async initCollections() {
@@ -246,12 +267,11 @@ export class ArchSubCollectionBuilder extends LitElement {
   private setSourceCollectionIdsUrlParam(
     collectionIds: Array<Collection["id"]>
   ) {
-    const { urlCollectionsParamName } = ArchSubCollectionBuilder;
     const url = new URL(window.location.href);
     // Unconditionally delete the params in preparation for any params.append()
-    url.searchParams.delete(urlCollectionsParamName);
+    url.searchParams.delete(UrlCollectionsParamName);
     collectionIds.forEach((collectionId) =>
-      url.searchParams.append(urlCollectionsParamName, collectionId.toString())
+      url.searchParams.append(UrlCollectionsParamName, collectionId.toString())
     );
     history.replaceState(null, "", url.toString());
   }
@@ -265,14 +285,16 @@ export class ArchSubCollectionBuilder extends LitElement {
   }
 
   private static fieldValueParserMap: Record<
-    string,
-    ((s: string) => string) | ((s: string) => Array<string>)
+    FormFieldName,
+    (s: FormFieldValue) => ParsedFormFieldValue
   > = {
-    mimesOR: splitFieldValue,
-    statusPrefixesOR: splitFieldValue,
-    surtPrefixesOR: splitFieldValue,
-    timestampFrom: parseDatetimeFieldValue,
-    timestampTo: parseDatetimeFieldValue,
+    mimesOR: (s) => splitFieldValue(s as string),
+    name: (s) => identity<string>(s as string),
+    sources: (s) => identity<Array<string>>(s as Array<string>),
+    statusPrefixesOR: (s) => splitFieldValue(s as string),
+    surtPrefixesOR: (s) => splitFieldValue(s as string),
+    timestampFrom: (s) => identity<string>(s as string),
+    timestampTo: (s) => identity<string>(s as string),
   };
 
   private static fieldValueValidatorMessagePairMap: Record<
@@ -301,16 +323,31 @@ export class ArchSubCollectionBuilder extends LitElement {
     ],
   };
 
+  private static fieldValuePreSendPrepareMap: Map<
+    keyof DecodedFormData,
+    (x: ValueOf<DecodedFormData>) => ValueOf<DecodedFormData>
+  > = new Map([
+    ["mimesOR", identity<ValueOf<DecodedFormData>>],
+    ["name", identity<ValueOf<DecodedFormData>>],
+    ["sources", identity<ValueOf<DecodedFormData>>],
+    ["statusPrefixesOR", identity<ValueOf<DecodedFormData>>],
+    ["surtPrefixesOR", identity<ValueOf<DecodedFormData>>],
+    [
+      "timestampFrom",
+      (s) => prepareDatetimeFieldValue(s as string) as ValueOf<DecodedFormData>,
+    ],
+    [
+      "timestampTo",
+      (s) => prepareDatetimeFieldValue(s as string) as ValueOf<DecodedFormData>,
+    ],
+  ]);
+
   private static decodeFormDataValue(
-    k: string,
+    k: FormFieldName,
     v: string
-  ): string | Array<string> | Error {
-    let rv: string | Array<string> | Error = v;
-    // If a parser is defined, apply it.
-    const parse = ArchSubCollectionBuilder.fieldValueParserMap[k];
-    if (parse !== undefined) {
-      rv = parse(rv);
-    }
+  ): ValueOf<DecodedFormData> {
+    let rv: ValueOf<DecodedFormData> =
+      ArchSubCollectionBuilder.fieldValueParserMap[k](v);
     // If a validator is defined, apply it.
     const isValidMessagePair =
       ArchSubCollectionBuilder.fieldValueValidatorMessagePairMap[k];
@@ -355,7 +392,7 @@ export class ArchSubCollectionBuilder extends LitElement {
           k === "sources"
             ? (v as Array<string>)
             : ArchSubCollectionBuilder.decodeFormDataValue(
-                k as string,
+                k as FormFieldName,
                 v as string
               ),
         ])
@@ -383,6 +420,21 @@ export class ArchSubCollectionBuilder extends LitElement {
 
   private async doPost(data: DecodedFormData) {
     const { csrfToken } = this;
+
+    //  Apply any pre-flight conversions.
+    const finalData = Object.assign({}, data);
+    Array.from(
+      ArchSubCollectionBuilder.fieldValuePreSendPrepareMap.entries()
+    ).forEach(([k, prepareFn]) => {
+      if (finalData[k] !== undefined) {
+        finalData[k] = (
+          Array.isArray(finalData[k])
+            ? (finalData[k] as Array<ValueOf<DecodedFormData>>).map(prepareFn)
+            : prepareFn(finalData[k] as ValueOf<DecodedFormData>)
+        ) as ValueOf<DecodedFormData>;
+      }
+    });
+
     return fetch("/api/collections/custom", {
       method: "POST",
       credentials: "same-origin",
@@ -391,42 +443,47 @@ export class ArchSubCollectionBuilder extends LitElement {
         "X-CSRFToken": csrfToken,
       },
       mode: "cors",
-      body: JSON.stringify(data),
+      body: JSON.stringify(finalData),
     });
+  }
+
+  validateForm(): boolean {
+    /* Validate the form inputs and return a boolean indicating whether the
+       inputs are valid.*/
+    const { form, formData } = this;
+
+    // Update form field validity.
+    this.setFormInputValidity(formData);
+
+    // Check form validity and return true if valid.
+    if (form.checkValidity()) {
+      return true;
+    }
+    form.reportValidity();
+    return false;
   }
 
   private async createSubCollection(e: Event) {
     // Prevent the form submission.
     e.preventDefault();
-    // Disable the submit button.
-    const button = e.target as HTMLButtonElement;
-    button.disabled = true;
-
-    // Read and filter the form data.
-    const formData = this.formData;
-
-    // Update form field validity.
-    this.setFormInputValidity(formData);
-
-    // Check form validity and abort if invalid.
-    const { form } = this;
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      // Re-enable the submit button.
-      button.disabled = false;
-      return;
-    }
-
     // Make the request.
-    const res = await this.doPost(formData);
+    const res = await this.doPost(this.formData);
+    const { submitButton } = this;
     if (res.ok) {
-      // Request was successful - redirect to collections table.
-      window.location.href = "/collections";
+      // Request was successful. Reset the form and show the notification modal.
+      this.form.reset();
+      ArchGlobalModal.showNotification(
+        "ARCH is creating your custom collection",
+        `You will receive an email when your custom collection is ready to view. You will be able to access it from the <a href="${Paths.collections}">Collections page</a>.`,
+        submitButton
+      );
     } else {
-      // Display an alert.
-      window.alert("Could not create Sub-Collection");
-      // Re-enable the button.
-      button.disabled = false;
+      // Request failed. Show the error modal.
+      ArchGlobalModal.showError(
+        "",
+        "Could not create custom collection. Please try again.",
+        submitButton
+      );
     }
   }
 }

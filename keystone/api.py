@@ -1,6 +1,7 @@
 # pylint: disable=too-many-lines
 
 import http
+from collections import defaultdict
 from typing import (
     Any,
     List,
@@ -34,16 +35,21 @@ from ninja.security import (
 )
 
 
-from config import settings
+from config.settings import (
+    PRIVATE_API_KEY,
+    KnownArchJobUuids,
+)
 
 from . import jobmail
 from .arch_api import (
     ArchAPI,
     ArchRequestError,
 )
+from .context_processors import helpers as ctx_helpers
 from .helpers import (
     dot_to_dunder,
     find_field_from_lookup,
+    insert_arch_collection_id_username,
     report_exceptions,
 )
 from .models import (
@@ -84,7 +90,7 @@ class ApiKey(APIKeyHeader):
     param_name = "X-API-Key"
 
     def authenticate(self, request, key):
-        if key == settings.PRIVATE_API_KEY:
+        if key == PRIVATE_API_KEY:
             return key
         return None
 
@@ -459,6 +465,7 @@ class AvailableJob(Schema):
     id: str
     name: str
     description: str
+    parameters_schema: Optional[dict]
 
 
 class AvailableJobsCategory(Schema):
@@ -500,12 +507,11 @@ class DatasetPublicationMetadata(Schema):
 
 
 class DatasetGenerationRequest(Schema):
-    """Request POST payload schema for Dataset (re)generation."""
+    """Request POST payload schema for Dataset generation."""
 
     collection_id: int
     job_type_id: str
     is_sample: bool
-    rerun: Optional[bool] = False
 
 
 class SubCollectionCreationRequest(Schema):
@@ -532,7 +538,7 @@ class JobStateInfo(Schema):
     failed: bool
     activeStage: str
     activeState: str
-    startTime: str
+    startTime: Optional[str]
     finishedTime: Optional[str]
 
 
@@ -573,23 +579,48 @@ def register_job_start(request, payload: JobStartIn):
         User, username=username[3:] if username.startswith("ks:") else username
     )
 
-    # If job is a User-Defined Query, create a Collection to represent the
-    # eventual output.
-    if job_type != JobType.objects.get(
-        id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
-    ):
-        collection = get_object_or_404(Collection, arch_id=payload.collection_id)
+    parameters = payload.parameters
+
+    # If this is a retry, as indicated by attempt > 1, update the existing attempt
+    # count and return.
+    current_attempt = parameters.attempt
+    if current_attempt > 1:
+        # In the event of a retry, update the existing JobStart's attempt count.
+        job_start = JobStart.objects.get(id=payload.id)
+        # Raise an error if the current attempt would not decrement the existing.
+        previous_attempt = job_start.parameters["attempt"]
+        if current_attempt <= previous_attempt:
+            raise HttpError(
+                400,
+                f"Can not update job ({job_start.id}) attempt count from "
+                f"({previous_attempt}) to ({current_attempt}) - value can only be incremented",
+            )
+        job_start.parameters["attempt"] = current_attempt
+        job_start.save()
+        return job_start
+
+    #
+    # This is the first job run attempt.
+    #
+
+    # If job is not a User-Defined Query, lookup the collection from the
+    # provided inputSpec, otherwise create a new Collection to serve as the
+    # job_start.collection value.
+    if job_type != JobType.objects.get(id=KnownArchJobUuids.USER_DEFINED_QUERY):
+        try:
+            collection = Collection.get_for_input_spec(parameters.conf.inputSpec)
+        except Collection.DoesNotExist as e:
+            raise Http404 from e
     else:
-        job_conf = payload.parameters.conf
+        job_conf = parameters.conf
 
         # Parse the collection name and owning user from the outputPath param,
         # which has a format like:
         #  .../{pathsafe_username}/{collection_id}
         # Example:
         #  .../ks-test/SPECIAL-test-collection_1707245569769
-        arch_username, arch_collection_id = job_conf.outputPath.rsplit("/", 2)[-2:]
-        arch_username = arch_username.replace("-", ":")
-        arch_id = f"CUSTOM-{arch_username}:{arch_collection_id}"
+        _, arch_collection_id = job_conf.outputPath.rsplit("/", 2)[-2:]
+        arch_id = f"CUSTOM-{arch_collection_id}"
 
         name = job_conf.params.get("name")
         if name is None:
@@ -602,55 +633,21 @@ def register_job_start(request, payload: JobStartIn):
             size_bytes=0,
             metadata={"state": JobEventTypes.SUBMITTED},
         )
+        # Grant user and user-account level collection access.
         collection.accounts.add(user.account)
         collection.users.add(user)
 
-    # Create or update a JobStart instance.
-    parameters = payload.parameters.dict()
-    if not JobStart.objects.filter(id=payload.id).exists():
-        return JobStart.objects.create(
-            id=payload.id,
-            job_type=job_type,
-            collection=collection,
-            user=user,
-            input_bytes=payload.input_bytes,
-            sample=payload.sample,
-            parameters=parameters,
-            commit_hash=payload.commit_hash,
-            created_at=payload.created_at,
-        )
-
-    # Note that it's a little confusing that we allow a JobStart
-    # (and JobComplete - see register_job_complete()), to be updated given
-    # that each instance is supposed to represent a unique job run, but ARCH
-    # currently reports the same UUID for jobs submitted via the legacy
-    # /api/runjob/:jobid/:collectionid endpoint for:
-    #  - the initial run
-    #  - additional attempts in the event of run failure
-    #  - manual reruns
-    # and, the outputs of jobs submitted via the legacy endpoint overwrite/clobber
-    # the outputs of any previous run, so it kind of makes sense from Keystone's
-    # perspective for these runs to share the same JobStart UUID.
-    job_start = JobStart.objects.get(id=payload.id)
-    # Return a 400 on fundamental configuration mismatch.
-    if (
-        job_start.job_type != job_type
-        or job_start.collection != collection
-        or job_start.sample != payload.sample
-    ):
-        raise HttpError(
-            400,
-            f"Payload ({payload}) is incompatible with existing JobStart: "
-            f"{model_to_dict(job_start)}",
-        )
-    # Update the existing object.
-    job_start.user = user
-    job_start.input_bytes = payload.input_bytes
-    job_start.parameters = parameters
-    job_start.commit_hash = payload.commit_hash
-    job_start.save()
-
-    return job_start
+    return JobStart.objects.create(
+        id=payload.id,
+        job_type=job_type,
+        collection=collection,
+        user=user,
+        input_bytes=payload.input_bytes,
+        sample=payload.sample,
+        parameters=parameters.dict(),
+        commit_hash=payload.commit_hash,
+        created_at=payload.created_at,
+    )
 
 
 @private_api.post("/job/event", response=JobEventOut)
@@ -675,23 +672,19 @@ def register_job_complete(request, payload: JobCompleteIn):
     """
     job_start = get_object_or_404(JobStart, id=payload.job_start_id)
 
-    # Create or update a JobComplete.
-    if not JobComplete.objects.filter(job_start=job_start).exists():
-        job_complete = JobComplete.objects.create(
-            job_start=job_start,
-            output_bytes=payload.output_bytes,
-            created_at=payload.created_at,
-        )
-    else:
-        # See the note in register_job_start() as to why we allow JobComplete
-        # instances to be updated.
+    # Get (in the event of a retry) or create a JobComplete.
+    if job_start.parameters["attempt"] > 1:
         job_complete = JobComplete.objects.get(job_start=job_start)
         # Maybe update output_bytes.
         if job_complete.output_bytes != payload.output_bytes:
             job_complete.output_bytes = payload.output_bytes
             job_complete.save()
-        # Delete any preexisting JobFile objects.
-        JobFile.objects.filter(job_complete=job_complete).delete()
+    else:
+        job_complete = JobComplete.objects.create(
+            job_start=job_start,
+            output_bytes=payload.output_bytes,
+            created_at=payload.created_at,
+        )
 
     # Abort if job did not finish successfully.
     if job_start.get_job_status().state != JobEventTypes.FINISHED:
@@ -719,9 +712,7 @@ def register_job_complete(request, payload: JobCompleteIn):
     job_type = job_complete.job_start.job_type
     if job_type.can_run:
         jobmail.send_dataset_finished(request, job_complete)
-    elif job_type == JobType.objects.get(
-        id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
-    ):
+    elif job_type == JobType.objects.get(id=KnownArchJobUuids.USER_DEFINED_QUERY):
         jobmail.send_custom_collection_finished(request, job_complete)
 
     return HTTP_NO_CONTENT, None
@@ -786,21 +777,35 @@ def collections_filter_values(request, field: str):
     )
 
 
-@public_api.get(
-    "/collections/{collection_id}/dataset_states", response=List[DatasetSchema]
-)
+@public_api.get("/collections/{collection_id}/dataset_states", response=dict)
 def collection_dataset_states(request, collection_id: int):
-    """Retrieve the most recent Dataset of each job type for
-    the specified collection."""
-    return (
+    """Retrieve a collection's stats for each dataset type as a dicts in the format:
+    {
+      "{JobType.id}": [
+        [ {dataset_id}, {most_recent_dataset_start_time}, {dataset_state} ],
+        [ {dataset_id}, {next_most_recent_dataset_start_time}, {dataset_state} ],
+        ...
+      ],
+      ...
+    }
+    """
+    datasets = (
         Dataset.objects.filter(
             job_start__user=request.user,
             job_start__collection_id=collection_id,
             job_start__collection__users=request.user,
         )
-        .order_by("job_start__job_type", "job_start__sample", "finished_time")
-        .distinct("job_start__job_type", "job_start__sample")
+        .order_by("-start_time")
+        .all()
     )
+
+    # I tried to use Django to do this grouping but...too....difficult...
+    d = defaultdict(list)
+    for dataset in datasets:
+        d[str(dataset.job_start.job_type.id)].append(
+            (dataset.id, dataset.start_time, dataset.state)
+        )
+    return d
 
 
 @public_api.get("/datasets", response=List[DatasetSchema])
@@ -851,7 +856,12 @@ def list_available_jobs(request):
             "categoryImage": cat_img_url(job_cat),
             "categoryId": job_cat.id,
             "jobs": [
-                {"id": str(job.id), "name": job.name, "description": job.description}
+                {
+                    "id": str(job.id),
+                    "name": job.name,
+                    "description": job.description,
+                    "parameters_schema": job.parameters_schema,
+                }
                 for job in job_cat.jobtype_set.filter(can_run=True)
             ],
         }
@@ -860,9 +870,9 @@ def list_available_jobs(request):
             # Filter out ArchiveSpark* jobs for the time being.
             .exclude(
                 jobtype__id__in=(
-                    settings.KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION,
-                    settings.KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE,
-                    settings.KnownArchJobUuids.ARCHIVESPARK_NOOP,
+                    KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION,
+                    KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE,
+                    KnownArchJobUuids.ARCHIVESPARK_NOOP,
                 )
             ).distinct()
         )
@@ -898,8 +908,11 @@ def generate_sub_collection(request, payload: SubCollectionCreationRequest):
         collection_id = "UNION-UDQ"
         # Assign arch_ids to data.input which is expected by
         # DerivationJobConf.jobInPath() for Union-type collections.
-        job_params["input"] = arch_ids
-    return ArchAPI.create_sub_collection(request.user, collection_id, job_params)
+        job_params["input"] = [
+            insert_arch_collection_id_username(x, request.user) for x in arch_ids
+        ]
+    input_spec = {"type": "collection", "collectionId": collection_id}
+    return ArchAPI.create_sub_collection(request.user, input_spec, job_params)
 
 
 @public_api.post("/datasets/generate", response=JobStateInfo)
@@ -911,10 +924,9 @@ def generate_dataset(request, payload: DatasetGenerationRequest):
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
     return ArchAPI.generate_dataset(
         request.user,
-        collection.arch_id,
+        collection.input_spec,
         str(job_type.id),  # Cast UUID to serializable
         payload.is_sample,
-        payload.rerun,
     )
 
 
@@ -988,9 +1000,7 @@ def delete_published_item(request, dataset_id: int, item_id: str):
 def get_sample_viz_data(request, dataset_id: int):
     """Get the sample visualization data for the specific dataset."""
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    return ArchAPI.get_dataset_sample_viz_data(
-        request.user, ArchAPI.get_arch_dataset_id(dataset)
-    )
+    return ArchAPI.get_dataset_sample_viz_data(request.user, dataset.job_start.id)
 
 
 ###############################################################################
@@ -1003,11 +1013,14 @@ def get_sample_viz_data(request, dataset_id: int):
 )
 def get_file_listing(request, dataset_id: int):
     """Proxy as WASAPI datase file listing response from ARCH."""
-    dataset = get_object_or_404(Dataset, id=dataset_id)
-
+    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    # Use the reverse for dataset-file-download to create a base download URL, to
+    # which ARCH will append "/{filename}?access=..."
+    base_download_url = ctx_helpers(request)["abs_url"](
+        "dataset-file-download", args=[dataset.id, "dummy"]
+    ).rsplit("/", 1)[0]
     return ArchAPI.proxy_wasapi_request(
         request.user,
-        dataset.job_start.collection.arch_id,
-        dataset.job_start.job_type.id,
-        dataset.job_start.sample,
+        dataset.job_start.id,
+        base_download_url,
     )

@@ -4,7 +4,10 @@
     dataset.job_start.collection.name
     + ": "
     + dataset.job_start.job_type.name
-    + (" (Sample)" if dataset.job_start.sample else "")
+    + " ("
+    + ("Sample, " if dataset.job_start.sample else "")
+    + dataset.job_start.created_at.strftime("%m-%d-%Y %H:%M")
+    + ")"
   )
 %}
 
@@ -53,36 +56,6 @@
             .text(function(d) { return d; });
         });
       });
-
-    // For the time being, just port existing rerun button click handler.
-    document.getElementById("job-rerunbutton").addEventListener("click", async (e) => {
-      const ok = confirm(
-        "You are about to regenerate this dataset which will permanently overwrite the existing version."
-      )
-      if (!ok) {
-        return;
-      }
-      const { target } = e;
-      target.disabled = true;
-      const res = await fetch(
-        "/api/datasets/generate", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "X-CSRFToken": "{{ csrf_token }}" },
-          mode: "cors",
-          body: JSON.stringify({
-            collection_id: {{ dataset.job_start.collection.id }},
-            job_type_id: "{{ dataset.job_start.job_type.id }}",
-            is_sample: {{ dataset.job_start.sample | tojson }},
-            rerun: true
-          }),
-        });
-      if (res.ok) {
-        window.location = "/datasets";
-      } else {
-        target.disabled = false;
-      }
-    });
   }
 
   document.addEventListener("DOMContentLoaded", () => init());
@@ -166,22 +139,6 @@
     {% endif %}
 
     {% endfor %}
-
-    <div class="row">
-      <div class="large-12 columns">
-        <h2 id="regenerate">Regenerate</h2>
-        <div class="card" id="card-re-run-job">
-          <div class="card-body">
-            <p>
-              The new dataset will include any content added to the collection since this was last generated.
-              <br />
-              <strong>Regenerating this dataset will permanently overwrite the current version.</strong>
-            </p>
-            <button id="job-rerunbutton">Regenerate Dataset</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
   </div>
 </div>

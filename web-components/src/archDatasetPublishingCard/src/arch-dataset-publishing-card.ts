@@ -191,7 +191,8 @@ export class ArchDatasetPublishingCard extends LitElement {
               ? html``
               : html`
                   <arch-dataset-metadata-form
-                    metadata="${JSON.stringify(metadata ?? "")}"
+                    .schema=${_metadataSchema}
+                    .data=${metadata ?? {}}
                   >
                   </arch-dataset-metadata-form>
                 `}

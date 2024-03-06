@@ -1,4 +1,5 @@
 import functools
+import re
 import csv
 
 from django.core.exceptions import FieldDoesNotExist
@@ -88,3 +89,33 @@ def report_exceptions(*exceptions):
         return wrapper
 
     return decorator
+
+
+ARCH_COLLECTION_ID_USERNAME_STRIP_REGEX = re.compile(
+    "(ARCHIVEIT|SPECIAL|CUSTOM)-(?:ks:[^:]+:)?(.+)"
+)
+
+
+def strip_arch_collection_id_username(arch_collection_id):
+    """Strip the embedded username from an ARCH collection ID.
+    E.g. "ARCHIVEIT-ks:test:00001" -> "ARCHIVEIT-00001"
+    """
+    return "-".join(
+        ARCH_COLLECTION_ID_USERNAME_STRIP_REGEX.match(arch_collection_id).groups()
+    )
+
+
+def insert_arch_collection_id_username(arch_collection_id, user):
+    """Insert a user's arch_username into an ARCH collection ID. Raise an error if
+    the collection ID already includes a username other than the specified user."""
+    stripped_arch_collection_id = strip_arch_collection_id_username(arch_collection_id)
+    id_includes_username = arch_collection_id != stripped_arch_collection_id
+    # Format the final desired ID.
+    prefix, rest = stripped_arch_collection_id.split("-", 1)
+    final_collection_id = f"{prefix}-{user.arch_username}:{rest}"
+    if id_includes_username and final_collection_id != arch_collection_id:
+        raise ValueError(
+            f"Can not replace existing username with ({user.arch_username}) "
+            f"in collection ID ({arch_collection_id})"
+        )
+    return final_collection_id

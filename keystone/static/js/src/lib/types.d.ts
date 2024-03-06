@@ -1,5 +1,7 @@
 import { JSONSchemaType } from "ajv";
 import { SomeJSONSchema } from "ajv/lib/types/json-schema";
+export { SomeJSONSchema };
+import { ArchJobCard } from "../archGenerateDatasetForm/src/arch-job-card";
 export declare enum ProcessingState {
     SUBMITTED = "SUBMITTED",
     QUEUED = "QUEUED",
@@ -74,6 +76,17 @@ export type Dataset = {
     start_time: Date;
     state: ProcessingState;
 };
+type DatasetStartTimeString = string;
+export type JobIdStatesMap = Record<Dataset["job_id"], Array<[DatasetStartTimeString, Dataset["state"]]>>;
+type GlobalJobParameters = {
+    sample: boolean;
+};
+type NamedEntityExtractionParameters = GlobalJobParameters & {
+    language: string;
+};
+export type JobParameters = NamedEntityExtractionParameters;
+export type JobParametersKey = keyof JobParameters;
+export type JobParametersValue = JobParameters[JobParametersKey];
 export type JobState = Dataset;
 export declare enum JobId {
     ArsLgaGeneration = "ArsLgaGeneration",
@@ -97,6 +110,7 @@ export type AvailableJob = {
     id: JobId;
     name: string;
     description: string;
+    parameters_schema: JSONSchemaType<JobParameters>;
 };
 export type AvailableJobsCategory = {
     categoryName: string;
@@ -130,7 +144,8 @@ export type PublishedDatasetMetadata = {
     subject?: Array<string>;
     title?: string;
 };
-export type PublishedDatasetMetadataValue = PublishedDatasetMetadata[keyof PublishedDatasetMetadata];
+export type PublishedDatasetMetadataKey = keyof PublishedDatasetMetadata;
+export type PublishedDatasetMetadataValue = PublishedDatasetMetadata[PublishedDatasetMetadataKey];
 export type PublishedDatasetMetadataJSONSchema = JSONSchemaType<PublishedDatasetMetadata>;
 export type PublishedDatasetMetadataJSONSchemaProps = Record<keyof PublishedDatasetMetadata, SomeJSONSchema>;
 export type BaseFilteredApiResponse<T> = {
@@ -150,4 +165,6 @@ export type ApiParams<T> = Array<[
     string | number | boolean
 ]>;
 export type ApiPath = "/collections" | "/datasets";
-export {};
+export type GenerateDatasetDetail = {
+    archJobCard: ArchJobCard;
+};

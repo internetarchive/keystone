@@ -39,6 +39,11 @@ export default [
       margin-bottom: 1rem;
     }
 
+    div.input-block > em {
+      display: inline-block;
+      margin: 0.5rem 0 0.5rem 0.5rem;
+    }
+
     div.input-row {
       display: flex;
       padding-bottom: 0.4rem;
@@ -83,7 +88,6 @@ export default [
     label {
       display: block;
       font-weight: bold;
-      padding-bottom: 0.4rem;
       color: #444;
     }
 

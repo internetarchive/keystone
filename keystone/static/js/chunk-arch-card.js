@@ -1,4 +1,4 @@
-import{i as t,e as o,_ as p,s as e,y as r,a as s}from"./chunk-query-assigned-elements.js";import{t as i}from"./chunk-state.js";import{S as m,x as c,A as v,d as a}from"./chunk-scale-large.js";import{i as h,g as n}from"./chunk-styles.js";const u=t`
+import{i as t,e as o,y as p,b as e,_ as r,s,a as i}from"./chunk-query-assigned-elements.js";import{t as m}from"./chunk-state.js";import"./chunk-sp-overlay.js";import{S as c,d as v}from"./chunk-define-element.js";import{i as a,g as h}from"./chunk-styles.js";import"./chunk-scale-large.js";const n=t`
 :host{--spectrum-overlay-animation-distance:6px;--spectrum-overlay-animation-duration:var(
 --spectrum-animation-duration-100
 );opacity:0;pointer-events:none;transition:transform var(--spectrum-overlay-animation-duration) ease-in-out,opacity var(--spectrum-overlay-animation-duration) ease-in-out,visibility 0s linear var(--spectrum-overlay-animation-duration);visibility:hidden}:host([open]){opacity:1;pointer-events:auto;transition-delay:0s;visibility:visible}:host([open]) .spectrum-Popover--bottom-end,:host([open]) .spectrum-Popover--bottom-left,:host([open]) .spectrum-Popover--bottom-right,:host([open]) .spectrum-Popover--bottom-start,:host([placement*=bottom][open]){--spectrum-overlay-animation-distance:6px;transform:translateY(var(--spectrum-overlay-animation-distance))}:host([open]) .spectrum-Popover--top-end,:host([open]) .spectrum-Popover--top-left,:host([open]) .spectrum-Popover--top-right,:host([open]) .spectrum-Popover--top-start,:host([placement*=top][open]){--spectrum-overlay-animation-distance:6px;transform:translateY(calc(var(--spectrum-overlay-animation-distance)*-1))}:host([dir=rtl][open]) .spectrum-Popover--start,:host([dir=rtl][open]) .spectrum-Popover--start-bottom,:host([dir=rtl][open]) .spectrum-Popover--start-top,:host([open]) .spectrum-Popover--end,:host([open]) .spectrum-Popover--end-bottom,:host([open]) .spectrum-Popover--end-top,:host([open]) .spectrum-Popover--right-bottom,:host([open]) .spectrum-Popover--right-top,:host([placement*=right][open]){--spectrum-overlay-animation-distance:6px;transform:translateX(var(--spectrum-overlay-animation-distance))}:host([dir=rtl][open]) .spectrum-Popover--end,:host([dir=rtl][open]) .spectrum-Popover--end-bottom,:host([dir=rtl][open]) .spectrum-Popover--end-top,:host([open]) .spectrum-Popover--left-bottom,:host([open]) .spectrum-Popover--left-top,:host([open]) .spectrum-Popover--start,:host([open]) .spectrum-Popover--start-bottom,:host([open]) .spectrum-Popover--start-top,:host([placement*=left][open]){--spectrum-overlay-animation-distance:6px;transform:translateX(calc(var(--spectrum-overlay-animation-distance)*-1))}:host{--spectrum-popover-cross-offset:0;--spectrum-popover-background-color:var(
@@ -64,7 +64,7 @@ import{i as t,e as o,_ as p,s as e,y as r,a as s}from"./chunk-query-assigned-ele
 );padding:var(
 --mod-popover-dialog-padding,var(--spectrum-popover-dialog-padding,30px 29px)
 )}
-`;var l=Object.defineProperty,d=Object.getOwnPropertyDescriptor,P=(t,o,p,e)=>{for(var r,s=e>1?void 0:e?d(o,p):o,i=t.length-1;i>=0;i--)(r=t[i])&&(s=(e?r(o,p,s):r(s))||s);return e&&s&&l(o,p,s),s};class g extends m{constructor(){super(...arguments),this.dialog=!1,this.open=!1,this.tip=!1}static get styles(){return[u]}renderTip(){return c`
+`;var u=Object.defineProperty,l=Object.getOwnPropertyDescriptor,d=(t,o,p,e)=>{for(var r,s=e>1?void 0:e?l(o,p):o,i=t.length-1;i>=0;i--)(r=t[i])&&(s=(e?r(o,p,s):r(s))||s);return e&&s&&u(o,p,s),s};class P extends c{constructor(){super(...arguments),this.dialog=!1,this.open=!1,this.tip=!1}static get styles(){return[n]}renderTip(){return p`
             <div id="tip" aria-hidden="true">
                 <svg class="tip block" viewBox="0 -0.5 16 9">
                     <path class="triangle" d="M-1,-1 8,8 17,-1"></path>
@@ -73,10 +73,10 @@ import{i as t,e as o,_ as p,s as e,y as r,a as s}from"./chunk-query-assigned-ele
                     <path class="triangle" d="M-1,-1 8,8 -1,17"></path>
                 </svg>
             </div>
-        `}update(t){super.update(t)}render(){return c`
+        `}update(t){super.update(t)}render(){return p`
             <slot></slot>
-            ${this.tip?this.renderTip():v}
-        `}}P([o({type:Boolean,reflect:!0})],g.prototype,"dialog",2),P([o({type:Boolean,reflect:!0})],g.prototype,"open",2),P([o({reflect:!0})],g.prototype,"placement",2),P([o({type:Boolean,reflect:!0})],g.prototype,"tip",2),P([h("#tip")],g.prototype,"tipElement",2),a("sp-popover",g);var b=[n,t`
+            ${this.tip?this.renderTip():e}
+        `}}d([o({type:Boolean,reflect:!0})],P.prototype,"dialog",2),d([o({type:Boolean,reflect:!0})],P.prototype,"open",2),d([o({reflect:!0})],P.prototype,"placement",2),d([o({type:Boolean,reflect:!0})],P.prototype,"tip",2),d([a("#tip")],P.prototype,"tipElement",2),v("sp-popover",P);var g=[h,t`
     sp-popover {
       padding: 1rem;
     }
@@ -104,7 +104,7 @@ import{i as t,e as o,_ as p,s as e,y as r,a as s}from"./chunk-query-assigned-ele
       text-align: right;
       padding-top: 1rem;
     }
-  `];let f=class extends e{constructor(){super(...arguments),this.header=void 0,this.text=void 0,this.learnMoreUrl=void 0,this.width=12,this.isOpen=!1}render(){const{header:t,text:o,learnMoreUrl:p,width:e}=this;return r`
+  `];let b=class extends s{constructor(){super(...arguments),this.header=void 0,this.text=void 0,this.learnMoreUrl=void 0,this.width=12,this.isOpen=!1}render(){const{header:t,text:o,learnMoreUrl:e,width:r}=this;return p`
       <sp-theme color="light" scale="medium">
         <overlay-trigger
           placement="bottom-end"
@@ -117,22 +117,22 @@ import{i as t,e as o,_ as p,s as e,y as r,a as s}from"./chunk-query-assigned-ele
             slot="trigger"
             title="Learn about ${this.header}"
           >
-            ${this.isOpen?r`<strong>&#9432;</strong>`:r`&#9432;`}
+            ${this.isOpen?p`<strong>&#9432;</strong>`:p`&#9432;`}
           </button>
           <sp-popover slot="click-content" position="bottom" tip open>
             <div role="dialog">
-              ${t?r` <h2><span>&#9432;</span>${t}</h2>`:r``}
-              <div class="text" style="width: ${e}rem">${o||""}</div>
-              ${p?r`
+              ${t?p` <h2><span>&#9432;</span>${t}</h2>`:p``}
+              <div class="text" style="width: ${r}rem">${o||""}</div>
+              ${e?p`
                     <div class="learn-more">
-                      <a href="${p}" target="_blank">Learn More</a>
+                      <a href="${e}" target="_blank">Learn More</a>
                     </div>
-                  `:r``}
+                  `:p``}
             </div>
           </sp-popover>
         </overlay-trigger>
       </sp-theme>
-    `}};f.styles=b,p([o({type:String})],f.prototype,"header",void 0),p([o({type:String})],f.prototype,"text",void 0),p([o({type:String})],f.prototype,"learnMoreUrl",void 0),p([o({type:Number})],f.prototype,"width",void 0),p([i()],f.prototype,"isOpen",void 0),f=p([s("arch-tooltip")],f);var y=[n,t`
+    `}};b.styles=g,r([o({type:String})],b.prototype,"header",void 0),r([o({type:String})],b.prototype,"text",void 0),r([o({type:String})],b.prototype,"learnMoreUrl",void 0),r([o({type:Number})],b.prototype,"width",void 0),r([m()],b.prototype,"isOpen",void 0),b=r([i("arch-tooltip")],b);var f=[h,t`
     :host {
       display: block;
       background-color: #fff;
@@ -167,19 +167,19 @@ import{i as t,e as o,_ as p,s as e,y as r,a as s}from"./chunk-query-assigned-ele
     :host arch-tooltip {
       margin: auto 0 auto 0.5rem;
     }
-  `];let w=class extends e{constructor(){super(...arguments),this.title="Title",this.headerLevel=2,this.ctaText=void 0,this.ctaHref=void 0,this.ctaTooltipHeader=void 0,this.ctaTooltipText=void 0,this.ctaTooltipLearnMoreUrl=void 0}get header(){switch(this.headerLevel){case 1:return r`<h1>${this.title}</h1>`;case 2:return r`<h2>${this.title}</h2>`;case 3:return r`<h3>${this.title}</h3>`;case 4:return r`<h4>${this.title}</h4>`;case 5:return r`<h5>${this.title}</h5>`;default:return r`<h6>${this.title}</h6>`}}render(){const{ctaTooltipHeader:t,ctaTooltipText:o,ctaTooltipLearnMoreUrl:p}=this;return r`
+  `];let y=class extends s{constructor(){super(...arguments),this.title="Title",this.headerLevel=2,this.ctaText=void 0,this.ctaHref=void 0,this.ctaTooltipHeader=void 0,this.ctaTooltipText=void 0,this.ctaTooltipLearnMoreUrl=void 0}get header(){switch(this.headerLevel){case 1:return p`<h1>${this.title}</h1>`;case 2:return p`<h2>${this.title}</h2>`;case 3:return p`<h3>${this.title}</h3>`;case 4:return p`<h4>${this.title}</h4>`;case 5:return p`<h5>${this.title}</h5>`;default:return p`<h6>${this.title}</h6>`}}render(){const{ctaTooltipHeader:t,ctaTooltipText:o,ctaTooltipLearnMoreUrl:e}=this;return p`
       <section>
         <div class="header">
           ${this.header}
-          ${this.ctaText&&this.ctaHref?r`
+          ${this.ctaText&&this.ctaHref?p`
                 <a href="${this.ctaHref}">${this.ctaText}</a>
-                ${t||o||p?r`
+                ${t||o||e?p`
                       <arch-tooltip
                         .header=${t}
                         .text=${o}
-                        .learnMoreUrl=${p}
+                        .learnMoreUrl=${e}
                       ></arch-tooltip>
-                    `:r``}
+                    `:p``}
               `:""}
         </div>
         <hr />
@@ -188,5 +188,5 @@ import{i as t,e as o,_ as p,s as e,y as r,a as s}from"./chunk-query-assigned-ele
           <slot name="footer"></slot>
         </div>
       </section>
-    `}};w.styles=y,p([o({type:String})],w.prototype,"title",void 0),p([o({type:Number})],w.prototype,"headerLevel",void 0),p([o({type:String})],w.prototype,"ctaText",void 0),p([o({type:String})],w.prototype,"ctaHref",void 0),p([o({type:String})],w.prototype,"ctaTooltipHeader",void 0),p([o({type:String})],w.prototype,"ctaTooltipText",void 0),p([o({type:String})],w.prototype,"ctaTooltipLearnMoreUrl",void 0),w=p([s("arch-card")],w);
+    `}};y.styles=f,r([o({type:String})],y.prototype,"title",void 0),r([o({type:Number})],y.prototype,"headerLevel",void 0),r([o({type:String})],y.prototype,"ctaText",void 0),r([o({type:String})],y.prototype,"ctaHref",void 0),r([o({type:String})],y.prototype,"ctaTooltipHeader",void 0),r([o({type:String})],y.prototype,"ctaTooltipText",void 0),r([o({type:String})],y.prototype,"ctaTooltipLearnMoreUrl",void 0),y=r([i("arch-card")],y);
 //# sourceMappingURL=chunk-arch-card.js.map

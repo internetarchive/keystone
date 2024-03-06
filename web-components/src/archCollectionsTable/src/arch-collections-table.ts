@@ -80,7 +80,7 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
         }
         lastJobName = lastJobName as string;
         return `
-          <a href="${Paths.dataset(`${collection.latest_dataset.id}`)}"
+          <a href="${Paths.dataset(collection.latest_dataset.id)}"
              title="${_(lastJobName)}">
             ${lastJobName}
           </a>

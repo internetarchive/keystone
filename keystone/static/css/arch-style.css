@@ -40,26 +40,6 @@ div.job-card-flex {
     display: flex;
 }
 
-div.job-card-sample {
-    padding-right: 1%;
-    font-size: 90%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 50%
-}
-
-div.job-card-full {
-    padding-left: 1%;
-    font-size: 90%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 50%
-}
-
 div.dataset-info {
     display: flex;
     flex-direction: column;
@@ -72,46 +52,6 @@ div.dataset-download {
     flex-direction: column;
     align-items: center;
     width: 20%
-}
-
-button.job-button {
-    display: none;
-}
-
-button.job-runbutton {
-    font-weight: bold;
-    min-width: 100%;
-    float: left;
-    background-color: #052c65;
-    color: #fff;
-}
-
-#job-rerunbutton {
-    color: #fff;
-    background-color: #dc3545;
-    border-color: #dc3545;
-    display: block;
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    font-weight: bold;
-}
-
-button.job-statebutton {
-    font-weight: bold;
-    min-width: 100%;
-    background-color: #f0f0f0;
-    color: #222;
-    float: left;
-    cursor: wait;
-}
-
-a.button.job-resultsbutton {
-    font-weight: bold;
-    min-width: 100%;
-    background-color: #1e7b34;
-    color: #fff;
-    float: left;
 }
 
 button.download-button {

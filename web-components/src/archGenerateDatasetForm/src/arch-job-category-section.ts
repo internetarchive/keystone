@@ -1,65 +1,73 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
+import "@spectrum-web-components/tabs/sp-tabs.js";
+import "@spectrum-web-components/tabs/sp-tab.js";
+import "@spectrum-web-components/tabs/sp-tab-panel.js";
+import "@spectrum-web-components/theme/sp-theme.js";
+import "@spectrum-web-components/theme/src/themes.js";
+
 import { AvailableJobsCategory, JobState } from "../../lib/types";
 
+import "../../archJobParametersForm/index";
 import "./arch-job-card";
+import Styles from "./styles";
 
 @customElement("arch-job-category-section")
 export class ArchJobCategorySection extends LitElement {
-  @property({ type: Boolean }) collapsed = false;
-  @property({ type: String }) collectionId!: string;
+  @property({ type: String }) collectionId!: number;
+  @property({ type: String }) collectionName!: string;
   @property({ type: Object }) jobsCat!: AvailableJobsCategory;
   @property({ type: Object }) jobIdStatesMap!: Record<string, JobState>;
 
-  createRenderRoot() {
-    /* Disable the shadow root for this component to let in global styles.
-       https://stackoverflow.com/a/55213037 */
-    return this;
-  }
-
-  expand() {
-    this.collapsed = false;
-  }
-
-  collapse() {
-    this.collapsed = true;
-  }
+  // Apply any ARCH-specific styles.
+  static styles = Styles;
 
   render() {
+    const { collectionId, collectionName, jobIdStatesMap } = this;
+    const {
+      categoryDescription,
+      categoryId,
+      categoryImage,
+      categoryName,
+      jobs,
+    } = this.jobsCat;
     return html`
-      <div class="job-category ${this.collapsed ? "collapsed" : "expanded"}">
-        <button
-          class="category-accordian-button"
-          aria-controls=${this.jobsCat.categoryName}
-          aria-expanded="${this.collapsed ? "false" : "true"}"
-        >
-          <img
-            class="category-image"
-            src="${this.jobsCat.categoryImage}"
-            alt="Icon for ${this.jobsCat.categoryName}"
-          />
-          <span id="${this.jobsCat.categoryId}" class="category-title">
-            ${this.jobsCat.categoryName}
-          </span>
-          <br />
-          <span class="category-description">
-            ${this.jobsCat.categoryDescription}
-          </span>
-        </button>
-        <div id=${this.jobsCat.categoryName} class="collapsible-content">
-          ${this.jobsCat.jobs.map(
-            (job) => html`
-              <arch-job-card
-                .collectionId=${this.collectionId}
-                .job=${job}
-                .jobIdStatesMap=${this.jobIdStatesMap}
-              >
-              </arch-job-card>
-            `
-          )}
-        </div>
+      <div class="category-header">
+        <img
+          class="category-image"
+          src="${categoryImage}"
+          alt="Icon for ${categoryName}"
+        />
+        <h2 id="${categoryId}" class="category-title">${categoryName}</h2>
+        <p class="category-description">${categoryDescription}</p>
       </div>
+
+      <label for="job-tabs">Select Dataset Type</label>
+      <br />
+      <sp-theme color="light" scale="medium">
+        <sp-tabs
+          compact
+          direction="vertical"
+          selected="${jobs[0].id}"
+          name="job-tabs"
+        >
+          ${jobs.map(
+            (job) => html`<sp-tab
+                label="${job.name}"
+                value="${job.id}"
+              ></sp-tab>
+              <sp-tab-panel value="${job.id}">
+                <arch-job-card
+                  .collectionId=${collectionId}
+                  .collectionName=${collectionName}
+                  .job=${job}
+                  .jobIdStatesMap=${jobIdStatesMap}
+                ></arch-job-card>
+              </sp-tab-panel>`
+          )}
+        </sp-tabs>
+      </sp-theme>
     `;
   }
 }

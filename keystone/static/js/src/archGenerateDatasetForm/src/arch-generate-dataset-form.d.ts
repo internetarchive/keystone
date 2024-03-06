@@ -1,37 +1,37 @@
 import { LitElement } from "lit";
-import { AvailableJobs, Collection, JobState } from "../../lib/types";
-import { ArchAlert } from "../../archAlert/index";
+import "@spectrum-web-components/icon/sp-icon.js";
+import "@spectrum-web-components/tabs/sp-tabs.js";
+import "@spectrum-web-components/tabs/sp-tab.js";
+import "@spectrum-web-components/tabs/sp-tab-panel.js";
+import "@spectrum-web-components/theme/sp-theme.js";
+import "@spectrum-web-components/theme/src/themes.js";
+import { AvailableJobs, Collection, JobIdStatesMap } from "../../lib/types";
 import "./arch-job-category-section";
 import { ArchJobCategorySection } from "./arch-job-category-section";
 export declare class ArchGenerateDatasetForm extends LitElement {
     csrfToken: string;
+    collectionDetailPageUrlTemplate: string;
     collections: null | Array<Collection>;
     availableJobs: AvailableJobs;
     sourceCollectionId: Collection["id"] | null;
-    collectionJobStates: Record<Collection["id"], Record<string, JobState>>;
+    collectionJobIdStatesMapMap: Record<Collection["id"], JobIdStatesMap>;
     activePollCollectionId: Collection["id"] | null;
-    anyErrors: boolean;
     collectionSelector: HTMLSelectElement;
-    errorAlert: ArchAlert;
-    emailAlert: ArchAlert;
     categorySections: Array<ArchJobCategorySection>;
-    static styles: import("lit").CSSResult;
+    static styles: import("lit").CSSResult[];
     static urlCollectionParamName: string;
     connectedCallback(): Promise<void>;
-    createRenderRoot(): this;
     render(): import("lit-html").TemplateResult<1>;
     private setCollectionIdUrlParam;
     private sourceCollectionChangeHandler;
-    private updateAnyErrors;
     private setSourceCollectionId;
     private initCollections;
     private initAvailableJobs;
-    private fetchCollectionJobStates;
-    pollJobStates(): Promise<void>;
+    private fetchJobIdStatesMap;
+    pollDatasetStates(): Promise<void>;
     private startPolling;
-    private expandCategorySection;
     private runJob;
-    private clickHandler;
+    private generateDatasetHandler;
 }
 declare global {
     interface HTMLElementTagNameMap {

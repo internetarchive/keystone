@@ -27,3 +27,9 @@ export const CollectionTypeDisplayMap: Record<CollectionType, string> = {
   CUSTOM: "Custom",
   SPECIAL: "Special",
 };
+
+// The URL params to use for specifying a single Collection.id value.
+export const UrlCollectionParamName = "cid";
+
+// The URL params to use for specifying an array of Collection.id values.
+export const UrlCollectionsParamName = "cid[]";

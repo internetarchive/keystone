@@ -186,9 +186,7 @@ def dataset_file_preview(request, dataset_id, filename):
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
     return ArchAPI.proxy_file_preview_download(
         request.user,
-        dataset.job_start.collection.arch_id,
-        dataset.job_start.job_type.id,
-        dataset.job_start.sample,
+        dataset.job_start.id,
         filename,
     )
 
@@ -215,12 +213,7 @@ def dataset_file_download(request, dataset_id, filename):
         return HttpResponseForbidden()
 
     return ArchAPI.proxy_file_download(
-        request.user,
-        dataset.job_start.collection.arch_id,
-        dataset.job_start.job_type.id,
-        dataset.job_start.sample,
-        filename,
-        access_token,
+        request.user, dataset.job_start.id, filename, access_token
     )
 
 
@@ -233,9 +226,7 @@ def dataset_file_colab(request, dataset_id, filename):
     )
     return ArchAPI.proxy_colab_redirect(
         request.user,
-        dataset.job_start.collection.arch_id,
-        dataset.job_start.job_type.id,
-        dataset.job_start.sample,
+        dataset.job_start.id,
         filename,
         job_file.access_token,
         ctx_helpers(request)["abs_url"](

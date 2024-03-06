@@ -28,6 +28,7 @@ export default {
     "./src/archHoverTooltip/src/arch-hover-tooltip.ts",
     "./src/archRecentDatasetsCard/src/arch-recent-datasets-card.ts",
     "./src/archSubCollectionBuilder/src/arch-sub-collection-builder.ts",
+    "./src/archGlobalModal/src/arch-global-modal.ts",
   ],
   output: {
     dir: "../keystone/static/js",

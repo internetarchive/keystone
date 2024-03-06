@@ -1,4 +1,4 @@
-import{i as t,_ as e,s as o,y as s,a}from"./chunk-query-assigned-elements.js";import{t as l}from"./chunk-state.js";import{a as i}from"./chunk-arch-alert.js";import{P as c}from"./chunk-helpers2.js";import"./chunk-arch-card.js";import"./chunk-arch-loading-indicator.js";import{g as n,c as r}from"./chunk-styles.js";import{h as d}from"./chunk-helpers.js";import"./chunk-arch-generate-dataset-form.js";import"./chunk-query-all.js";import"./chunk-arch-sub-collection-builder.js";import"./chunk-scale-large.js";var h,m=[n,r,t`
+import{i as t,_ as e,s as o,y as s,a as l}from"./chunk-query-assigned-elements.js";import{t as i}from"./chunk-state.js";import{A as a}from"./chunk-arch-sub-collection-builder.js";import{a as c}from"./chunk-helpers2.js";import"./chunk-arch-card.js";import"./chunk-arch-loading-indicator.js";import{g as n,c as r}from"./chunk-styles.js";import{h as d}from"./chunk-helpers.js";import"./chunk-directive.js";import"./chunk-arch-json-schema-form.js";import"./chunk-define-element.js";import"./chunk-scale-large.js";import"./chunk-sp-overlay.js";var h,m=[n,r,t`
     thead > tr.hidden-header {
       color: transparent;
     }
@@ -47,13 +47,13 @@ import{i as t,_ as e,s as o,y as s,a}from"./chunk-query-assigned-elements.js";im
               </tr>
             </thead>
             <tbody>
-              ${(()=>{var a;return e?[s`
+              ${(()=>{var l;return e?[s`
               <tr>
                 <td colspan="3">
                   <arch-loading-indicator></arch-loading-indicator>
                 </td>
               </tr>
-            `]:o?(null!==(a=this.collections)&&void 0!==a?a:[]).slice(0,t).map((t=>s`
+            `]:o?(null!==(l=this.collections)&&void 0!==l?l:[]).slice(0,t).map((t=>s`
               <tr>
                 <td class="name">
                   <a
@@ -95,5 +95,5 @@ import{i as t,_ as e,s as o,y as s,a}from"./chunk-query-assigned-elements.js";im
               `}
         </div>
       </arch-card>
-    `}async initCollections(){const t=await i.collections.get([["limit","=",h.maxDisplayedCollections]]);this.numTotalCollections=t.count,this.collections=t.items}};u.maxDisplayedCollections=10,u.styles=m,e([l()],u.prototype,"numTotalCollections",void 0),e([l()],u.prototype,"collections",void 0),u=h=e([a("arch-collections-card")],u);export{u as ArchCollectionsCard};
+    `}async initCollections(){const t=await a.collections.get([["limit","=",h.maxDisplayedCollections]]);this.numTotalCollections=t.count,this.collections=t.items}};u.maxDisplayedCollections=10,u.styles=m,e([i()],u.prototype,"numTotalCollections",void 0),e([i()],u.prototype,"collections",void 0),u=h=e([l("arch-collections-card")],u);export{u as ArchCollectionsCard};
 //# sourceMappingURL=arch-collections-card.js.map

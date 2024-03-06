@@ -1,4 +1,4 @@
-import{i as t,_ as a,s as e,y as s,a as r}from"./chunk-query-assigned-elements.js";import{t as i}from"./chunk-state.js";import{a as o}from"./chunk-arch-alert.js";import{P as l}from"./chunk-helpers2.js";import{i as d}from"./chunk-helpers.js";import"./chunk-arch-card.js";import"./chunk-arch-loading-indicator.js";import{g as n,c}from"./chunk-styles.js";import"./chunk-arch-generate-dataset-form.js";import"./chunk-query-all.js";import"./chunk-arch-sub-collection-builder.js";import"./chunk-scale-large.js";var h,m=[n,c,t`
+import{i as t,_ as a,s as e,y as s,a as i}from"./chunk-query-assigned-elements.js";import{t as r}from"./chunk-state.js";import{A as o}from"./chunk-arch-sub-collection-builder.js";import{a as l}from"./chunk-helpers2.js";import{i as d}from"./chunk-helpers.js";import"./chunk-arch-card.js";import"./chunk-arch-loading-indicator.js";import{g as n,c}from"./chunk-styles.js";import"./chunk-directive.js";import"./chunk-arch-json-schema-form.js";import"./chunk-define-element.js";import"./chunk-scale-large.js";import"./chunk-sp-overlay.js";var h,m=[n,c,t`
     thead > tr.hidden-header {
       color: transparent;
     }
@@ -18,7 +18,7 @@ import{i as t,_ as a,s as e,y as s,a as r}from"./chunk-query-assigned-elements.j
     td.date {
       text-align: right;
     }
-  `];let p=h=class extends e{constructor(){super(),this.numTotalDatasets=0,this.datasets=void 0,this.initDatasets()}render(){var t,a;const{numTotalDatasets:e}=this,r=void 0===this.datasets,i=(null!==(t=this.datasets)&&void 0!==t?t:[]).length>0,o=null!==(a=this.datasets)&&void 0!==a?a:[];return s`
+  `];let p=h=class extends e{constructor(){super(),this.numTotalDatasets=0,this.datasets=void 0,this.initDatasets()}render(){var t,a;const{numTotalDatasets:e}=this,i=void 0===this.datasets,r=(null!==(t=this.datasets)&&void 0!==t?t:[]).length>0,o=null!==(a=this.datasets)&&void 0!==a?a:[];return s`
       <arch-card
         title="Recent Datasets"
         ctatext="Generate New Dataset"
@@ -27,18 +27,18 @@ import{i as t,_ as a,s as e,y as s,a as r}from"./chunk-query-assigned-elements.j
         <div slot="content">
           <table>
             <thead>
-              <tr class="${r||!i?"hidden-header":""}">
+              <tr class="${i||!r?"hidden-header":""}">
                 <th class="name">Dataset</th>
                 <th class="collection">Collection Name</th>
                 <th class="date">Date Generated</th>
               </tr>
             </thead>
             <tbody>
-              ${r?[s`<tr>
+              ${i?[s`<tr>
               <td colspan="3">
                 <arch-loading-indicator></arch-loading-indicator>
               </td>
-            </tr>`]:i?o.map((t=>{const a=`${t.name}${t.is_sample?" (Sample)":""}`;return s`
+            </tr>`]:r?o.map((t=>{const a=`${t.name}${t.is_sample?" (Sample)":""}`;return s`
               <tr>
                 <td class="name">
                   <a href="${l.dataset(t.id)}" title="${a}">
@@ -59,7 +59,7 @@ import{i as t,_ as a,s as e,y as s,a as r}from"./chunk-query-assigned-elements.j
           </table>
         </div>
         <div slot="footer">
-          ${r||!i?s``:s`
+          ${i||!r?s``:s`
                 <a href="/datasets/explore" class="view-all">
                   View
                   ${o.length<e?s`All ${e}`:s``}
@@ -68,5 +68,5 @@ import{i as t,_ as a,s as e,y as s,a as r}from"./chunk-query-assigned-elements.j
               `}
         </div>
       </arch-card>
-    `}async initDatasets(){const t=await o.datasets.get([["state","=","FINISHED"],["sort","=","-start_time"],["limit","=",h.maxDisplayedDatasets]]);this.numTotalDatasets=t.count,this.datasets=t.items}};p.maxDisplayedDatasets=10,p.styles=m,a([i()],p.prototype,"numTotalDatasets",void 0),a([i()],p.prototype,"datasets",void 0),p=h=a([r("arch-recent-datasets-card")],p);export{p as ArchRecentDatasetsCard};
+    `}async initDatasets(){const t=await o.datasets.get([["state","=","FINISHED"],["sort","=","-start_time"],["limit","=",h.maxDisplayedDatasets]]);this.numTotalDatasets=t.count,this.datasets=t.items}};p.maxDisplayedDatasets=10,p.styles=m,a([r()],p.prototype,"numTotalDatasets",void 0),a([r()],p.prototype,"datasets",void 0),p=h=a([i("arch-recent-datasets-card")],p);export{p as ArchRecentDatasetsCard};
 //# sourceMappingURL=arch-recent-datasets-card.js.map

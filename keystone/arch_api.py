@@ -155,32 +155,35 @@ class ArchAPI:
         )
 
     @classmethod
-    def run_job(cls, user, collection_id, job_id, sample, job_params, rerun=False):
+    def run_job(cls, user, input_spec, job_id, sample, job_params):
         """Run a job."""
         return cls.post(
             user,
-            f"/runjob/{job_id}/{collection_id}",
-            data=job_params,
+            f"/runjob/{job_id}",
+            data={
+                "user": user.arch_username,
+                "inputSpec": input_spec,
+                "params": job_params,
+            },
             sample=sample,
-            rerun=rerun,
         )
 
     @classmethod
-    def get_dataset_sample_viz_data(cls, user, dataset_id):
+    def get_dataset_sample_viz_data(cls, user, job_run_uuid):
         """Get the dataset sample visualization data."""
         try:
-            return cls.get_json(user, f"/datasets/{dataset_id}/sample_viz_data")
+            return cls.get_json(user, f"/job/{job_run_uuid}/sample_viz_data")
         except ArchRequestError as e:
             if e.status_code != HTTPStatus.NOT_FOUND:
                 raise
             raise Http404 from e
 
     @classmethod
-    def publish_dataset(cls, user, collection_id, job_id, sample, metadata):
+    def publish_dataset(cls, user, input_spec, job_id, sample, metadata):
         """Publish a Dataset"""
         return cls.run_job(
             user=user,
-            collection_id=collection_id,
+            input_spec=input_spec,
             job_id="DatasetPublication",
             sample=sample,
             job_params={"dataset": job_id, "metadata": metadata},
@@ -244,27 +247,21 @@ class ArchAPI:
             raise Http404 from e
 
     @classmethod
-    def proxy_file_preview_download(cls, user, collection_id, job_id, sample, filename):
+    def proxy_file_preview_download(cls, user, job_run_uuid, filename):
         """Download a dataset file preview."""
         return cls.get(
             user,
-            f"/preview/{collection_id}/{job_id}/{filename}",
-            base_url=settings.ARCH_FILES_BASE_URL,
+            f"/job/{job_run_uuid}/preview/{filename}",
             proxy=True,
-            sample=sample,
         )
 
     @classmethod
-    def proxy_file_download(
-        cls, user, collection_id, job_id, sample, filename, access_token
-    ):
+    def proxy_file_download(cls, user, job_run_uuid, filename, access_token):
         """Download a dataset file."""
         return cls.get(
             user,
-            f"/download/{collection_id}/{job_id}/{filename}",
-            base_url=settings.ARCH_FILES_BASE_URL,
+            f"/job/{job_run_uuid}/download/{filename}",
             proxy=True,
-            sample=sample,
             access=access_token,
         )
 
@@ -272,9 +269,7 @@ class ArchAPI:
     def proxy_colab_redirect(
         cls,
         user,
-        collection_id,
-        job_id,
-        sample,
+        job_run_uuid,
         filename,
         access_token,
         file_download_url,
@@ -282,48 +277,43 @@ class ArchAPI:
         """Redirect to a Google Colab initialized with the dataset file"""
         return cls.get(
             user,
-            f"/colab/{collection_id}/{job_id}/{filename}?access={access_token}",
-            base_url=settings.ARCH_FILES_BASE_URL,
+            f"/job/{job_run_uuid}/colab/{filename}",
             proxy=True,
             follow_redirects=False,
-            sample=sample,
+            access=access_token,
             file_download_url=file_download_url,
         )
 
     @classmethod
-    def proxy_wasapi_request(cls, user, collection_id, job_id, sample):
+    def proxy_wasapi_request(cls, user, job_run_uuid, base_download_url):
         """Return a WASAPI dataset file listing response."""
         return cls.get(
             user,
-            f"/jobs/{job_id}/result",
-            base_url=settings.ARCH_WASAPI_BASE_URL,
+            f"/job/{job_run_uuid}/files",
             proxy=True,
-            collection=collection_id,
-            sample=sample,
+            base_download_url=base_download_url,
         )
 
     @classmethod
-    def generate_dataset(cls, user, collection_id, job_id, sample, rerun=False):
+    def generate_dataset(cls, user, input_spec, job_id, sample):
         """(Re)Generate a Dataset."""
         return cls.run_job(
             user=user,
-            collection_id=collection_id,
+            input_spec=input_spec,
             job_id=job_id,
             sample=sample,
             job_params={"dataset": job_id},
-            rerun=rerun,
         )
 
     @classmethod
-    def create_sub_collection(cls, user, collection_id, job_params):
+    def create_sub_collection(cls, user, input_spec, job_params):
         """Create a custom sub-collection."""
         return cls.run_job(
             user=user,
-            collection_id=collection_id,
-            job_id="UserDefinedQuery",
+            input_spec=input_spec,
+            job_id=settings.KnownArchJobUuids.USER_DEFINED_QUERY,
             sample=None,
             job_params=job_params,
-            rerun=None,
         )
 
     @classmethod

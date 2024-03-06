@@ -75,6 +75,7 @@ export class ArchCollectionDetailsDatasetTable extends ArchDataTable<Dataset> {
     this.singleName = "Dataset";
     this.sort = "-start_time";
     this.sortableColumns = [true, true, true, true, true, true];
+    this.persistSearchStateInUrl = true;
     this.pluralName = "Datasets";
   }
 

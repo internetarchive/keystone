@@ -19,6 +19,7 @@ import uuid6
 
 from config import settings
 from .validators import validate_username
+from .helpers import strip_arch_collection_id_username
 
 
 # Define a namedtuple to return from JobStart.get_job_status()
@@ -181,6 +182,26 @@ class Collection(models.Model):
         collection.size_bytes = job_complete.output_bytes
         collection.save()
 
+    @property
+    def input_spec(self):
+        """Return the ARCH InputSpec object for this collection."""
+        if self.collection_type in (
+            CollectionTypes.AIT,
+            CollectionTypes.SPECIAL,
+            CollectionTypes.CUSTOM,
+        ):
+            return {"type": "collection", "collectionId": self.arch_id}
+        raise NotImplementedError
+
+    @classmethod
+    def get_for_input_spec(cls, input_spec):
+        """Return the collection that matches the specified InputSpec object."""
+        if input_spec["type"] != "collection":
+            raise NotImplementedError
+        # Strip any included username.
+        arch_id = strip_arch_collection_id_username(input_spec["collectionId"])
+        return cls.objects.get(arch_id=arch_id)
+
     def __str__(self):
         return self.name
 
@@ -247,6 +268,7 @@ class JobType(models.Model):
     output_quota_eligible = models.BooleanField()
     download_quota_eligible = models.BooleanField()
     created_at = models.DateTimeField(auto_now_add=True)
+    parameters_schema = models.JSONField(null=True)
 
     def __str__(self):
         return f"{self.id} - {self.name}"

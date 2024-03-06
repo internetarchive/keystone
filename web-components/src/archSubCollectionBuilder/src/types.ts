@@ -1,4 +1,4 @@
-type FormFieldName =
+export type FormFieldName =
   | "sources"
   | "name"
   | "surtPrefixesOR"
@@ -6,6 +6,10 @@ type FormFieldName =
   | "timestampTo"
   | "statusPrefixesOR"
   | "mimesOR";
+
+export type FormFieldValue = string | Array<string>;
+
+export type ParsedFormFieldValue = string | Array<string>;
 
 export type DecodedFormData = Record<
   FormFieldName,
