@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators.js";
 
 import { FacetResultMap } from "../../lib/types";
 import { EventHelpers } from "../../lib/eventHelpers";
+import { readableFacetName } from "../../lib/helpers";
 
 @customElement("collection-surveyor-facet")
 export class CollectionSurveyorFacet extends LitElement {
@@ -72,7 +73,11 @@ export class CollectionSurveyorFacet extends LitElement {
                             /* Placeholder event listener for acessibility */
                           }}
                         >
-                          ${facetFieldResult.name} (${facetFieldResult.count})
+                          ${readableFacetName(
+                            facetFieldResult.name,
+                            this.facetField
+                          )}
+                          (${facetFieldResult.count})
                         </span>
                         ${this.selectedfacetFieldResults.includes(
                           facetFieldResult.name

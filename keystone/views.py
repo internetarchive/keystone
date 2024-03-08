@@ -86,8 +86,15 @@ def collection_surveyor_search(request):
     """search ait collections using search term or facet"""
     filter_query = ["type:Collection", "publiclyVisible:true"]
 
-    search_query = request.GET.get("q")
+    search_query = request.GET.get("q", "")
     search_query = "*:*" if search_query == "" else search_query
+
+    row_count = request.GET.get("r")
+
+    try:
+        row_count = int(row_count)
+    except ValueError:
+        return HttpResponseBadRequest(f"invalid value for r: {row_count}")
 
     solr_url = "http://wbgrp-svc515.us.archive.org:8983/solr"
     core_name = "ait"  # Replace with your Solr core or collection name
@@ -98,9 +105,9 @@ def collection_surveyor_search(request):
     # Perform a search query with facets
     result = solr_client.search(
         query=search_query,
-        rows=1000,
+        rows=row_count,
         fq=filter_query,
-        facet_fields=["f_organizationName", "f_organizationType", "f_collectionName"],
+        facet_fields=["f_organizationName", "f_organizationType"],
     )
 
     # parse data for each facet field into list of dictionaries

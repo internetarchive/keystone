@@ -2,12 +2,12 @@ import { html, css, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { SelectedFacets } from "../../lib/types";
 import { EventHelpers } from "../../lib/eventHelpers";
+import { readableFacetName } from "../../lib/helpers";
 
 @customElement("collection-surveyor-active-filters")
 export class CollectionSurveyorActiveFilters extends LitElement {
   @property({ type: Object })
   activeFilters: SelectedFacets = {
-    f_collectionName: [],
     f_organizationName: [],
     f_organizationType: [],
   };
@@ -53,7 +53,7 @@ export class CollectionSurveyorActiveFilters extends LitElement {
                               facetFieldName
                             )}:</strong
                           >
-                          ${facetValue}
+                          ${readableFacetName(facetValue, facetFieldName)}
                           <button
                             @click=${() =>
                               this.handleRemoveActiveFilter(
@@ -75,6 +75,10 @@ export class CollectionSurveyorActiveFilters extends LitElement {
   }
 
   static styles = css`
+    .active-filters {
+      padding: 0px 0px 30px 0px;
+    }
+
     button {
       background: none;
       border: none;

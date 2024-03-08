@@ -9,6 +9,8 @@ export class CollectionSurveyorPagination extends LitElement {
 
   @property({ type: Number }) totalResults = 0;
 
+  @property({ type: Boolean }) backgroundCollectionsLoaded = false;
+
   get totalPages(): number {
     return Math.ceil(this.totalResults / this.itemsPerPage);
   }
@@ -18,7 +20,7 @@ export class CollectionSurveyorPagination extends LitElement {
     this.dispatchEvent(
       new CustomEvent("page-changed", { detail: this.currentPage })
     );
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 300, behavior: "smooth" });
   }
 
   nextPage() {
@@ -28,7 +30,7 @@ export class CollectionSurveyorPagination extends LitElement {
   }
 
   prevPage() {
-    if (this.currentPage < this.totalPages) {
+    if (this.currentPage <= this.totalPages) {
       this.jumpToPage(this.currentPage - 1);
     }
   }
@@ -39,10 +41,12 @@ export class CollectionSurveyorPagination extends LitElement {
         <button @click="${this.prevPage}" ?disabled="${this.currentPage === 1}">
           Previous
         </button>
-        <span
-          >Page ${this.currentPage} of ${this.totalPages} (${this.totalResults}
-          Total Results)</span
-        >
+        ${this.backgroundCollectionsLoaded
+          ? html` <span
+              >Page ${this.currentPage} of ${this.totalPages}
+              (${this.totalResults} Total Results)</span
+            >`
+          : html`<span>Page ${this.currentPage} </span>`}
         <button
           @click="${this.nextPage}"
           ?disabled="${this.currentPage === this.totalPages}"

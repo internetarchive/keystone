@@ -21,18 +21,23 @@ export interface CollectionSearchResult {
   collectionId: number;
   meta_Description?: string;
   totalWarcBytes: number;
+  created_dt: string;
 }
 
-export interface CollectionCheckboxEventDetail {
+export interface CollectionAddToCartEventDetail {
   collectionSize: string;
-  isChecked: boolean;
+  isSelected: boolean;
   collectionName: string;
   collectionId: string;
+  organizationName: string;
+  createdDt: string;
 }
 
 export interface CollectionSelectedDetail {
   collectionSize: string;
   collectionId: string;
+  organizationName: string;
+  createdDt: string;
 }
 
 export interface Facets {
@@ -45,7 +50,6 @@ export interface FacetResultMap {
 }
 
 export interface SelectedFacets {
-  f_collectionName: string[];
   f_organizationName: string[];
   f_organizationType: string[];
 }

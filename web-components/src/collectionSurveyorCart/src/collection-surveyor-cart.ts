@@ -3,7 +3,10 @@ import { customElement, property } from "lit/decorators.js";
 
 import { CollectionSelectedDetail } from "../../lib/types";
 
-import { humanBytes } from "../../lib/webservices/src/lib/helpers";
+import {
+  humanBytes,
+  timestampStringToYearMonthString,
+} from "../../lib/helpers";
 import { EventHelpers } from "../../lib/eventHelpers";
 
 @customElement("collection-surveyor-cart")
@@ -35,13 +38,19 @@ export class CollectionSurveyorCart extends LitElement {
   render() {
     return html`
       <div class="cart-container">
-        <div class="collections-cart ">
-          <h3>Collections Selected:</h3>
+        <div class="collections-cart">
+          <h3>Collections Selected</h3>
           <ul>
             ${Object.entries(this.collectionsInCart).map(
               ([collectionName, value]) => html`
                 <li>
-                  ${collectionName}, Collection ID: ${value.collectionId},
+                  <a
+                    class="collectionName"
+                    href="https://archive-it.org/collections/${value.collectionId}"
+                    target="_blank"
+                    >${collectionName}</a
+                  >, Organization: ${value.organizationName}, Archived Since:
+                  ${timestampStringToYearMonthString(value.createdDt)},
                   Collection Size: ${humanBytes(Number(value.collectionSize))}
                   <button
                     @click=${() =>
@@ -53,12 +62,12 @@ export class CollectionSurveyorCart extends LitElement {
               `
             )}
           </ul>
-          <h3>
+          <h4>
             Total Collection Size Selected:
             <span class="totalSizeSelected"
               >${humanBytes(this.totalCollectionSizeSelected)}</span
             >
-          </h3>
+          </h4>
         </div>
       </div>
     `;
@@ -83,6 +92,16 @@ export class CollectionSurveyorCart extends LitElement {
       cursor: pointer;
       color: red;
       text-decoration: underline;
+    }
+    li {
+      margin: 0.6em 0;
+      line-height: 1.25;
+    }
+    .collectionName {
+      font-weight: bold;
+    }
+    a {
+      color: #c9540a;
     }
   `;
 }
