@@ -21,7 +21,7 @@ import{i as e,_ as t,e as r,s as a,y as s,a as h}from"./chunk-query-assigned-ele
       </div>
     `}handleInputChange(e){const t=e.target;this.searchText=t.value}handleSearch(){this.emitEvent("search-clicked",{searchText:this.searchText})}handleClear(){this.searchText="",this.handleSearch()}handleEnter(e){"Enter"===e.key&&this.handleSearch()}emitEvent(e,t={}){this.dispatchEvent(n.createEvent(e,t?{detail:t}:{}))}};c.styles=e`
     .search-bar-container {
-      padding: 20px 50px 6px 50px;
+      padding: 0px 0px 6px 0px;
     }
 
     .search-bar-contents {

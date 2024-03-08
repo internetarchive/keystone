@@ -1,100 +1,110 @@
-import{e,i as t,_ as i,s as o,y as c,a as l,b as s}from"./chunk-query-assigned-elements.js";import"./collection-surveyor-facet.js";import"./collection-surveyor-pagination.js";import{h as n}from"./chunk-collection-surveyor-cart.js";import"./collection-surveyor-search-bar.js";import"./collection-surveyor-active-filters.js";import"./chunk-eventHelpers.js";
+import{e,i as t,_ as o,s as i,y as c,a as l,b as s}from"./chunk-query-assigned-elements.js";import"./collection-surveyor-facet.js";import"./collection-surveyor-pagination.js";import"./collection-surveyor-cart.js";import"./collection-surveyor-search-bar.js";import"./collection-surveyor-active-filters.js";import{t as a,h as n}from"./chunk-helpers.js";import"./chunk-eventHelpers.js";
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */function a(t){return e({...t,state:!0})}
+ */function r(t){return e({...t,state:!0})}
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */const r=({finisher:e,descriptor:t})=>(i,o)=>{var c;if(void 0===o){const o=null!==(c=i.originalKey)&&void 0!==c?c:i.key,l=null!=t?{kind:"method",placement:"prototype",key:o,descriptor:t(i.key)}:{...i,key:o};return null!=e&&(l.finisher=function(t){e(t,o)}),l}{const c=i.constructor;void 0!==t&&Object.defineProperty(i,o,t(o)),null==e||e(c,o)}}
+ */const d=({finisher:e,descriptor:t})=>(o,i)=>{var c;if(void 0===i){const i=null!==(c=o.originalKey)&&void 0!==c?c:o.key,l=null!=t?{kind:"method",placement:"prototype",key:i,descriptor:t(o.key)}:{...o,key:i};return null!=e&&(l.finisher=function(t){e(t,i)}),l}{const c=o.constructor;void 0!==t&&Object.defineProperty(o,i,t(i)),null==e||e(c,i)}}
 /**
  * @license
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
- */;const d=/csrftoken=([^;$]+)/,h=()=>{const e=d.exec(decodeURIComponent(document.cookie));return e?{"X-CSRFToken":e[1]}:{}};function p(e,t){const i=function(e,t){return 0===t.length?e:""===e?t.join(" AND "):[...t,e].join(" AND ")}(e,t);return function(e){const t={method:e.method,headers:{...h(),Accept:"application/json","Content-Type":"application/json"}};return e.body&&(t.body=JSON.stringify(e.body)),fetch(e.url,t).then((t=>{if(t.ok)return t.json().then((e=>e));throw new Error(e.errorMessage)})).catch((t=>(console.error(t),Promise.reject(e.errorMessage))))}({url:`/collection_surveyor/search/?q=${encodeURIComponent(i)}`,method:"GET",errorMessage:"error in collection surveyor search"})}let u=class extends o{constructor(){super(...arguments),this.collections=void 0,this.facets={},this.isLoading=!0,this.collectionsSelected={},this.selectedFacets={f_collectionName:[],f_organizationName:[],f_organizationType:[]},this.searchTerm="",this.currentPage=1,this.itemsPerPage=10}connectedCallback(){super.connectedCallback(),this.search()}get collectionsLength(){return this.collections?this.collections.length:0}get startIndex(){return(this.currentPage-1)*this.itemsPerPage}get endIndex(){return this.startIndex+this.itemsPerPage}get paginatedResults(){var e;return null===(e=this.collections)||void 0===e?void 0:e.slice(this.startIndex,this.endIndex)}handleUpdateCollectionsSelected(e){const{collectionSize:t,isChecked:i,collectionName:o,collectionId:c}=e.detail;if(i){const e={collectionSize:t,collectionId:c};this.collectionsSelected={...this.collectionsSelected,[o]:e}}else this.removeCollectionFromCollectionsSelected(o)}handleRemoveCollectionFromCart(e){const{collectionName:t}=e.detail;this.removeCollectionFromCollectionsSelected(t)}removeCollectionFromCollectionsSelected(e){const{[e]:t,...i}=this.collectionsSelected;this.collectionsSelected={...i}}handlePageChange(e){this.currentPage=Number(e.detail)}handleFacetSelected(e){const t=e.detail.facetName,i=e.detail.facetFieldName;this.selectedFacets={...this.selectedFacets,[i]:[...this.selectedFacets[i],t]},this.search()}handleFacetDeselected(e){const t=e.detail.facetName,i=e.detail.facetFieldName;this.selectedFacets={...this.selectedFacets,[i]:this.selectedFacets[i].filter((e=>e!==t))},this.search()}get filterQuery(){return Object.entries(this.selectedFacets).flatMap((([e,t])=>{const i=e.slice(2);return t.map((e=>`${i}:"${e}"`))}))}handleSearchClicked(e){const t=e.detail.searchText;this.searchTerm=t,this.search()}search(){this.isLoading=!0,p(this.searchTerm,this.filterQuery).then((e=>{this.collections=e.collections,this.facets=e.facets,this.isLoading=!1})).catch((e=>{this.isLoading=!1}))}render(){var e;return c`
+ */;const h=/csrftoken=([^;$]+)/,p=()=>{const e=h.exec(decodeURIComponent(document.cookie));return e?{"X-CSRFToken":e[1]}:{}};function u(e,t){return function(e){const t={method:e.method,headers:{...p(),Accept:"application/json","Content-Type":"application/json"}};return e.body&&(t.body=JSON.stringify(e.body)),fetch(e.url,t).then((t=>{if(t.ok)return t.json().then((e=>e));throw new Error(e.errorMessage)})).catch((t=>(console.error(t),Promise.reject(e.errorMessage))))}({url:`/collection_surveyor/search/?q=${encodeURIComponent(e)}&r=${encodeURIComponent(t)}`,method:"GET",errorMessage:"error in collection surveyor search"})}var g;let m=g=class extends i{constructor(){super(...arguments),this.collections=void 0,this.cachedCollections=void 0,this.facets={},this.cachedFacets={},this.isLoading=!1,this.backgroundCollectionsLoaded=!1,this.collectionsSelected={},this.selectedFacets={f_organizationName:[],f_organizationType:[]},this.searchTerm="",this.currentPage=1,this.itemsPerPage=100}connectedCallback(){super.connectedCallback(),this.loadSearchFirstPage().then((()=>this.loadRemainingSearchResultsInBackgroundAndCacheData())).catch((e=>{throw e}))}get collectionsLength(){return this.collections?this.collections.length:0}get startIndex(){return(this.currentPage-1)*this.itemsPerPage}get endIndex(){return this.startIndex+this.itemsPerPage}get paginatedResults(){var e;return null===(e=this.collections)||void 0===e?void 0:e.slice(this.startIndex,this.endIndex)}handleUpdateCollectionsSelected(e){const{collectionSize:t,collectionName:o,collectionId:i,organizationName:c,createdDt:l}=e.detail;if(o in this.collectionsSelected)this.removeCollectionFromCollectionsSelected(o);else{const e={collectionSize:t,collectionId:i,organizationName:c,createdDt:l};this.collectionsSelected={...this.collectionsSelected,[o]:e}}}handleRemoveCollectionFromCart(e){const{collectionName:t}=e.detail;this.removeCollectionFromCollectionsSelected(t)}removeCollectionFromCollectionsSelected(e){const{[e]:t,...o}=this.collectionsSelected;this.collectionsSelected={...o}}handlePageChange(e){this.currentPage=Number(e.detail)}handleFacetSelected(e){const t=e.detail.facetName,o=e.detail.facetFieldName;this.selectedFacets={...this.selectedFacets,[o]:[...this.selectedFacets[o],t]},this.loadSearchResults()}handleFacetDeselected(e){const t=e.detail.facetName,o=e.detail.facetFieldName;this.selectedFacets={...this.selectedFacets,[o]:this.selectedFacets[o].filter((e=>e!==t))},this.loadSearchResults()}get filterQuery(){return Object.entries(this.selectedFacets).flatMap((([e,t])=>{const o=e.slice(2);return t.map((e=>`${o}:"${e}"`))}))}handleSearchClicked(e){const t=e.detail.searchText;this.searchTerm=t,this.loadSearchResults()}get finalSearchTerm(){return e=this.searchTerm,0===(t=this.filterQuery).length?e:""===e?t.join(" AND "):[...t,e].join(" AND ");var e,t}loadSearchFirstPage(){return this.performSearch(this.finalSearchTerm,this.itemsPerPage).then((()=>{this.currentPage=1}))}loadRemainingSearchResultsInBackground(){return this.backgroundCollectionsLoaded=!1,this.performSearch(this.finalSearchTerm,g.MAX_COLLECTION_COUNT).then((()=>{this.backgroundCollectionsLoaded=!0}))}loadRemainingSearchResultsInBackgroundAndCacheData(){this.performSearch("",g.MAX_COLLECTION_COUNT).then((e=>{this.cachedCollections=e.collections,this.cachedFacets=e.facets,this.backgroundCollectionsLoaded=!0})).catch((e=>{throw e}))}loadSearchResults(){""===this.finalSearchTerm&&void 0!==this.cachedCollections&&void 0!==this.cachedFacets?(this.collections=this.cachedCollections,this.facets=this.cachedFacets,this.currentPage=1):this.loadSearchFirstPage().then((()=>this.loadRemainingSearchResultsInBackground())).catch((e=>{throw e}))}performSearch(e,t){return this.isLoading=!0,u(e,t).then((e=>(this.collections=e.collections,this.facets=e.facets,this.isLoading=!1,e))).catch((e=>{throw this.isLoading=!1,e}))}render(){var e;return c`
       <!-- Collections Cart -->
       <collection-surveyor-cart
         .collectionsInCart=${this.collectionsSelected}
         @collection-removed-from-cart=${this.handleRemoveCollectionFromCart}
       ></collection-surveyor-cart>
 
-      <!-- Search Bar -->
-      <collection-surveyor-search-bar
-        .searchText=${this.searchTerm}
-        @search-clicked="${this.handleSearchClicked}"
-      ></collection-surveyor-search-bar>
+      <div class="search-facets-and-collections-container">
+        <!-- Search Bar -->
+        <collection-surveyor-search-bar
+          .searchText=${this.searchTerm}
+          @search-clicked="${this.handleSearchClicked}"
+        ></collection-surveyor-search-bar>
 
-      <!-- Facets and Collections-->
-      <div class="facets-and-collections-container">
-        <!-- Loading icon -->
-          <div class="loading">
-            ${this.isLoading?c`<div class="spinner"></div>`:c``}
-          </div>
+        <!-- Facets and Collections-->
+        <div class="facets-and-collections-container">
+          <!-- Loading icon -->
+            <div class="loading">
+              ${this.isLoading?c`<div class="spinner"></div>`:c``}
+            </div>
 
-        ${0!==this.collectionsLength?c`
-                <!-- Facets  -->
-                <div class="facets-container">
-                  <div>
-                    <h4>Narrow Your Results</h4>
-                    ${this.facets?c` ${Object.entries(this.facets).map((([e,t])=>c`
-                            <collection-surveyor-facet
-                              .facetField=${e}
-                              .facetFieldResults=${t}
-                              .selectedfacetFieldResults=${this.selectedFacets[e]}
-                              @facet-selected=${this.handleFacetSelected}
-                              @facet-deselected=${this.handleFacetDeselected}
-                            ></collection-surveyor-facet>
-                          `))}`:c`<p>No facets available</p>`}
+          ${0!==this.collectionsLength?c`
+                  <!-- Facets  -->
+                  <div class="facets-container">
+                    <div>
+                      <h4>Narrow Your Results</h4>
+                      ${this.facets?c` ${Object.entries(this.facets).map((([e,t])=>c`
+                              <collection-surveyor-facet
+                                .facetField=${e}
+                                .facetFieldResults=${t}
+                                .selectedfacetFieldResults=${this.selectedFacets[e]}
+                                @facet-selected=${this.handleFacetSelected}
+                                @facet-deselected=${this.handleFacetDeselected}
+                              ></collection-surveyor-facet>
+                            `))}`:c`<p>No facets available</p>`}
+                    </div>
                   </div>
-                </div>
-
-                <!-- Collections -->
-                <div class="collections-container">
-                  <!-- Active Filters -->
-                  <collection-surveyor-active-filters
-                    .activeFilters=${this.selectedFacets}
-                    @facet-deselected=${this.handleFacetDeselected}
-                  ></collection-surveyor-active-filters>
-
-                  <!-- Pagination top of page -->
-                  <collection-surveyor-pagination
-                    .currentPage="${this.currentPage}"
-                    .totalResults="${this.collectionsLength}"
-                    .itemsPerPage="${this.itemsPerPage}"
-                    @page-changed="${this.handlePageChange}"
-                  ></collection-surveyor-pagination>
 
                   <!-- Collections -->
-                  ${null===(e=this.paginatedResults)||void 0===e?void 0:e.map((e=>c`
-                      <collection-surveyor-search-result
-                        .collection=${e}
-                        .isChecked=${e.collectionName in this.collectionsSelected}
-                        @update-collections-selected="${this.handleUpdateCollectionsSelected}"
-                      ></collection-surveyor-search-result>
-                    `))}
+                  <div class="collections-container">
+                    <!-- Active Filters -->
+                    <collection-surveyor-active-filters
+                      .activeFilters=${this.selectedFacets}
+                      @facet-deselected=${this.handleFacetDeselected}
+                    ></collection-surveyor-active-filters>
 
-                  <!-- Pagination bottom of page -->
-                  <collection-surveyor-pagination
-                    .currentPage="${this.currentPage}"
-                    .totalResults="${this.collectionsLength}"
-                    .itemsPerPage="${this.itemsPerPage}"
-                    @page-changed="${this.handlePageChange}"
-                  ></collection-surveyor-pagination>
-                </div>
-              `:c``}
+                    <!-- Pagination top of page -->
+                    <collection-surveyor-pagination
+                      .currentPage="${this.currentPage}"
+                      .totalResults="${this.collectionsLength}"
+                      .itemsPerPage="${this.itemsPerPage}"
+                      .backgroundCollectionsLoaded="${this.backgroundCollectionsLoaded}"
+                      @page-changed="${this.handlePageChange}"
+                    ></collection-surveyor-pagination>
 
-        ${0!==this.collectionsLength||this.isLoading?c``:c`
-                <div class="no-results-message">
-                  <h2>No Results Found For Your Search</h2>
-                  <p>Try a new search or clear your previous search</p>
-                  <p></p>
-                </div>
-              `}
+                    <!-- Collections -->
+                    ${null===(e=this.paginatedResults)||void 0===e?void 0:e.map((e=>c`
+                        <collection-surveyor-search-result
+                          .collection=${e}
+                          .isSelected=${e.collectionName in this.collectionsSelected}
+                          @update-collections-selected="${this.handleUpdateCollectionsSelected}"
+                        ></collection-surveyor-search-result>
+                      `))}
+
+                    <!-- Pagination bottom of page -->
+                    <collection-surveyor-pagination
+                      .currentPage="${this.currentPage}"
+                      .totalResults="${this.collectionsLength}"
+                      .itemsPerPage="${this.itemsPerPage}"
+                      .backgroundCollectionsLoaded="${this.backgroundCollectionsLoaded}"
+                      @page-changed="${this.handlePageChange}"
+                    ></collection-surveyor-pagination>
+                  </div>
+                `:c``}
+
+          ${0!==this.collectionsLength||this.isLoading?c``:c`
+                  <div class="no-results-message">
+                    <h2>No Results Found For Your Search</h2>
+                    <p>Try a new search or clear your previous search</p>
+                    <p></p>
+                  </div>
+                `}
+          </div>
         </div>
       </div>
-    `}};u.styles=t`
+    `}};m.MAX_COLLECTION_COUNT=14e3,m.styles=t`
+    .search-facets-and-collections-container {
+      box-shadow: rgb(136, 136, 136) 1px 1px 6px;
+      border-radius: 6px;
+      margin: 20px 50px;
+    }
+
     .facets-and-collections-container {
       display: flex;
       background-color: rgb(248, 248, 248);
@@ -103,15 +113,14 @@ import{e,i as t,_ as i,s as o,y as c,a as l,b as s}from"./chunk-query-assigned-e
 
     .facets-container {
       display: flex;
-      padding: 10px 30px 10px 50px;
+      padding: 10px 20px;
       width: 40%;
     }
 
     .collections-container {
       display: flex;
       flex-direction: column;
-      padding: 10px;
-      padding-right: 50px;
+      padding: 10px 20px;
       width: -webkit-fill-available;
     }
 
@@ -140,7 +149,7 @@ import{e,i as t,_ as i,s as o,y as c,a as l,b as s}from"./chunk-query-assigned-e
         transform: rotate(360deg);
       }
     }
-  `,i([e({type:Array})],u.prototype,"collections",void 0),i([e({type:Object})],u.prototype,"facets",void 0),i([e({type:Boolean})],u.prototype,"isLoading",void 0),i([a()],u.prototype,"collectionsSelected",void 0),i([a()],u.prototype,"selectedFacets",void 0),i([a()],u.prototype,"searchTerm",void 0),i([a()],u.prototype,"currentPage",void 0),i([e({type:Number})],u.prototype,"itemsPerPage",void 0),u=i([l("collection-surveyor-search-results")],u);let g=class extends o{constructor(){super(...arguments),this.isChecked=!1}handleCheckboxChange(e){const t=e.target,{collectionId:i,collectionName:o,collectionSize:c}=t.dataset,l=new CustomEvent("update-collections-selected",{detail:{collectionSize:c,isChecked:t.checked,collectionName:o,collectionId:i},bubbles:!0,composed:!0});this.dispatchEvent(l)}render(){return c`
+  `,o([r()],m.prototype,"collections",void 0),o([r()],m.prototype,"cachedCollections",void 0),o([r()],m.prototype,"facets",void 0),o([r()],m.prototype,"cachedFacets",void 0),o([r()],m.prototype,"isLoading",void 0),o([r()],m.prototype,"backgroundCollectionsLoaded",void 0),o([r()],m.prototype,"collectionsSelected",void 0),o([r()],m.prototype,"selectedFacets",void 0),o([r()],m.prototype,"searchTerm",void 0),o([r()],m.prototype,"currentPage",void 0),o([e({type:Number})],m.prototype,"itemsPerPage",void 0),m=g=o([l("collection-surveyor-search-results")],m);let v=class extends i{constructor(){super(...arguments),this.isSelected=!1}handleAddToCartChange(e){const t=e.target,{collectionId:o,collectionName:i,collectionSize:c,organizationName:l,createdDt:s}=t.dataset,a=new CustomEvent("update-collections-selected",{detail:{collectionSize:c,collectionName:i,collectionId:o,organizationName:l,createdDt:s},bubbles:!0,composed:!0});this.dispatchEvent(a)}render(){return c`
       <div class="result-item">
         <div class="item-detail">
           <div class="item-detail-text">
@@ -153,60 +162,52 @@ import{e,i as t,_ as i,s as o,y as c,a as l,b as s}from"./chunk-query-assigned-e
             </h3>
             <ul>
               <li>
-                <span class="item-detail-label"> Organization ID: </span>
-                ${this.collection.organizationId}
-              </li>
-              <li>
                 <span class="item-detail-label"> Organization: </span>
                 ${this.collection.organizationName}
               </li>
-              <li>
-                <span class="item-detail-label"> Collection ID: </span>
-                ${this.collection.collectionId}
-              </li>
-
               ${this.collection.meta_Description?c` <li>
                     <span class="item-detail-label"> Description: </span>
                     ${this.collection.meta_Description[0]}
                   </li>`:s}
               <li>
-                <span class="item-detail-label"> Collection Size: </span>
-                ${n(this.collection.totalWarcBytes)}
+                <span class="item-detail-label"> Archived since: </span>
+                ${a(this.collection.created_dt)}
               </li>
               <li>
-                <input
-                  type="checkbox"
-                  data-collection-id=${this.collection.collectionId}
-                  data-collection-name=${this.collection.collectionName}
-                  data-collection-size=${this.collection.totalWarcBytes}
-                  @change=${this.handleCheckboxChange}
-                  .checked=${this.isChecked}
-                />
-                add collection to list
+                <span class="item-detail-label"> Collection Size: </span>
+                ${n(this.collection.totalWarcBytes)}
               </li>
             </ul>
           </div>
         </div>
+        <div class="collection-button">
+          <button
+            type="button"
+            data-collection-id=${this.collection.collectionId}
+            data-collection-name=${this.collection.collectionName}
+            data-collection-size=${this.collection.totalWarcBytes}
+            data-organization-name=${this.collection.organizationName}
+            data-created-dt=${this.collection.created_dt}
+            @click=${this.handleAddToCartChange}
+          >
+            ${this.isSelected?"Remove from cart":"Add to cart"}
+          </button>
+        </div>
       </div>
-    `}};g.styles=t`
+    `}};v.styles=t`
     .result-item {
       background-color: rgb(255, 255, 255);
       border-radius: 6px;
       box-shadow: rgb(136, 136, 136) 1px 1px 6px;
       margin-bottom: 15px;
+      display: flex;
+      justify-content: space-around;
     }
 
     .item-detail {
-      padding: 1em;
-      display: flex;
-      flex-direction: row;
-      justify-content: flex-start;
-      align-items: flex-start;
-      gap: 2em;
-    }
-
-    .item-detail-text {
-      max-width: 600px;
+      padding: 1em 0 1em 1em;
+      display: inline-block;
+      width: 75%;
     }
 
     .item-detail-text h2,
@@ -222,11 +223,26 @@ import{e,i as t,_ as i,s as o,y as c,a as l,b as s}from"./chunk-query-assigned-e
     }
 
     .item-detail-text ul li {
-      margin: 0.6em 0 0.6em 0;
+      margin: 0.6em 0;
+      line-height: 1.25;
     }
 
     .item-detail-text .item-detail-label {
       font-weight: bold;
     }
-  `,i([e({type:Object})],g.prototype,"collection",void 0),i([e({type:Boolean})],g.prototype,"isChecked",void 0),i([function(e){return r({finisher:(t,i)=>{Object.assign(t.prototype[i],e)}})}({capture:!0})],g.prototype,"handleCheckboxChange",null),g=i([l("collection-surveyor-search-result")],g);export{g as CollectionSurveyorSearchResult,u as CollectionSurveyorSearchResults};
+
+    .collection-button {
+      display: inline-block;
+      vertical-align: top;
+      padding: 1em;
+    }
+
+    button {
+      width: 130px;
+    }
+
+    a {
+      color: #c9540a;
+    }
+  `,o([e({type:Object})],v.prototype,"collection",void 0),o([e({type:Boolean})],v.prototype,"isSelected",void 0),o([function(e){return d({finisher:(t,o)=>{Object.assign(t.prototype[o],e)}})}({capture:!0})],v.prototype,"handleAddToCartChange",null),v=o([l("collection-surveyor-search-result")],v);export{v as CollectionSurveyorSearchResult,m as CollectionSurveyorSearchResults};
 //# sourceMappingURL=collection-surveyor-search-results.js.map

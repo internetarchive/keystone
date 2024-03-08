@@ -59,7 +59,7 @@ export class CollectionSurveyorSearchBar extends LitElement {
 
   static styles = css`
     .search-bar-container {
-      padding: 20px 50px 6px 50px;
+      padding: 0px 0px 6px 0px;
     }
 
     .search-bar-contents {
