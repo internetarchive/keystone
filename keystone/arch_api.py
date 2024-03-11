@@ -325,3 +325,13 @@ class ArchAPI:
             job_params=job_params,
             rerun=None,
         )
+
+    @classmethod
+    def proxy_admin_logs_request(cls, user, log_type):
+        """Return an admin job logs response."""
+        return cls.get(
+            user,
+            f"/logs/{log_type}",
+            base_url=settings.ARCH_ADMIN_BASE_URL,
+            proxy=True,
+        )

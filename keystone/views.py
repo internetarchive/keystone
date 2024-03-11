@@ -245,6 +245,17 @@ def dataset_file_colab(request, dataset_id, filename):
     )
 
 
+@require_staff_or_superuser
+def get_arch_job_logs(request, log_type):
+    """Return an ARCH job log response."""
+    valid_log_types = ("jobs", "running", "failed")
+    if log_type not in valid_log_types:
+        return HttpResponseBadRequest(
+            f"Unsupported log_type: {log_type}. Please specify one of: {valid_log_types}"
+        )
+    return ArchAPI.proxy_admin_logs_request(request.user, log_type)
+
+
 ###############################################################################
 # AIT User import
 ###############################################################################

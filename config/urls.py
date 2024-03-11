@@ -143,6 +143,11 @@ urlpatterns = [
         views.get_ait_account_collections_info,
         name="get_ait_account_collections_info",
     ),
+    path(
+        "admin/arch_logs/<log_type>",
+        views.get_arch_job_logs,
+        name="get_arch_job_logs",
+    ),
     path("admin/", admin.site.urls),
     path("api/", public_api.urls),
     path("private/api/", private_api.urls),
