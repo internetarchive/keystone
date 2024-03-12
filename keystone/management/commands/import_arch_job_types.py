@@ -2,6 +2,8 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.db.utils import IntegrityError
 
+from config import settings
+
 from keystone.arch_api import ArchAPI
 from keystone.models import (
     JobCategory,
@@ -11,7 +13,7 @@ from keystone.models import (
 
 
 def import_job_types():
-    user = User.objects.get(username="system")
+    user = User.objects.get(username=settings.ARCH_SYSTEM_USER)
     for category_section in ArchAPI.get_json(user, "available-jobs"):
         # Create or update the JobCategory instance.
         cat_name = category_section["categoryName"]

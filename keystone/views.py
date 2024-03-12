@@ -253,7 +253,8 @@ def get_arch_job_logs(request, log_type):
         return HttpResponseBadRequest(
             f"Unsupported log_type: {log_type}. Please specify one of: {valid_log_types}"
         )
-    return ArchAPI.proxy_admin_logs_request(request.user, log_type)
+    user = User.objects.get(username=settings.ARCH_SYSTEM_USER)
+    return ArchAPI.proxy_admin_logs_request(user, log_type)
 
 
 ###############################################################################
