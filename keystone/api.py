@@ -12,7 +12,7 @@ from datetime import datetime
 from uuid import UUID
 
 from django.forms import model_to_dict
-from django.http import HttpRequest, HttpResponseBadRequest
+from django.http import Http404, HttpRequest, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q, QuerySet
 from django.templatetags.static import static
@@ -44,6 +44,7 @@ from .arch_api import (
 from .helpers import (
     dot_to_dunder,
     find_field_from_lookup,
+    report_exceptions,
 )
 from .models import (
     Collection,
@@ -562,6 +563,7 @@ class WasapiResponse(Schema):
 
 
 @private_api.post("/job/start", response=JobStartOut)
+@report_exceptions(Http404)
 def register_job_start(request, payload: JobStartIn):
     """Tell Keystone a user has started a job."""
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
@@ -665,6 +667,7 @@ def register_job_event(request, payload: JobEventIn):
 
 
 @private_api.post("/job/complete", response={HTTP_NO_CONTENT: None})
+@report_exceptions(Http404)
 def register_job_complete(request, payload: JobCompleteIn):
     """Tell Keystone a previously registered JobStart has now ended.
     "Complete" does not imply success. The job may have ended in error,

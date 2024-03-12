@@ -22,6 +22,7 @@ dependencies = [
     "requests",
     "uuid6",
     "requests",
+    "sentry-sdk",
 ]
 
 [project.optional-dependencies]

@@ -1,7 +1,9 @@
+import functools
 import csv
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
+import sentry_sdk
 
 
 def parse_csv(csv_file):
@@ -67,3 +69,22 @@ def find_field_from_lookup(model_class: models.Model, lookup: str) -> models.Fie
         if field_names and not model_class:
             raise FieldDoesNotExist(lookup)
     return field
+
+
+def report_exceptions(*exceptions):
+    """Decorator to report otherwise handled exceptions to Sentry"""
+    if not exceptions:
+        exceptions = Exception
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except exceptions as e:
+                sentry_sdk.capture_exception(e)
+                raise
+
+        return wrapper
+
+    return decorator

@@ -15,6 +15,9 @@ from pathlib import Path
 
 from dotenv import dotenv_values
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +29,16 @@ env = {
 
 DEPLOYMENT_ENVIRONMENT = env.get("KEYSTONE_DEPLOYMENT_ENVIRONMENT", "DEV")
 KEYSTONE_GIT_COMMIT_HASH = env.get("KEYSTONE_GIT_COMMIT_HASH", "")[:7]
+
+# Configure Sentry
+sentry_sdk.init(
+    dsn=env.get("KEYSTONE_SENTRY_DSN", ""),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=0.1,
+    send_default_pii=True,
+    environment=DEPLOYMENT_ENVIRONMENT,
+    release=KEYSTONE_GIT_COMMIT_HASH,
+)
 
 PUBLIC_BASE_URL = env.get("KEYSTONE_PUBLIC_BASE_URL", "")
 
