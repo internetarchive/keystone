@@ -68,7 +68,9 @@ export const global = css`
     color: ${defaultButtonFgColor};
   }
 
-  button:disabled {
+  button:disabled,
+  input:disabled,
+  select:disabled {
     cursor: default;
   }
 

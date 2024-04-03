@@ -26,7 +26,6 @@ import {
   GenerateDatasetDetail,
   JobIdStatesMap,
   JobParameters,
-  FilteredApiResponse,
   ProcessingState,
 } from "../../lib/types";
 
@@ -183,8 +182,7 @@ export class ArchGenerateDatasetForm extends LitElement {
   }
 
   private async initCollections() {
-    const response =
-      (await ArchAPI.collections.get()) as FilteredApiResponse<Collection>;
+    const response = await ArchAPI.collections.get();
     this.collections = response.items;
     this.collectionIdNameMap = new Map(
       this.collections.map((c) => [c.id, c.name])

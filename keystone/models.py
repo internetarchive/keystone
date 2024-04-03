@@ -4,6 +4,7 @@ from collections import defaultdict, namedtuple
 from functools import reduce
 from operator import or_
 
+from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -81,6 +82,12 @@ class User(AbstractUser):
     def arch_username(self):
         """Return the user's corresponding ARCH username."""
         return f"ks:{self.username}"
+
+    def save(self, *args, **kwargs):
+        """Normalize the email address (i.e. lowercase the domain part) to prevent
+        dupes."""
+        self.email = BaseUserManager.normalize_email(self.email)
+        super().save()
 
     def __str__(self):
         return self.username
@@ -160,8 +167,9 @@ class Collection(models.Model):
     @classmethod
     def get_for_user(cls, user):
         """Get all Collections a given user has access to"""
-        collections = {*user.collections.all(), *user.account.collections.all()}
-        return list(collections)
+        return Collection.objects.filter(
+            Q(users=user) | Q(accounts__user=user) | Q(teams__members=user)
+        ).distinct()
 
     @classmethod
     def handle_job_event(cls, job_event):

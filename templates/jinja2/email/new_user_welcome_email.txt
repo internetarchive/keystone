@@ -1,0 +1,12 @@
+Dear {{ user.first_name or user.get_username() }},
+
+You're receiving this email because a new ARCH account has been created for you.
+
+Please go to {{ protocol }}://{{ domain }}{{ url('password_reset_confirm', kwargs={"uidb64": uid, "token": token}) }} to set your password.
+
+Your username is: {{ user.get_username() }}
+
+If you experience any issues, please create a support ticket at: {{ arch_support_ticket_url }}
+
+All the best,
+The ARCH Team

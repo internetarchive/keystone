@@ -6,6 +6,8 @@ declare module "./webservices/src/lib/pubsub" {
   enum Topics {
     CREATE_SUB_COLLECTION = "CREATE_SUB_COLLECTION",
     GENERATE_DATASET = "GENERATE_DATASET",
+    DISPLAY_CREATE_USER_MODAL = "DISPLAY_CREATE_USER_MODAL",
+    DISPLAY_EDIT_USER_MODAL = "DISPLAY_EDIT_USER_MODAL",
   }
 }
 
@@ -16,4 +18,6 @@ declare module "./webservices/src/lib/pubsub" {
 Object.assign(Topics as Record<string, string>, {
   CREATE_SUB_COLLECTION: "CREATE_SUB_COLLECTION",
   GENERATE_DATASET: "GENERATE_DATASET",
+  DISPLAY_CREATE_USER_MODAL: "DISPLAY_CREATE_USER_MODAL",
+  DISPLAY_EDIT_USER_MODAL: "DISPLAY_EDIT_USER_MODAL",
 });

@@ -3,7 +3,7 @@ import { customElement, state } from "lit/decorators.js";
 
 import ArchAPI from "../../lib/ArchAPI";
 import { Paths } from "../../lib/helpers";
-import { Dataset, FilteredApiResponse } from "../../lib/types";
+import { Dataset } from "../../lib/types";
 import { isoStringToDateString } from "../../lib/webservices/src/lib/helpers";
 
 import "../../archCard/index";
@@ -105,11 +105,11 @@ export class ArchRecentDatasetsCard extends LitElement {
   }
 
   private async initDatasets() {
-    const response = (await ArchAPI.datasets.get([
+    const response = await ArchAPI.datasets.get([
       ["state", "=", "FINISHED"],
       ["sort", "=", "-start_time"],
       ["limit", "=", ArchRecentDatasetsCard.maxDisplayedDatasets],
-    ])) as FilteredApiResponse<Dataset>;
+    ]);
     this.numTotalDatasets = response.count;
     this.datasets = response.items;
   }

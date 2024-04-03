@@ -1,4 +1,4 @@
-import { ApiResponse } from "./types";
+import { FilteredApiResponse } from "./types";
 
 import { DataTable } from "./webservices/src/aitDataTable/src/types";
 
@@ -63,7 +63,7 @@ export default class API<RowT> {
           accept: "application/json",
         },
       })
-    ).json()) as ApiResponse<RowT>;
+    ).json()) as FilteredApiResponse<RowT>;
 
     // Determine whether we should update the hit count with the
     // response from this query.

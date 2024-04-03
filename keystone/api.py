@@ -1,7 +1,10 @@
 # pylint: disable=too-many-lines
 
-import http
+import re
 from collections import defaultdict
+from datetime import datetime
+from functools import wraps
+from http import HTTPStatus
 from typing import (
     Any,
     List,
@@ -9,14 +12,22 @@ from typing import (
     Tuple,
 )
 
-from datetime import datetime
 from uuid import UUID
 
-from django.forms import model_to_dict
-from django.http import Http404, HttpRequest, HttpResponseBadRequest
+import django.utils
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, QuerySet
 from django.templatetags.static import static
+from django.http import (
+    Http404,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadRequest,
+    JsonResponse,
+)
 from ninja.errors import HttpError
 from ninja.pagination import paginate
 from ninja.parser import Parser
@@ -36,6 +47,8 @@ from ninja.security import (
 
 
 from config.settings import (
+    ARCH_SUPPORT_TICKET_URL,
+    PUBLIC_BASE_URL,
     PRIVATE_API_KEY,
     KnownArchJobUuids,
 )
@@ -46,6 +59,7 @@ from .arch_api import (
     ArchRequestError,
 )
 from .context_processors import helpers as ctx_helpers
+from .jobmail import send as send_email
 from .helpers import (
     dot_to_dunder,
     find_field_from_lookup,
@@ -64,6 +78,7 @@ from .models import (
     JobStart,
     JobType,
     User,
+    UserRoles,
 )
 
 
@@ -72,8 +87,19 @@ from .models import (
 ###############################################################################
 
 
-HTTP_NO_CONTENT = http.client.NO_CONTENT.value
-HTTP_ACCEPTED = http.client.ACCEPTED.value
+INTEGRITY_ERROR_REGEX = re.compile(r"Key \(([^\)]+)\)=\(([^\)]+)\) already exists")
+
+
+###############################################################################
+# Custom Exceptions
+###############################################################################
+
+
+class PermissionDenied(HttpError):
+    """A Ninja-friendly Django PermissionDenied exception."""
+
+    def __init__(self, message="FORBIDDEN"):
+        super().__init__(HTTPStatus.FORBIDDEN, message)
 
 
 ###############################################################################
@@ -107,6 +133,23 @@ class BasicAuth(HttpBasicAuth):
             request.user = user
             return username
         return None
+
+
+###############################################################################
+# Decorators
+###############################################################################
+
+
+def require_admin(func):
+    """Route decorator to enforce user.role == ADMIN"""
+
+    @wraps(func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.role != UserRoles.ADMIN:
+            raise PermissionDenied
+        return func(request, *args, **kwargs)
+
+    return wrapper
 
 
 ###############################################################################
@@ -205,6 +248,25 @@ public_api = NinjaAPI(
 def public_api_arch_request_error_handler(request, exc):
     """Convert ArchRequestErrors to HTTP responses."""
     return exc.to_http_response()
+
+
+@public_api.exception_handler(IntegrityError)
+def public_api_integrityerror_error_handler(request, exc):
+    """Convert IntegrityErrors to JSON responses."""
+    match = INTEGRITY_ERROR_REGEX.search(exc.args[0])
+    if match:
+        field, value = match.groups()
+        details = f"value ({value}) already exists for field ({field})"
+    else:
+        details = "Unhandled IntegrityError"
+    return JsonResponse({"details": details}, status=400)
+
+
+@public_api.exception_handler(ObjectDoesNotExist)
+def public_api_objectdoesnotexist_error_handler(request, exc):
+    """Convert Model.DoesNotExist to a HTTP 404 response."""
+    # pylint: disable=unused-argument
+    return HttpResponse("Not Found", status=HTTPStatus.NOT_FOUND)
 
 
 private_api = NinjaAPI(
@@ -378,7 +440,7 @@ class CollectionSchema(Schema):
     name: str
     collection_type: str
     size_bytes: int
-    dataset_count: int
+    dataset_count: int = 0
     latest_dataset: LatestDatasetSchema = None
     metadata: Optional[AITCollectionMetadata | CustomCollectionMetadata] = None
 
@@ -476,6 +538,61 @@ class AvailableJobsCategory(Schema):
     categoryImage: str
     categoryId: int
     jobs: List[AvailableJob]
+
+
+class UserSchema(Schema):
+    """User schema"""
+
+    id: int
+    username: str
+    first_name: str
+    last_name: str
+    email: str
+    role: UserRoles
+    date_joined: datetime
+    last_login: datetime = None
+
+
+class CreateUserSchema(Schema):
+    """New User creation schema"""
+
+    account_id: int
+    username: str
+    first_name: str
+    last_name: str
+    email: str
+    role: UserRoles
+
+
+class UpdateUserSchema(Schema):
+    """Existing User update schema"""
+
+    username: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    email: Optional[str]
+    role: Optional[UserRoles]
+
+
+class UserFilterSchema(FilterSchema):
+    """User filters"""
+
+    # Suppress "Method 'custom_expression' is abstract in class 'FilterSchema' ..."
+    # pylint: disable=abstract-method
+
+    search: Optional[str] = Field(
+        None,
+        q=[
+            "username__icontains",
+            "first_name__icontains",
+            "last_name__icontains",
+            "email__icontains",
+        ],
+    )
+
+    # In order to support multiple query values for a single field,
+    # use type of Optional[List[T]] and a Field q value like "...__in".
+    role: Optional[List[UserRoles]] = Field(None, q="role__in")
 
 
 ###############################################################################
@@ -663,7 +780,7 @@ def register_job_event(request, payload: JobEventIn):
     return job_event
 
 
-@private_api.post("/job/complete", response={HTTP_NO_CONTENT: None})
+@private_api.post("/job/complete", response={HTTPStatus.NO_CONTENT: None})
 @report_exceptions(Http404)
 def register_job_complete(request, payload: JobCompleteIn):
     """Tell Keystone a previously registered JobStart has now ended.
@@ -688,7 +805,7 @@ def register_job_complete(request, payload: JobCompleteIn):
 
     # Abort if job did not finish successfully.
     if job_start.get_job_status().state != JobEventTypes.FINISHED:
-        return HTTP_NO_CONTENT, None
+        return HTTPStatus.NO_CONTENT, None
 
     # Create the JobFile objects.
     JobFile.objects.bulk_create(
@@ -715,7 +832,7 @@ def register_job_complete(request, payload: JobCompleteIn):
     elif job_type == JobType.objects.get(id=KnownArchJobUuids.USER_DEFINED_QUERY):
         jobmail.send_custom_collection_finished(request, job_complete)
 
-    return HTTP_NO_CONTENT, None
+    return HTTPStatus.NO_CONTENT, None
 
 
 # TODO: bulk endpoint for all jobs that can run on a given collection input
@@ -755,7 +872,7 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
     """Retrieve a user's Collections, including in-progress and finished, but
     not cancelled or failed, Custom collections."""
     queryset = filters.filter(
-        Collection.objects.filter(users=request.user)
+        Collection.get_for_user(request.user)
         .exclude(
             # Need to do a NULL check first so *__in will work as expected.
             Q(metadata__state__isnull=False)
@@ -771,7 +888,7 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
 def collections_filter_values(request, field: str):
     """Retrieve the distinct values for a specific Collection field."""
     return get_model_queryset_filter_values(
-        Collection.objects.filter(users=request.user),
+        Collection.get_for_user(request.user),
         field,
         CollectionFilterSchema,
     )
@@ -879,6 +996,87 @@ def list_available_jobs(request):
     ]
 
 
+@public_api.get("/users", response=List[UserSchema])
+@paginate
+@require_admin
+def list_account_users(request, filters: UserFilterSchema = Query(...)):
+    """Return the users that are members of the requesting ADMIN-type user's
+    account."""
+    queryset = filters.filter(User.objects.filter(account=request.user.account))
+    return apply_sort_param(request, queryset, UserSchema)
+
+
+@public_api.get("/users/filter_values", response=List[Any])
+@paginate
+def users_filter_values(request, field: str):
+    """Retrieve the distinct values for a specific User field."""
+    return get_model_queryset_filter_values(
+        User.objects.filter(account=request.user.account),
+        field,
+        UserFilterSchema,
+    )
+
+
+@public_api.get("/users/{user_id}", response=UserSchema)
+def get_user(request, user_id: int):
+    """Return a single User."""
+    req_user = request.user
+    if req_user.role != UserRoles.ADMIN and user_id != req_user.id:
+        raise PermissionDenied
+    return User.objects.filter(account=req_user.account).get(id=user_id)
+
+
+@public_api.put("/users", response={HTTPStatus.CREATED: UserSchema})
+@require_admin
+@transaction.atomic
+def create_user(request, payload: CreateUserSchema, send_welcome: bool):
+    """Create a new User."""
+    # Deny if the requesting and target user accounts are not the same.
+    if payload.account_id != request.user.account_id:
+        raise PermissionDenied
+    new_user = User.objects.create(**payload.dict())
+    if send_welcome:
+        send_email(
+            "new_user_welcome_email",
+            context={
+                "user": new_user,
+                "base_url": PUBLIC_BASE_URL,
+                "uid": django.utils.http.urlsafe_base64_encode(
+                    django.utils.encoding.force_bytes(new_user.id)
+                ),
+                "token": PasswordResetTokenGenerator().make_token(new_user),
+                "arch_support_ticket_url": ARCH_SUPPORT_TICKET_URL,
+            },
+            subject="Welcome to ARCH",
+            to=new_user.email,
+        )
+    return HTTPStatus.CREATED, new_user
+
+
+@public_api.patch("/users/{user_id}", response=UserSchema)
+def update_user(request, payload: UpdateUserSchema, user_id: int):
+    """Update an existing User."""
+    req_user = request.user
+    # Deny request if not admin or target is not self.
+    if req_user.role != UserRoles.ADMIN and user_id != req_user.id:
+        raise PermissionDenied
+    existing_user = User.objects.get(id=user_id)
+    # Deny if the requesting and target user accounts are not the same.
+    if existing_user.account_id != req_user.account_id:
+        raise PermissionDenied
+    updated = False
+    for k, v in payload.dict(exclude_none=True).items():
+        if getattr(existing_user, k) != v:
+            # A user is not allowed to modify their own role.
+            if k == "role" and existing_user == request.user:
+                raise PermissionDenied("self role modification not allowed")
+            setattr(existing_user, k, v)
+            updated = True
+    if updated:
+        existing_user.save()
+    return existing_user
+
+
 ###############################################################################
 # Public API -> ARCH Proxy Endpoints
 ###############################################################################
@@ -971,7 +1169,8 @@ def get_published_item_metadata(request, dataset_id: int, item_id: str):
 
 
 @public_api.post(
-    "/datasets/{dataset_id}/publication/{item_id}", response={HTTP_NO_CONTENT: None}
+    "/datasets/{dataset_id}/publication/{item_id}",
+    response={HTTPStatus.NO_CONTENT: None},
 )
 def update_published_item_metadata(
     request, dataset_id: int, item_id: str, metadata: DatasetPublicationMetadata
@@ -982,18 +1181,18 @@ def update_published_item_metadata(
     ArchAPI.update_published_item_metadata(
         request.user, collection_id, item_id, metadata.dict(exclude_none=True)
     )
-    return HTTP_NO_CONTENT, None
+    return HTTPStatus.NO_CONTENT, None
 
 
 @public_api.delete(
-    "/datasets/{dataset_id}/publication/{item_id}", response={HTTP_ACCEPTED: None}
+    "/datasets/{dataset_id}/publication/{item_id}", response={HTTPStatus.ACCEPTED: None}
 )
 def delete_published_item(request, dataset_id: int, item_id: str):
     """Update the metadata of a published Dataset petabox item"""
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
     collection_id = dataset.job_start.collection.arch_id
     ArchAPI.delete_published_item(request.user, collection_id, item_id)
-    return HTTP_ACCEPTED, None
+    return HTTPStatus.ACCEPTED, None
 
 
 @public_api.get("/datasets/{dataset_id}/sample_viz_data", response=DatasetSampleVizData)

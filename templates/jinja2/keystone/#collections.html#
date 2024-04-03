@@ -1,0 +1,18 @@
+{% set breadcrumbs = (("Collections", "collections"),) %}
+{% extends 'keystone/base.html' %}
+
+{% block header_title %}
+Collections
+{% endblock %}
+
+{% block head_extra %}
+  <script src="{{ static('/js/arch-collections-table.js') }}" type="module"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="card-container">
+    <arch-collections-table></arch-collections-table>
+  </div>
+</div>
+{% endblock %}

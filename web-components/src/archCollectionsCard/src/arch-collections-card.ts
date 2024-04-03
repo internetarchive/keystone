@@ -2,7 +2,7 @@ import { LitElement, html } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
 import ArchAPI from "../../lib/ArchAPI";
-import { FilteredApiResponse, Collection } from "../../lib/types";
+import { Collection } from "../../lib/types";
 import { Paths, humanBytes } from "../../lib/helpers";
 
 import "../../archCard/index";
@@ -119,11 +119,11 @@ export class ArchCollectionsCard extends LitElement {
   }
 
   private async initCollections() {
-    const response = (await ArchAPI.collections.get([
+    const response = await ArchAPI.collections.get([
       // TODO
       //      ["sort", "=", "-lastJobTime"],
       ["limit", "=", ArchCollectionsCard.maxDisplayedCollections],
-    ])) as FilteredApiResponse<Collection>;
+    ]);
     this.numTotalCollections = response.count;
     this.collections = response.items;
   }

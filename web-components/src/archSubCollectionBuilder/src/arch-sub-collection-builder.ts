@@ -8,7 +8,7 @@ import {
   UrlCollectionsParamName,
 } from "../../lib/constants";
 import { Paths, identity } from "../../lib/helpers";
-import { Collection, FilteredApiResponse, ValueOf } from "../../lib/types";
+import { Collection, ValueOf } from "../../lib/types";
 import { AlertClass } from "../../archAlert/index";
 import { ArchGlobalModal } from "../../archGlobalModal";
 import "../../archAlert/index";
@@ -259,8 +259,7 @@ export class ArchSubCollectionBuilder extends LitElement {
   }
 
   private async initCollections() {
-    const response =
-      (await ArchAPI.collections.get()) as FilteredApiResponse<Collection>;
+    const response = await ArchAPI.collections.get();
     this.collections = response.items;
   }
 

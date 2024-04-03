@@ -26,7 +26,7 @@ class TestCollection:
         # When we fetch all collections for the user we get all
         # account-only, user-only, and account+user associated collections
         # (without any duplicated collections)
-        user_collections = Collection.get_for_user(user)
+        user_collections = Collection.get_for_user(user).all()
         expected = sorted([collection1, collection2, collection3], key=lambda x: x.id)
         actual = sorted(user_collections, key=lambda x: x.id)
         assert expected == actual
@@ -61,6 +61,19 @@ class TestArchQuota:
 class TestUser:
     user_data_json_file = "test_user_data.json"
     user_data = read_json_file(user_data_json_file)
+
+    @mark.django_db
+    def test_user_email_normalized_on_save(self, make_user):
+        """User.email is normalized on save to prevent dupes."""
+        user = make_user()
+        orig_email = "userName@DOMAIN.COM"
+        norm_email = "userName@domain.com"
+        user.email = orig_email
+        user.save()
+        # Expect the domain to have been lowercased.
+        assert user.email == norm_email
+        user.refresh_from_db()
+        assert user.email == norm_email
 
     @mark.django_db
     def test_create_users_from_data_dict_list(self):

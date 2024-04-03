@@ -30,6 +30,7 @@ from .models import (
     JobFile,
     Team,
     User,
+    UserRoles,
 )
 from .solr import SolrClient
 from . import ait
@@ -119,6 +120,15 @@ def collection_surveyor(request):
             "facets": parsed_facets,
         },
     )
+
+
+@login_required
+def account(request):
+    """Account admin"""
+    # Deny non-admins.
+    if request.user.role != UserRoles.ADMIN:
+        return HttpResponseNotFound()
+    return render(request, "keystone/account.html", context={"user": request.user})
 
 
 @login_required

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+  </head>
+  <body>
+    <p>
+      Dear {{ user.first_name or user.get_username() }},
+    </p>
+    <p>
+      You're receiving this email because a new ARCH account has been created for you.
+      <br><br>
+      Your username is: <strong>{{ user.get_username() }}</strong>
+      <br><br>
+      Please <a href="{{ base_url }}{{ url('password_reset_confirm', kwargs={'uidb64': uid, 'token': token}) }}"> click here to set your password</a>.
+      <br><br>
+      If you experience any issues, please create a support ticket at: {{ arch_support_ticket_url }}
+    </p>
+    <p>
+      All the best,
+      <br>
+      The ARCH Team
+    </p>
+  </body>
+</html>

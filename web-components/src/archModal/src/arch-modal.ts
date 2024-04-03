@@ -1,4 +1,4 @@
-import { LitElement, html } from "lit";
+import { LitElement, TemplateResult, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import "@spectrum-web-components/theme/sp-theme.js";
@@ -36,6 +36,7 @@ export class ArchModal extends ModalMixin(LitElement) {
   @property({ type: String }) submitButtonClass = "primary";
   @property({ type: String }) submitButtonText = "Ok";
   @property({ type: String }) title = "";
+  @property() content: TemplateResult = html``;
 
   static styles = styles;
 
@@ -43,6 +44,7 @@ export class ArchModal extends ModalMixin(LitElement) {
     const {
       cancelButtonClass,
       cancelButtonText,
+      content,
       hideCancelButton,
       hideSubmitButton,
       submitButtonClass,
@@ -51,7 +53,7 @@ export class ArchModal extends ModalMixin(LitElement) {
     } = this;
     return html`
       <h2 slot="heading">${title}</h2>
-      <slot name="content"></slot>
+      <slot name="content">${content}</slot>
       <slot name="buttons">
         <div class="buttons-wrapper">
           ${hideCancelButton

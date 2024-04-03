@@ -33,6 +33,7 @@ export enum CollectionType {
 }
 
 export type Collection = {
+  account_id: number;
   id: number;
   name: string;
   collection_type: CollectionType;
@@ -45,6 +46,10 @@ export type Collection = {
   };
   metadata: AITCollectionMetadata | CustomCollectionMetadata;
 };
+
+export type CollectionIdNamePairs = Array<
+  [Collection["id"], Collection["name"]]
+>;
 
 export interface CollectionSearchResult {
   organizationId: number;
@@ -99,6 +104,23 @@ export type JobIdStatesMap = Record<
   Dataset["job_id"],
   Array<[Dataset["id"], DatasetStartTimeString, Dataset["state"]]>
 >;
+
+export enum UserRoles {
+  ADMIN = "ADMIN",
+  USER = "USER",
+}
+
+export type User = {
+  id: number;
+  account_id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: UserRoles;
+  date_joined: Date;
+  last_login: Date;
+};
 
 // AvailableJob parameters types
 
@@ -212,7 +234,18 @@ export type DistinctApiResponse<T> = BaseFilteredApiResponse<
   DistinctApiResults<T>
 >;
 
-export type ApiResponse<T> = FilteredApiResponse<T> | DistinctApiResponse<T>;
+export type ObjectApiResponse<T> = T;
+
+export type ApiResponse<T> =
+  | FilteredApiResponse<T>
+  | DistinctApiResponse<T>
+  | ObjectApiResponse<T>;
+
+export class ResponseError extends Error {
+  constructor(public response: Response, msg?: string) {
+    super(msg);
+  }
+}
 
 type ApiParamOp = "=" | "!=";
 
@@ -221,8 +254,6 @@ type ApiFilterKey = "distinct" | "limit" | "offset" | "search" | "sort";
 export type ApiParams<T> = Array<
   [keyof T | ApiFilterKey, ApiParamOp, string | number | boolean]
 >;
-
-export type ApiPath = "/collections" | "/datasets";
 
 // Custom Events
 

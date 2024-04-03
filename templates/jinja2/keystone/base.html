@@ -42,10 +42,21 @@
 
     <!-- Global Components -->
     <script src="{{ static('/js/arch-global-modal.js') }}" type="module"></script>
+    <script src="{{ static('/js/arch-edit-user-modal.js') }}" type="module"></script>
 
     <!-- Zendesk help widget -->
     <script>/*<![CDATA[*/window.zEmbed||function(e,t){var n,o,d,i,s,a=[],r=document.createElement("iframe");window.zEmbed=function(){a.push(arguments)},window.zE=window.zE||window.zEmbed,r.src="javascript:false",r.title="",r.role="presentation",(r.frameElement||r).style.cssText="display: none",d=document.getElementsByTagName("script"),d=d[d.length-1],d.parentNode.insertBefore(r,d),i=r.contentWindow,s=i.document;try{o=s}catch(c){n=document.domain,r.src='javascript:var d=document.open();d.domain="'+n+'";void(0);',o=s}o.open()._l=function(){var o=this.createElement("script");n&&(this.domain=n),o.id="js-iframe-async",o.src=e,this.t=+new Date,this.zendeskHost=t,this.zEQueue=a,this.body.appendChild(o)},o.write('<body onload="document._l();">'),o.close()}("https://assets.zendesk.com/embeddable_framework/main.js","arch-webservices.zendesk.com");
      /*]]>*/</script>
+
+    <!-- Small script to update topbar logged-in name on profile update -->
+    <script>
+     document.addEventListener("DOMContentLoaded", function () {
+       const userProfileModal = document.getElementById("user-profile-modal");
+       userProfileModal.onUpdate = function (user) {
+         document.getElementById("welcome-name").textContent = user.first_name;
+       };
+     });
+    </script>
 
     <!-- Head Extra Block -->
     {% block head_extra %}{% endblock %}
@@ -67,6 +78,7 @@
             <li><a href="{{ url('dashboard') }}">Dashboard</a></li>
             <li><a href="{{ url('collections') }}">Collections</a></li>
             <li><a href="{{ url('datasets-explore') }}">Datasets</a></li>
+            {% if request.user.role == "ADMIN" %}<li><a href="{{ url('account') }}">Account</a></li>{% endif %}
             {% if request.user.is_staff %}<li><a href="{{ url('admin:index') }}">Admin</a></li>{% endif %}
             {% endif %}
           </ul>
@@ -80,16 +92,28 @@
             {% endif %}
 
             <li><a target="_blank" href="https://arch-webservices.zendesk.com/hc/en-us">Help Center</a></li>
+
             {% if request.user.is_authenticated %}
             <li class="has-dropdown not-click" has-dropdown="">
-              <a name="_welcome">Welcome, <span>{{ request.user.first_name }}</span></a>
+              <a name="_welcome">Welcome, <span id="welcome-name">{{ request.user.first_name }}</span></a>
               <ul class="dropdown"top-bar-dropdown=""><li class="title back js-generated"><h5><a href="">Back</a></h5></li>
+                <li><a href="{{ url("password_change") }}" target="_self">Change Password</a></li>
+                <li>
+                  <arch-edit-user-modal
+                    userId="{{ request.user.id }}"
+                    profileMode
+                    id="user-profile-modal"
+                  >
+                    <a slot="trigger" href="#">Profile</a>
+                  </arch-edit-user-modal>
+                </li>
                 <li><a href="/logout" target="_self">Log Out</a></li>
               </ul>
             </li>
             {% else %}
             <li><a href="/login">Log In</a></li>
             {% endif %}
+
           </ul>
         </section>
       </nav>

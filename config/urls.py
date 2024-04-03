@@ -27,6 +27,7 @@ from keystone.api import private_api, public_api, wasapi_api
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
+    path("account", views.account, name="account"),
     path("collections", views.collections, name="collections"),
     path(
         "collections/custom-collection-builder",
