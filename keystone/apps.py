@@ -13,15 +13,3 @@ class KeystoneConfig(AppConfig):
 
     default_auto_field = "django.db.models.BigAutoField"
     name = "keystone"
-
-    def ready(self):
-        """Log a warning if the ARCH system user hasn't been created yet."""
-        from config import settings
-        from keystone.models import User
-
-        if not User.objects.filter(username=settings.ARCH_SYSTEM_USER).exists():
-            log.warning(
-                "Please create a Keystone user to serve as the ARCH system "
-                "user with the username: %s",
-                settings.ARCH_SYSTEM_USER,
-            )

@@ -29,6 +29,9 @@ JOB_TYPE_ID_JOB_CATEGORY_NAME_MAP = {
 }
 
 
+DUMMY_JOB_START_COLLECTION_TARGET_ID = -1
+
+
 migration_dir = path.abspath(
     path.join(path.dirname(__file__), "0002_become_arch_client")
 )
@@ -45,7 +48,7 @@ def create_dummy_job_start_collection_target(apps, schema_editor):
     existing rows, so create a dummy value for them to point to."""
     Collection = apps.get_model("keystone", "Collection")
     kwargs = {
-        "id": 1,
+        "id": DUMMY_JOB_START_COLLECTION_TARGET_ID,
         "name": "Something for the new collection_id field of existing jobstart rows to reference",
         "collection_type": "SPECIAL",
     }
@@ -128,7 +131,7 @@ class Migration(migrations.Migration):
             model_name="jobstart",
             name="collection",
             field=models.ForeignKey(
-                default=1,
+                default=DUMMY_JOB_START_COLLECTION_TARGET_ID,
                 on_delete=django.db.models.deletion.PROTECT,
                 to="keystone.collection",
             ),
