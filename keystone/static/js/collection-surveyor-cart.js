@@ -1,4 +1,4 @@
-import{i as e,_ as t,e as o,s as l,y as c,a as n}from"./chunk-query-assigned-elements.js";import{h as r}from"./chunk-helpers.js";let i=class extends l{constructor(){super(...arguments),this.collectionsInCart={}}get totalCollectionSizeSelected(){return Object.values(this.collectionsInCart).reduce(((e,t)=>e+Number(t.collectionSize)),0)}handleRemoveCollectionFromCart(e){this.dispatchEvent(new CustomEvent("collection-removed-from-cart",{bubbles:!0,composed:!0,detail:{collectionName:e}}))}render(){return c`
+import{i as e,_ as t,e as o,s as l,y as c,a as n}from"./chunk-lit-element.js";import{a as r}from"./chunk-helpers2.js";let i=class extends l{constructor(){super(...arguments),this.collectionsInCart={}}get totalCollectionSizeSelected(){return Object.values(this.collectionsInCart).reduce(((e,t)=>e+Number(t.collectionSize)),0)}handleRemoveCollectionFromCart(e){this.dispatchEvent(new CustomEvent("collection-removed-from-cart",{bubbles:!0,composed:!0,detail:{collectionName:e}}))}render(){return c`
       <div class="cart-container">
         <div class="collections-cart ">
           <h3>Collections Selected:</h3>

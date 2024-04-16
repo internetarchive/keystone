@@ -1,4 +1,4 @@
-import{i as t,_ as e,e as i,s as a,y as s,a as n}from"./chunk-query-assigned-elements.js";import{t as o}from"./chunk-state.js";import{g as r,d,i as l}from"./chunk-styles.js";import{i as c}from"./chunk-helpers.js";import"./chunk-helpers2.js";import"./chunk-arch-sub-collection-builder.js";import"./chunk-arch-loading-indicator.js";import"./arch-dataset-metadata-form.js";import"./chunk-arch-json-schema-form.js";import"./chunk-define-element.js";import"./chunk-scale-large.js";import"./chunk-directive.js";var h=[r,t`
+import{i as t,_ as e,e as i,s as a,y as s,a as n}from"./chunk-lit-element.js";import{t as o}from"./chunk-state.js";import{g as r,b as d,i as l}from"./chunk-styles.js";import{i as c}from"./chunk-helpers2.js";import"./chunk-types.js";import"./chunk-arch-loading-indicator.js";import"./arch-dataset-metadata-form.js";import"./chunk-arch-json-schema-form.js";import"./chunk-_commonjsHelpers.js";import"./chunk-sizedMixin.js";var h=[r,t`
     :host > div.container {
       display: flex;
     }

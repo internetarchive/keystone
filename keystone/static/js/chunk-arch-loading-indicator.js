@@ -1,4 +1,4 @@
-import{i as a,_ as l,e as s,s as n,y as e,a as t}from"./chunk-query-assigned-elements.js";var i=a`
+import{i as a,_ as l,e as s,s as n,y as t,a as e}from"./chunk-lit-element.js";var i=a`
   :host {
     font-style: italic;
     color: var(--color, #666);
@@ -36,12 +36,12 @@ import{i as a,_ as l,e as s,s as n,y as e,a as t}from"./chunk-query-assigned-ele
       opacity: 0.1;
     }
   }
-`;let p=class extends n{constructor(){super(...arguments),this.text="Loading"}render(){const{text:a}=this;return e`
+`;let p=class extends n{constructor(){super(...arguments),this.text="Loading"}render(){const{text:a}=this;return t`
       ${a}
       <span class="la-ball-pulse">
         <span>&#x2B24;</span>
         <span>&#x2B24;</span>
         <span>&#x2B24;</span>
       </div>
-    `}};p.styles=i,l([s({type:String})],p.prototype,"text",void 0),p=l([t("arch-loading-indicator")],p);
+    `}};p.styles=i,l([s({type:String})],p.prototype,"text",void 0),p=l([e("arch-loading-indicator")],p);
 //# sourceMappingURL=chunk-arch-loading-indicator.js.map

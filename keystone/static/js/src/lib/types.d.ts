@@ -2,6 +2,7 @@ import { JSONSchemaType } from "ajv";
 import { SomeJSONSchema } from "ajv/lib/types/json-schema";
 export { SomeJSONSchema };
 import { ArchJobCard } from "../archGenerateDatasetForm/src/arch-job-card";
+export type ValueOf<T> = T[keyof T];
 export declare enum ProcessingState {
     SUBMITTED = "SUBMITTED",
     QUEUED = "QUEUED",
@@ -24,6 +25,7 @@ export declare enum CollectionType {
     CUSTOM = "CUSTOM"
 }
 export type Collection = {
+    account_id: number;
     id: number;
     name: string;
     collection_type: CollectionType;
@@ -36,6 +38,10 @@ export type Collection = {
     };
     metadata: AITCollectionMetadata | CustomCollectionMetadata;
 };
+export type CollectionIdNamePairs = Array<[
+    Collection["id"],
+    Collection["name"]
+]>;
 export interface CollectionSearchResult {
     organizationId: number;
     organizationName: string;
@@ -69,7 +75,7 @@ export type Dataset = {
     collection_id: number;
     collection_name: string;
     finished_time: Date;
-    id: string;
+    id: number;
     is_sample: boolean;
     job_id: string;
     name: string;
@@ -77,7 +83,22 @@ export type Dataset = {
     state: ProcessingState;
 };
 type DatasetStartTimeString = string;
-export type JobIdStatesMap = Record<Dataset["job_id"], Array<[DatasetStartTimeString, Dataset["state"]]>>;
+export type JobIdStatesMap = Record<Dataset["job_id"], Array<[Dataset["id"], DatasetStartTimeString, Dataset["state"]]>>;
+export declare enum UserRoles {
+    ADMIN = "ADMIN",
+    USER = "USER"
+}
+export type User = {
+    id: number;
+    account_id: number;
+    username: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    role: UserRoles;
+    date_joined: Date;
+    last_login: Date;
+};
 type GlobalJobParameters = {
     sample: boolean;
 };
@@ -156,7 +177,12 @@ type FilteredApiResults<T> = Array<T>;
 type DistinctApiResults<T> = Array<T[keyof T]>;
 export type FilteredApiResponse<T> = BaseFilteredApiResponse<FilteredApiResults<T>>;
 export type DistinctApiResponse<T> = BaseFilteredApiResponse<DistinctApiResults<T>>;
-export type ApiResponse<T> = FilteredApiResponse<T> | DistinctApiResponse<T>;
+export type ObjectApiResponse<T> = T;
+export type ApiResponse<T> = FilteredApiResponse<T> | DistinctApiResponse<T> | ObjectApiResponse<T>;
+export declare class ResponseError extends Error {
+    response: Response;
+    constructor(response: Response, msg?: string);
+}
 type ApiParamOp = "=" | "!=";
 type ApiFilterKey = "distinct" | "limit" | "offset" | "search" | "sort";
 export type ApiParams<T> = Array<[
@@ -164,7 +190,11 @@ export type ApiParams<T> = Array<[
     ApiParamOp,
     string | number | boolean
 ]>;
-export type ApiPath = "/collections" | "/datasets";
 export type GenerateDatasetDetail = {
     archJobCard: ArchJobCard;
+};
+export type GlobalModalDetail = {
+    elementToFocusOnClose: HTMLElement;
+    title: string;
+    message: string;
 };

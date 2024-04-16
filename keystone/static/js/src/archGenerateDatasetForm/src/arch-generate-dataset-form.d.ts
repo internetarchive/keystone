@@ -10,8 +10,8 @@ import "./arch-job-category-section";
 import { ArchJobCategorySection } from "./arch-job-category-section";
 export declare class ArchGenerateDatasetForm extends LitElement {
     csrfToken: string;
-    collectionDetailPageUrlTemplate: string;
     collections: null | Array<Collection>;
+    collectionIdNameMap: Map<Collection["id"], Collection["name"]>;
     availableJobs: AvailableJobs;
     sourceCollectionId: Collection["id"] | null;
     collectionJobIdStatesMapMap: Record<Collection["id"], JobIdStatesMap>;
@@ -19,7 +19,6 @@ export declare class ArchGenerateDatasetForm extends LitElement {
     collectionSelector: HTMLSelectElement;
     categorySections: Array<ArchJobCategorySection>;
     static styles: import("lit").CSSResult[];
-    static urlCollectionParamName: string;
     connectedCallback(): Promise<void>;
     render(): import("lit-html").TemplateResult<1>;
     private setCollectionIdUrlParam;

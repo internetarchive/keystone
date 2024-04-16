@@ -1,10 +1,10 @@
-import{i as e,_ as t,e as a,s,y as i,a as l}from"./chunk-query-assigned-elements.js";let r=class extends s{constructor(){super(...arguments),this.facetField="",this.facetFieldResults=[]}readableFacetFieldName(e){return e.split("_")[1].split(/(?=[A-Z])/).map((e=>e.charAt(0).toUpperCase()+e.slice(1))).join(" ")}render(){return i`
+import{i as e,_ as t,e as a,s as i,y as s,a as l}from"./chunk-lit-element.js";let r=class extends i{constructor(){super(...arguments),this.facetField="",this.facetFieldResults=[]}readableFacetFieldName(e){return e.split("_")[1].split(/(?=[A-Z])/).map((e=>e.charAt(0).toUpperCase()+e.slice(1))).join(" ")}render(){return s`
       <div class="facet">
         <h3>${this.readableFacetFieldName(this.facetField)}</h3>
         <hr />
         <div class="facetResults">
           <ul>
-            ${this.facetFieldResults.map((e=>i`
+            ${this.facetFieldResults.map((e=>s`
                 <li>${e.name} (${e.count})</li>
               `))}
           </ul>

@@ -1,15 +1,15 @@
 import { LitElement } from "lit";
 import { AvailableJob, JobIdStatesMap, JobParameters, SomeJSONSchema } from "../../lib/types";
-import "../../lib/webservices/src/aitLoadingSpinner/index";
+import { ArchJobButton } from "./arch-job-button";
+import "./arch-job-button";
 export declare class ArchJobCard extends LitElement {
-    collectionId: string;
+    collectionId: number;
+    collectionName: string;
     job: AvailableJob;
     jobIdStatesMap: JobIdStatesMap;
-    collectionDetailPageUrlTemplate: string;
-    button: HTMLButtonElement;
     jobParameters: object | JobParameters;
+    jobButton: ArchJobButton;
     static styles: import("lit").CSSResult[];
-    private startTimeStatePairsToButtonProps;
     static DefaultParametersSchema: SomeJSONSchema;
     private extendParamsSchemaWithDefaultOptions;
     get historicalDatasetsUrl(): string;
