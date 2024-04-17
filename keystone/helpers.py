@@ -1,10 +1,19 @@
 import functools
 import re
 import csv
+from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 import sentry_sdk
+
+
+def is_uuid7(s):
+    """Return a bool indicate whether a string is a valid UUID7."""
+    try:
+        return UUID(s).version == 7
+    except:
+        return False
 
 
 def parse_csv(csv_file):

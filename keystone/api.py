@@ -339,7 +339,6 @@ class JobStartIn(Schema):
 
     id: str
     job_type_id: str
-    collection_id: str
     username: str
     input_bytes: int
     sample: bool
@@ -733,6 +732,8 @@ def register_job_start(request, payload: JobStartIn):
         # Parse the collection name and owning user from the outputPath param,
         # which has a format like:
         #  .../{pathsafe_username}/{collection_id}
+        # or
+        #  .../{uuid_outpath}/{uuid}
         # Example:
         #  .../ks-test/SPECIAL-test-collection_1707245569769
         _, arch_collection_id = job_conf.outputPath.rsplit("/", 2)[-2:]
@@ -1089,26 +1090,16 @@ def generate_sub_collection(request, payload: SubCollectionCreationRequest):
     job_params = {k: v for k, v in dict(payload).items() if v is not None}
     sources = job_params.pop("sources")
 
-    # Convert Keystone ID string-ints to Collection.arch_ids.
-    arch_ids = tuple(
-        Collection.objects.filter(id__in=sources).values_list("arch_id", flat=True)
-    )
-    if len(arch_ids) != len(sources):
+    collections = list(Collection.objects.filter(id__in=sources))
+    if len(collections) != len(sources):
         raise HttpError(400, "Invalid collection ID(s)")
 
     # Handle single vs. multiple source collection cases.
-    if len(arch_ids) == 1:
-        # Specify the single Collection ID as the url param.
-        collection_id = arch_ids[0]
-    else:
-        # Specify the special "UNION-UDQ" Collection ID as the url param.
-        collection_id = "UNION-UDQ"
-        # Assign arch_ids to data.input which is expected by
-        # DerivationJobConf.jobInPath() for Union-type collections.
-        job_params["input"] = [
-            insert_arch_collection_id_username(x, request.user) for x in arch_ids
-        ]
-    input_spec = {"type": "collection", "collectionId": collection_id}
+    input_spec = collections[0].input_spec if (len(collections) == 1) else {
+        "type": "multi-specs",
+        "specs": [c.input_spec for c in collections]
+    }
+
     return ArchAPI.create_sub_collection(request.user, input_spec, job_params)
 
 

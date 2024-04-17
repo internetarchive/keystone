@@ -20,7 +20,10 @@ import uuid6
 
 from config import settings
 from .validators import validate_username
-from .helpers import strip_arch_collection_id_username
+from .helpers import (
+    is_uuid7,
+    strip_arch_collection_id_username,
+)
 
 
 # Define a namedtuple to return from JobStart.get_job_status()
@@ -193,22 +196,37 @@ class Collection(models.Model):
     @property
     def input_spec(self):
         """Return the ARCH InputSpec object for this collection."""
-        if self.collection_type in (
+        if self.collection_type not in (
             CollectionTypes.AIT,
             CollectionTypes.SPECIAL,
             CollectionTypes.CUSTOM,
         ):
-            return {"type": "collection", "collectionId": self.arch_id}
-        raise NotImplementedError
+            raise NotImplementedError
+        # Return dataset-type input spec if arch_id like "CUSTOM-{uuid}".
+        if (self.collection_type == CollectionTypes.CUSTOM
+            and len(splits:=self.arch_id.split("-", 1)) == 2
+            and is_uuid7(splits[1])):
+            return {
+                "type": "dataset",
+                "inputType": "cdx",
+                "uuid": splits[1]
+            }
+        # Return a collection-type input spec.
+        return {"type": "collection", "collectionId": self.arch_id}
 
     @classmethod
     def get_for_input_spec(cls, input_spec):
         """Return the collection that matches the specified InputSpec object."""
-        if input_spec["type"] != "collection":
-            raise NotImplementedError
-        # Strip any included username.
-        arch_id = strip_arch_collection_id_username(input_spec["collectionId"])
-        return cls.objects.get(arch_id=arch_id)
+        if input_spec["type"] == "collection":
+            # Strip any included username.
+            arch_id = strip_arch_collection_id_username(input_spec["collectionId"])
+            return cls.objects.get(arch_id=arch_id)
+
+        if input_spec["type"] == "dataset" and input_spec["inputType"] == "cdx":
+            return cls.objects.get(arch_id=f"CUSTOM-{input_spec['uuid']}")
+
+        raise NotImplementedError
+
 
     def __str__(self):
         return self.name
