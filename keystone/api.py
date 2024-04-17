@@ -604,8 +604,7 @@ class DatasetPublicationInfo(Schema):
     """Information about a published Dataset"""
 
     item: str
-    source: str
-    collection: str
+    inputId: str
     job: str
     complete: bool
     sample: bool
@@ -1132,24 +1131,17 @@ def generate_dataset(request, payload: DatasetGenerationRequest):
 def dataset_published_status(request, dataset_id: int):
     """Retrieve publication info for the specified Dataset"""
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    collection_id = dataset.job_start.collection.arch_id
-    job_id = dataset.job_start.job_type.id
-    return ArchAPI.get_dataset_publication_info(
-        request.user, collection_id, job_id, dataset.job_start.sample
-    )
+    res = ArchAPI.get_dataset_publication_info(request.user, dataset.job_start.id)
+    return res
 
 
 @public_api.post("/datasets/{dataset_id}/publication", response=JobStateInfo)
 def publish_dataset(request, dataset_id: int, metadata: DatasetPublicationMetadata):
     """Publish a dataset"""
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    collection_id = dataset.job_start.collection.arch_id
-    job_id = dataset.job_start.job_type.id
     return ArchAPI.publish_dataset(
         request.user,
-        collection_id,
-        str(job_id),  # Cast UUID to serializable
-        dataset.job_start.sample,
+        {"type": "dataset", "uuid": str(dataset.job_start.id)},
         metadata=metadata.dict(
             exclude_none=True
         ),  # Cast DatasetPublicationMetadata to serializable
@@ -1157,41 +1149,38 @@ def publish_dataset(request, dataset_id: int, metadata: DatasetPublicationMetada
 
 
 @public_api.get(
-    "/datasets/{dataset_id}/publication/{item_id}",
+    "/datasets/{dataset_id}/publication/metadata",
     response=DatasetPublicationMetadata,
     exclude_none=True,
 )
-def get_published_item_metadata(request, dataset_id: int, item_id: str):
+def get_published_item_metadata(request, dataset_id: int):
     """Retrieve published petabox item metadata for the specified Dataset"""
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    collection_id = dataset.job_start.collection.arch_id
-    return ArchAPI.get_published_item_metadata(request.user, collection_id, item_id)
+    return ArchAPI.get_published_item_metadata(request.user, dataset.job_start.id)
 
 
 @public_api.post(
-    "/datasets/{dataset_id}/publication/{item_id}",
+    "/datasets/{dataset_id}/publication/metadata",
     response={HTTPStatus.NO_CONTENT: None},
 )
 def update_published_item_metadata(
-    request, dataset_id: int, item_id: str, metadata: DatasetPublicationMetadata
+    request, dataset_id: int, metadata: DatasetPublicationMetadata
 ):
     """Update the metadata of a published Dataset petabox item"""
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    collection_id = dataset.job_start.collection.arch_id
     ArchAPI.update_published_item_metadata(
-        request.user, collection_id, item_id, metadata.dict(exclude_none=True)
+        request.user, dataset.job_start.id, metadata.dict(exclude_none=True)
     )
     return HTTPStatus.NO_CONTENT, None
 
 
 @public_api.delete(
-    "/datasets/{dataset_id}/publication/{item_id}", response={HTTPStatus.ACCEPTED: None}
+    "/datasets/{dataset_id}/publication", response={HTTPStatus.ACCEPTED: None}
 )
-def delete_published_item(request, dataset_id: int, item_id: str):
+def delete_published_item(request, dataset_id: int):
     """Update the metadata of a published Dataset petabox item"""
     dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    collection_id = dataset.job_start.collection.arch_id
-    ArchAPI.delete_published_item(request.user, collection_id, item_id)
+    ArchAPI.delete_published_item(request.user, dataset.job_start.id)
     return HTTPStatus.ACCEPTED, None
 
 

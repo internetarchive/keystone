@@ -6,6 +6,7 @@ export { SomeJSONSchema };
 import { ArchJobCard } from "../archGenerateDatasetForm/src/arch-job-card";
 
 export type ValueOf<T> = T[keyof T];
+export type Modify<T, R> = Omit<T, keyof R> & R;
 
 export enum ProcessingState {
   SUBMITTED = "SUBMITTED",
@@ -175,16 +176,23 @@ export type AvailableJobsCategory = {
 
 export type AvailableJobs = Array<AvailableJobsCategory>;
 
-export type PublishedDatasetInfo = {
+export type PublishedDatasetInfoApiResponse = {
   item: string;
   source: string;
   collection: string;
   job: JobId;
   complete: boolean;
   sample: boolean;
-  time: Date;
+  time: string;
   ark: string;
 };
+
+export type PublishedDatasetInfo = Modify<
+  PublishedDatasetInfoApiResponse,
+  {
+    time: Date;
+  }
+>;
 
 export type PublishedDatasetMetadataApiResponse = {
   creator?: Array<string>;

@@ -1,6 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement, property, state, query } from "lit/decorators.js";
 
+import ArchAPI from "../../lib/ArchAPI";
 import { isoStringToDateString } from "../../lib/helpers";
 import {
   Dataset,
@@ -9,6 +10,7 @@ import {
   PublishedDatasetMetadataApiResponse,
   PublishedDatasetMetadataJSONSchema,
   PublishedDatasetMetadataJSONSchemaProps,
+  ResponseError,
 } from "../../lib/types";
 import "../../archLoadingIndicator/index";
 import "../../archDatasetMetadataForm/index";
@@ -287,8 +289,7 @@ export class ArchDatasetPublishingCard extends LitElement {
   private async _pollItemMetadata() {
     /* Poll for the item metadata and save it once available. */
     const { pubState } = this;
-    const pubInfo = this.pubInfo as PublishedDatasetInfo;
-    const metadata = await this._fetchItemMetadata(pubInfo.item);
+    const metadata = await this._fetchItemMetadata();
     if (metadata === undefined && pubState === PublishState.Published) {
       // Try again in 3 seconds.
       setTimeout(() => void this._pollItemMetadata(), 3000);
@@ -300,27 +301,27 @@ export class ArchDatasetPublishingCard extends LitElement {
   private async _fetchPubInfo() {
     /* Attempt to retrieve the info for any existing published dataset */
     const { datasetId } = this;
-    const response = await fetch(`/api/datasets/${datasetId}/publication`);
-    if (response.status === 404) {
+    try {
+      return await ArchAPI.datasets.publication.info(datasetId);
+    } catch (e) {
+      if (!(e instanceof ResponseError) || e.response.status !== 404) {
+        console.error(e);
+      }
       return undefined;
-    } else {
-      const pubInfo = (await response.json()) as PublishedDatasetInfo;
-      // Convert datetime string to Date.
-      pubInfo.time = new Date(pubInfo.time);
-      return pubInfo;
     }
   }
 
-  private async _fetchItemMetadata(itemId: PublishedDatasetInfo["item"]) {
+  private async _fetchItemMetadata() {
     /* Attempt to retrieve the published item metadata */
     const { datasetId } = this;
-    const response = await fetch(
-      `/api/datasets/${datasetId}/publication/${itemId}`
-    );
-    if (response.status === 404) {
+    try {
+      return await ArchAPI.datasets.publication.metadata.get(datasetId);
+    } catch (e) {
+      if (!(e instanceof ResponseError) || e.response.status !== 404) {
+        console.error(e);
+      }
       return undefined;
     }
-    return (await response.json()) as PublishedDatasetMetadataApiResponse;
   }
 
   private _publishButtonClickHandler() {
@@ -362,24 +363,16 @@ export class ArchDatasetPublishingCard extends LitElement {
   }
 
   private async _unpublish() {
-    const { csrfToken, datasetId, pubInfo } = this;
-    const { item: itemId } = pubInfo as PublishedDatasetInfo;
+    const { datasetId } = this;
     this.pubState = PublishState.Unpublishing;
-    await fetch(`/api/datasets/${datasetId}/publication/${itemId}`, {
-      method: "DELETE",
-      credentials: "same-origin",
-      headers: { "X-CSRFToken": csrfToken },
-      mode: "cors",
-      body: JSON.stringify({ delete: true }),
-    });
+    await ArchAPI.datasets.publication.unpublish(datasetId);
     this.pubState = PublishState.Unpublished;
     // Call fetchInitialData to reset the component state.
     void this._fetchInitialData();
   }
 
   private async _saveMetadata() {
-    const { csrfToken, datasetId, pubInfo, _metadataFormData: metadata } = this;
-    const { item: itemId } = pubInfo as PublishedDatasetInfo;
+    const { datasetId, _metadataFormData: metadata } = this;
     this.metadata = metadata;
     this.metadataState = MetadataState.Saving;
     // Add empty array values for all unspecified metadata fields in order to delete
@@ -387,15 +380,11 @@ export class ArchDatasetPublishingCard extends LitElement {
     const finalMetadata = Object.assign(
       Object.fromEntries(orderedMetadataKeys.map((k) => [k, []])),
       metadata
+    ) as PublishedDatasetMetadata;
+    await ArchAPI.datasets.publication.metadata.update(
+      datasetId,
+      finalMetadata
     );
-    await fetch(`/api/datasets/${datasetId}/publication/${itemId}`, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "X-CSRFToken": csrfToken },
-      mode: "cors",
-      body: JSON.stringify(finalMetadata),
-    });
-
     this.metadataState = MetadataState.Displaying;
   }
 }

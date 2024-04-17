@@ -1,3 +1,4 @@
+import { identity } from "./helpers";
 import {
   ApiParams,
   Collection,
@@ -5,6 +6,10 @@ import {
   Dataset,
   FilteredApiResponse,
   ObjectApiResponse,
+  PublishedDatasetInfo,
+  PublishedDatasetInfoApiResponse,
+  PublishedDatasetMetadata,
+  PublishedDatasetMetadataApiResponse,
   ResponseError,
   User,
 } from "./types";
@@ -29,10 +34,11 @@ export default class ArchAPI {
   }
 
   static async jsonRequest<Item_T, Resp_T>(
-    method: "GET" | "PUT" | "PATCH",
+    method: "DELETE" | "GET" | "PATCH" | "POST" | "PUT",
     path: string,
     params?: ApiParams<Item_T>,
-    data?: Item_T
+    data?: Item_T,
+    responseTranslator?: (response: unknown) => Resp_T
   ): Promise<Resp_T> {
     // Construct the search params string.
     const paramsStr = !params
@@ -49,23 +55,27 @@ export default class ArchAPI {
       "content-type": "application/json",
     };
     let body = null;
-    if (method !== "GET" && data) {
+    if (method !== "GET") {
       headers = { ...headers, ...ArchAPI.getCsrfHeader() };
-      body = JSON.stringify(data);
+      if (data) {
+        body = JSON.stringify(data);
+      }
     }
     const res = await fetch(`${ArchAPI.BasePath}${path}${paramsStr}`, {
       method,
       headers,
       body,
     });
-    return new Promise((resolve, reject) =>
-      !res.ok
-        ? reject(new ResponseError(res))
-        : void res
-            .json()
-            .then((data) => resolve(data as Resp_T))
-            .catch(() => reject(new Error("could not decode response")))
-    );
+    // Throw a ResponseError on not-ok status.
+    if (!res.ok) {
+      throw new ResponseError(res);
+    }
+    // Return null for ACCEPTED and NO CONTENT responses.
+    if (res.status === 202 || res.status === 204) {
+      return null as Resp_T;
+    }
+    // Attempt to decode JSON body and apply any responseTranslator.
+    return (responseTranslator || identity)(await res.json()) as Resp_T;
   }
 
   static get collections() {
@@ -87,6 +97,48 @@ export default class ArchAPI {
           "/datasets",
           params
         ),
+
+      publication: {
+        info: (datasetId: Dataset["id"]) =>
+          ArchAPI.jsonRequest<undefined, PublishedDatasetInfo>(
+            "GET",
+            `/datasets/${datasetId}/publication`,
+            undefined,
+            undefined,
+            (response) => {
+              const info = Object.assign({}, response) as PublishedDatasetInfo;
+              info.time = new Date(
+                (response as PublishedDatasetInfoApiResponse).time
+              );
+              return info;
+            }
+          ),
+
+        metadata: {
+          get: (datasetId: Dataset["id"]) =>
+            ArchAPI.jsonRequest<undefined, PublishedDatasetMetadataApiResponse>(
+              "GET",
+              `/datasets/${datasetId}/publication/metadata`
+            ),
+
+          update: (
+            datasetId: Dataset["id"],
+            metadata: PublishedDatasetMetadata
+          ) =>
+            ArchAPI.jsonRequest<PublishedDatasetMetadata, null>(
+              "POST",
+              `/datasets/${datasetId}/publication/metadata`,
+              undefined,
+              metadata
+            ),
+        },
+
+        unpublish: (datasetId: Dataset["id"]) =>
+          ArchAPI.jsonRequest<undefined, null>(
+            "DELETE",
+            `/datasets/${datasetId}/publication`
+          ),
+      },
     };
   }
 

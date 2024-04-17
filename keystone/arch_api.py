@@ -179,42 +179,40 @@ class ArchAPI:
             raise Http404 from e
 
     @classmethod
-    def publish_dataset(cls, user, input_spec, job_id, sample, metadata):
+    def publish_dataset(cls, user, input_spec, metadata):
         """Publish a Dataset"""
         return cls.run_job(
             user=user,
             input_spec=input_spec,
             job_id="DatasetPublication",
-            sample=sample,
-            job_params={"dataset": job_id, "metadata": metadata},
+            sample=None,
+            job_params={"metadata": metadata},
         )
 
     @classmethod
-    def get_dataset_publication_info(cls, user, collection_id, job_id, sample):
+    def get_dataset_publication_info(cls, user, job_run_uuid):
         """Return publication info, less pbox metadata, for the specified
         dataset.
         """
         try:
-            return cls.get_json(
-                user, f"/petabox/{collection_id}/{job_id}", sample=sample
-            )
+            return cls.get_json(user, f"/job/{job_run_uuid}/published")
         except ArchRequestError as e:
             if e.status_code != HTTPStatus.NOT_FOUND:
                 raise
             raise Http404 from e
 
     @classmethod
-    def get_published_item_metadata(cls, user, collection_id, item_id):
+    def get_published_item_metadata(cls, user, job_run_uuid):
         """Return the petabox metadata object for the specified item."""
         try:
-            return cls.get_json(user, f"/petabox/{collection_id}/metadata/{item_id}")
+            return cls.get_json(user, f"/job/{job_run_uuid}/petabox/metadata")
         except ArchRequestError as e:
             if e.status_code != HTTPStatus.NOT_FOUND:
                 raise
             raise Http404 from e
 
     @classmethod
-    def update_published_item_metadata(cls, user, collection_id, item_id, metadata):
+    def update_published_item_metadata(cls, user, job_run_uuid, metadata):
         """Update the petabox metadata object for the specified item."""
         # NOTE: in local dev, Petabox returns the following error on metadata
         # update attempts - perhaps because dev is creating items in the special
@@ -222,7 +220,7 @@ class ArchAPI:
         try:
             return cls.post(
                 user,
-                f"/petabox/{collection_id}/metadata/{item_id}",
+                f"/job/{job_run_uuid}/petabox/metadata",
                 data=metadata,
                 expect_response_body=False,
             )
@@ -232,12 +230,12 @@ class ArchAPI:
             raise Http404 from e
 
     @classmethod
-    def delete_published_item(cls, user, collection_id, item_id):
+    def delete_published_item(cls, user, job_run_uuid):
         """Delete/dark a published petabox item."""
         try:
             return cls.post(
                 user,
-                f"/petabox/{collection_id}/delete/{item_id}",
+                f"/job/{job_run_uuid}/petabox/delete",
                 data={"delete": True},
                 expect_response_body=False,
             )
