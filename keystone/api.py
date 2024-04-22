@@ -44,6 +44,7 @@ from ninja.security import (
     HttpBasicAuth,
     django_auth,
 )
+from pydantic import PositiveInt
 
 
 from config.settings import (
@@ -340,7 +341,7 @@ class JobStartIn(Schema):
     id: str
     job_type_id: str
     username: str
-    input_bytes: int
+    input_bytes: PositiveInt
     sample: bool
     parameters: JobStartInParameters
     commit_hash: str
