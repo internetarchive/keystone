@@ -64,7 +64,6 @@ from .jobmail import send as send_email
 from .helpers import (
     dot_to_dunder,
     find_field_from_lookup,
-    insert_arch_collection_id_username,
     report_exceptions,
 )
 from .models import (
@@ -1096,10 +1095,11 @@ def generate_sub_collection(request, payload: SubCollectionCreationRequest):
         raise HttpError(400, "Invalid collection ID(s)")
 
     # Handle single vs. multiple source collection cases.
-    input_spec = collections[0].input_spec if (len(collections) == 1) else {
-        "type": "multi-specs",
-        "specs": [c.input_spec for c in collections]
-    }
+    input_spec = (
+        collections[0].input_spec
+        if (len(collections) == 1)
+        else {"type": "multi-specs", "specs": [c.input_spec for c in collections]}
+    )
 
     return ArchAPI.create_sub_collection(request.user, input_spec, job_params)
 

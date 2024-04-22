@@ -12,7 +12,7 @@ def is_uuid7(s):
     """Return a bool indicate whether a string is a valid UUID7."""
     try:
         return UUID(s).version == 7
-    except:
+    except ValueError:
         return False
 
 
