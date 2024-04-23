@@ -13,7 +13,7 @@ from django.db import models
 from django.db import transaction
 from django.db import IntegrityError
 from django.db.models import Q
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 
 import uuid6
@@ -58,7 +58,6 @@ class UserRoles(models.TextChoices):
     USER = "USER", "User"
 
 
-# Create your models here.
 class User(AbstractUser):
     """Keystone user. Django Auth model."""
 
@@ -66,6 +65,7 @@ class User(AbstractUser):
         max_length=150,
         unique=True,
         validators=[validate_username],
+        editable=False,
     )
 
     email = models.EmailField(unique=True)
@@ -118,6 +118,18 @@ class User(AbstractUser):
             return None
         except IntegrityError as e:
             return str(e)
+
+
+@receiver(pre_save, sender=User)
+def enforce_username_immutability(sender, instance, **kwargs):
+    """Raise an IntegrityError on attempted username update."""
+    try:
+        db_user = sender.objects.get(pk=instance.pk)
+    except sender.DoesNotExist:
+        pass
+    else:
+        if not db_user.username == instance.username:
+            raise IntegrityError("Can not update immutable field User.username")
 
 
 class Team(models.Model):

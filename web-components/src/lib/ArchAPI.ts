@@ -12,6 +12,7 @@ import {
   PublishedDatasetMetadataApiResponse,
   ResponseError,
   User,
+  UserUpdate,
 } from "./types";
 
 export default class ArchAPI {
@@ -156,10 +157,10 @@ export default class ArchAPI {
           undefined,
           user
         ),
-      update: (user: Partial<User>) =>
-        ArchAPI.jsonRequest<Partial<User>, ObjectApiResponse<User>>(
+      update: (userId: User["id"], user: UserUpdate) =>
+        ArchAPI.jsonRequest<UserUpdate, ObjectApiResponse<User>>(
           "PATCH",
-          `/users/${user.id as number}`,
+          `/users/${userId}`,
           undefined,
           user
         ),

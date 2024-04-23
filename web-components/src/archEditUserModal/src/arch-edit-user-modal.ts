@@ -1,7 +1,7 @@
 import { html } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import ArchAPI from "../../lib/ArchAPI";
-import { ResponseError, User, UserRoles } from "../../lib/types";
+import { ResponseError, User, UserRoles, UserUpdate } from "../../lib/types";
 
 import { ArchModal } from "../../archModal/index";
 
@@ -15,7 +15,6 @@ export class ArchEditUserModal extends ArchModal {
   @property() onUpdate: (user: User) => void = (user) => null;
 
   @query("form") form!: HTMLFormElement;
-  @query("form > input#user-name") usernameInput!: HTMLInputElement;
   @query("form > input#user-email") emailInput!: HTMLInputElement;
   @query("div.error") errorEl!: HTMLElement;
 
@@ -41,23 +40,6 @@ export class ArchEditUserModal extends ArchModal {
     this.content = html`
       <form validate>
         <input type="hidden" name="id" value=${user.id} />
-
-        <label for="user-name">
-          Username
-          <em>
-            150 characters or fewer. Letters, digits and &quot;@/./+/-/_&quot;
-            only
-          </em>
-        </label>
-        <input
-          id="user-name"
-          name="user-name"
-          type="text"
-          pattern="[a-zA-Z0-9@.+-_]+"
-          required
-          title='150 characters or fewer. Letters, digits and "@/./+/-/_" only'
-          value=${user.username}
-        />
 
         <label for="first-name">First Name</label>
         <input
@@ -134,21 +116,19 @@ export class ArchEditUserModal extends ArchModal {
     }
 
     const formData = new FormData(this.form);
-    const data: Partial<User> = {
-      id: parseInt(formData.get("id") as string),
+    const userId = parseInt(formData.get("id") as string);
+    const data: UserUpdate = {
       email: formData.get("user-email") as string,
       first_name: formData.get("first-name") as string,
       last_name: formData.get("last-name") as string,
       role: formData.get("user-role") as User["role"],
-      username: formData.get("user-name") as string,
     };
-    this.updateUser(data);
+    this.updateUser(userId, data);
   }
 
   private clearErrors() {
     this.unhandledError = false;
     if (this.form) {
-      this.usernameInput.setCustomValidity("");
       this.emailInput.setCustomValidity("");
     }
   }
@@ -163,10 +143,10 @@ export class ArchEditUserModal extends ArchModal {
     inputEl.addEventListener("input", handler);
   }
 
-  private updateUser(data: Partial<User>) {
+  private updateUser(userId: User["id"], data: UserUpdate) {
     this.clearErrors();
     ArchAPI.users
-      .update(data as User)
+      .update(userId, data)
       .then((user: User) => {
         this.open = false;
         // Invoke any registered onUpdate handler and catch/log any error
@@ -178,22 +158,13 @@ export class ArchEditUserModal extends ArchModal {
         }
       })
       .catch((error: ResponseError) => {
-        let unhandledError = true;
-        if (error.response?.status === 400) {
+        if (error.response?.status !== 400) {
+          this.unhandledError = true;
+        } else {
           error.response
             .json()
             .then((data: { details: string }) => {
               const { details } = data;
-              // Maybe handle a duplicate username error.
-              if (details.endsWith("already exists for field (username)")) {
-                this.usernameInput.setCustomValidity(
-                  "A user with this Username already exists."
-                );
-                this.usernameInput.reportValidity();
-                this.clearInputValidityOnChange(this.usernameInput);
-                unhandledError = false;
-              }
-
               // Maybe handle a duplicate email error.
               if (details.endsWith("already exists for field (email)")) {
                 this.emailInput.setCustomValidity(
@@ -201,12 +172,12 @@ export class ArchEditUserModal extends ArchModal {
                 );
                 this.emailInput.reportValidity();
                 this.clearInputValidityOnChange(this.emailInput);
-                unhandledError = false;
+              } else {
+                this.unhandledError = true;
               }
             })
-            .catch(() => null);
+            .catch(() => (this.unhandledError = true));
         }
-        this.unhandledError = unhandledError;
       });
   }
 

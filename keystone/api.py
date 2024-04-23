@@ -566,11 +566,15 @@ class CreateUserSchema(Schema):
 class UpdateUserSchema(Schema):
     """Existing User update schema"""
 
-    username: Optional[str]
     first_name: Optional[str]
     last_name: Optional[str]
     email: Optional[str]
     role: Optional[UserRoles]
+
+    class Config:
+        """Reject any requests that specify username."""
+
+        extra = "forbid"
 
 
 class UserFilterSchema(FilterSchema):

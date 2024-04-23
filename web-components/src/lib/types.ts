@@ -123,6 +123,11 @@ export type User = {
   last_login: Date;
 };
 
+export type UserUpdate = Pick<
+  User,
+  "first_name" | "last_name" | "email" | "role"
+>;
+
 // AvailableJob parameters types
 
 type GlobalJobParameters = {

@@ -129,7 +129,6 @@ class UserAdmin(django.contrib.auth.admin.UserAdmin, WrapPasswordMixin):
             None,
             {
                 "fields": (
-                    "username",
                     "password",
                     "account",  # added
                 )

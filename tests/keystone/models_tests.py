@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from model_bakery import baker
 from pytest import mark
 import pytest  # noqa
@@ -98,3 +99,11 @@ class TestUser:
         assert error_message != None
         assert users.count() == 1
         assert User.objects.first().username == "testuser"
+
+    @mark.django_db
+    def test_username_is_immutable(self, make_user):
+        # Attempting to update username raises an IntegrityError
+        user = make_user()
+        user.username = "new username"
+        with pytest.raises(IntegrityError):
+            user.save()

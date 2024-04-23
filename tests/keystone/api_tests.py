@@ -222,17 +222,17 @@ def test_admin_can_update_same_account_user(make_account, make_user):
     normal_user = make_user(account=account, role=UserRoles.USER)
 
     # Update normal_user.
-    new_username = "new username"
+    new_email = "new@email.com"
     new_role = UserRoles.ADMIN
-    assert normal_user.username != new_username
+    assert normal_user.email != new_email
     res = Client(admin_user).update_user(
-        normal_user, {"username": new_username, "role": new_role}
+        normal_user, {"email": new_email, "role": new_role}
     )
 
     # Check that the user was updated.
     assert res.status_code == HTTPStatus.OK
     normal_user.refresh_from_db()
-    assert normal_user.username == new_username
+    assert normal_user.email == new_email
     assert normal_user.role == new_role
 
 
@@ -250,9 +250,7 @@ def test_admin_can_not_update_other_account_user(make_account, make_user):
     """Users with role=ADMIN can not update a user in a different account."""
     admin_user = make_user(account=make_account(), role=UserRoles.ADMIN)
     other_account_user = make_user(account=make_account(), role=UserRoles.USER)
-    res = Client(admin_user).update_user(
-        other_account_user, {"username": "new_username"}
-    )
+    res = Client(admin_user).update_user(other_account_user, {"email": "new@email.com"})
     assert res.status_code == HTTPStatus.FORBIDDEN
 
 
@@ -260,12 +258,12 @@ def test_admin_can_not_update_other_account_user(make_account, make_user):
 def test_non_admin_can_update_self(make_account, make_user):
     """Users with role=USER are allowed to update themselves."""
     user = make_user(account=make_account(), role=UserRoles.USER)
-    new_username = "new username"
-    assert new_username != user.username
-    res = Client(user).update_user(user, {"username": new_username})
+    new_email = "new@email.com"
+    assert new_email != user.email
+    res = Client(user).update_user(user, {"email": new_email})
     assert res.status_code == HTTPStatus.OK
     user.refresh_from_db()
-    assert user.username == new_username
+    assert user.email == new_email
 
 
 @mark.django_db
@@ -276,10 +274,24 @@ def test_non_admin_cant_update_other_users(make_account, make_user):
 
     # Test a same-account user.
     other_user = make_user(account=account, role=UserRoles.USER)
-    res = Client(user).update_user(other_user, {"username": "new username"})
+    res = Client(user).update_user(other_user, {"email": "new@email.com"})
     assert res.status_code == HTTPStatus.FORBIDDEN
 
     # Test a different-account user.
     other_user = make_user(account=make_account(), role=UserRoles.USER)
-    res = Client(user).update_user(other_user, {"username": "new username"})
+    res = Client(user).update_user(other_user, {"email": "new@email.com"})
     assert res.status_code == HTTPStatus.FORBIDDEN
+
+
+@mark.django_db
+@mark.parametrize("role", (UserRoles.ADMIN, UserRoles.USER))
+def test_username_can_not_be_updated(role, make_account, make_user):
+    """Updates to username are not allowed."""
+    user = make_user(account=make_account(), role=role)
+    old_username = user.username
+    new_username = "new username"
+    assert new_username != old_username
+    res = Client(user).update_user(user, {"username": new_username})
+    assert res.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    user.refresh_from_db()
+    assert user.username == old_username
