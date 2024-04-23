@@ -120,6 +120,10 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
       "Dataset Date",
       "Size",
     ];
+    this.rowSelectDisabledCallback = (row: Collection) => {
+      const metadata = row.metadata as CustomCollectionMetadata;
+      return metadata.state && isActiveProcessingState(metadata.state);
+    };
     this.selectable = true;
     this.sort = "-id";
     this.sortableColumns = [true, true, false, false, false, true];

@@ -401,6 +401,15 @@ describe("ArchSubCollectionBuilder", () => {
         ["image/bmp", ["image/bmp"]],
         ["model/step", ["model/step"]],
         ["video/mp4", ["video/mp4"]],
+        // Test MIMEs that were previously, accidentally omitted.
+        ["image/gif", ["image/gif"]],
+        ["image/jpeg", ["image/jpeg"]],
+        ["model/mesh", ["model/mesh"]],
+        ["model/vrml", ["model/vrml"]],
+        ["text/enriched", ["text/enriched"]],
+        ["text/plain", ["text/plain"]],
+        ["text/richtext", ["text/richtext"]],
+        ["video/mpeg", ["video/mpeg"]],
       ]) {
         assertInputIsValid(el, inputEl, inputVal, decodedVal);
       }

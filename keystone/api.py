@@ -685,6 +685,7 @@ class WasapiResponse(Schema):
 
 @private_api.post("/job/start", response=JobStartOut)
 @report_exceptions(Http404)
+@transaction.atomic
 def register_job_start(request, payload: JobStartIn):
     """Tell Keystone a user has started a job."""
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
