@@ -7,7 +7,7 @@ import {
   humanBytes,
   timestampStringToYearMonthString,
 } from "../../lib/helpers";
-import { EventHelpers } from "../../lib/eventHelpers";
+import { EventHelpers } from "@internetarchive/ads-library";
 
 @customElement("collection-surveyor-cart")
 export class CollectionSurveyorCart extends LitElement {

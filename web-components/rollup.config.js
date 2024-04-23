@@ -29,13 +29,13 @@ export default {
     entryFileNames: "[name].js",
   },
   plugins: [
+    resolve({
+      exportConditions: ["browser", production ? "production" : "development"],
+    }),
     typescript({ tsconfig: "./tsconfig.json" }),
     commonjs(),
     styles({
       mode: "extract",
-    }),
-    resolve({
-      exportConditions: ["browser", production ? "production" : "development"],
     }),
     production && terser(),
     json(),

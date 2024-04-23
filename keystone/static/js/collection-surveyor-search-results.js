@@ -1,4 +1,4 @@
-import{e,i as t,_ as o,s as i,y as c,a as l,b as s}from"./chunk-query-assigned-elements.js";import"./collection-surveyor-facet.js";import"./collection-surveyor-pagination.js";import"./collection-surveyor-cart.js";import"./collection-surveyor-search-bar.js";import"./collection-surveyor-active-filters.js";import{t as a,h as n}from"./chunk-helpers.js";import"./chunk-eventHelpers.js";
+import{e,i as t,_ as o,s as i,y as c,a as l,b as s}from"./chunk-query-assigned-elements.js";import"./collection-surveyor-facet.js";import"./collection-surveyor-pagination.js";import"./collection-surveyor-cart.js";import"./collection-surveyor-search-bar.js";import"./collection-surveyor-active-filters.js";import{t as a,h as n}from"./chunk-helpers.js";import"./chunk-index.js";
 /**
  * @license
  * Copyright 2017 Google LLC

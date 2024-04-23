@@ -1,7 +1,7 @@
 import { html, css, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { SelectedFacets } from "../../lib/types";
-import { EventHelpers } from "../../lib/eventHelpers";
+import { EventHelpers } from "@internetarchive/ads-library";
 import { readableFacetName } from "../../lib/helpers";
 
 @customElement("collection-surveyor-active-filters")
