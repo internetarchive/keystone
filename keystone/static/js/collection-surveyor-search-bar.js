@@ -1,4 +1,4 @@
-import{i as e,_ as t,e as r,s as a,y as s,a as h}from"./chunk-query-assigned-elements.js";import{E as n}from"./chunk-eventHelpers.js";let c=class extends a{constructor(){super(...arguments),this.searchText=""}render(){return s`
+import{i as e,_ as t,e as r,s as a,y as s,a as h}from"./chunk-query-assigned-elements.js";import{E as n}from"./chunk-index.js";let c=class extends a{constructor(){super(...arguments),this.searchText=""}render(){return s`
       <div class="search-bar-container">
         <div class="search-bar-contents">
           <h3>Explore All Collections</h3>

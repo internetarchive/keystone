@@ -1,6 +1,6 @@
 import { html, css, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { EventHelpers } from "../../lib/eventHelpers";
+import { EventHelpers } from "@internetarchive/ads-library";
 
 @customElement("collection-surveyor-search-bar")
 export class CollectionSurveyorSearchBar extends LitElement {

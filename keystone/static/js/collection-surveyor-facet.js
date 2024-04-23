@@ -1,4 +1,4 @@
-import{i as e,_ as t,e as s,s as a,y as l,a as c}from"./chunk-query-assigned-elements.js";import{E as i}from"./chunk-eventHelpers.js";import{r as d}from"./chunk-helpers.js";let r=class extends a{constructor(){super(...arguments),this.facetField="",this.facetFieldResults=[],this.selectedfacetFieldResults=[]}readableFacetFieldName(e){return e.split("_")[1].split(/(?=[A-Z])/).map((e=>e.charAt(0).toUpperCase()+e.slice(1))).join(" ")}handleSelectFacet(e){this.selectedfacetFieldResults.includes(e)||this.emitEvent("facet-selected",{facetFieldName:this.facetField,facetName:e})}handleDeselectFacet(e){this.emitEvent("facet-deselected",{facetFieldName:this.facetField,facetName:e})}emitEvent(e,t={}){this.dispatchEvent(i.createEvent(e,t?{detail:t}:{}))}render(){return l`
+import{i as e,_ as t,e as a,s,y as l,a as c}from"./chunk-query-assigned-elements.js";import{E as i}from"./chunk-index.js";import{r as d}from"./chunk-helpers.js";let r=class extends s{constructor(){super(...arguments),this.facetField="",this.facetFieldResults=[],this.selectedfacetFieldResults=[]}readableFacetFieldName(e){return e.split("_")[1].split(/(?=[A-Z])/).map((e=>e.charAt(0).toUpperCase()+e.slice(1))).join(" ")}handleSelectFacet(e){this.selectedfacetFieldResults.includes(e)||this.emitEvent("facet-selected",{facetFieldName:this.facetField,facetName:e})}handleDeselectFacet(e){this.emitEvent("facet-deselected",{facetFieldName:this.facetField,facetName:e})}emitEvent(e,t={}){this.dispatchEvent(i.createEvent(e,t?{detail:t}:{}))}render(){return l`
       <div class="facet">
         <h3>${this.readableFacetFieldName(this.facetField)}</h3>
         <hr />
@@ -65,5 +65,5 @@ import{i as e,_ as t,e as s,s as a,y as l,a as c}from"./chunk-query-assigned-ele
       cursor: pointer;
       color: red;
     }
-  `,t([s({type:String})],r.prototype,"facetField",void 0),t([s({type:Array})],r.prototype,"facetFieldResults",void 0),t([s({type:Array})],r.prototype,"selectedfacetFieldResults",void 0),r=t([c("collection-surveyor-facet")],r);export{r as CollectionSurveyorFacet};
+  `,t([a({type:String})],r.prototype,"facetField",void 0),t([a({type:Array})],r.prototype,"facetFieldResults",void 0),t([a({type:Array})],r.prototype,"selectedfacetFieldResults",void 0),r=t([c("collection-surveyor-facet")],r);export{r as CollectionSurveyorFacet};
 //# sourceMappingURL=collection-surveyor-facet.js.map
