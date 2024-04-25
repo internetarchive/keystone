@@ -345,10 +345,10 @@
   resolved "https://registry.npmjs.org/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@internetarchive/ads-library@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.npmjs.org/@internetarchive/ads-library/-/ads-library-0.0.4.tgz"
-  integrity sha512-/ltcQLD5GDGOPvk4B1x7k7ngss6tFZJGOa0WXgWK0ZZyiZyjulo7fxQQ/ibaxhS3KcQN2tDp6s6UlBEcgoOPxg==
+"@internetarchive/ads-library@^0.0.8":
+  version "0.0.8"
+  resolved "https://registry.npmjs.org/@internetarchive/ads-library/-/ads-library-0.0.8.tgz"
+  integrity sha512-L8yq3nMcEm348G4BR97mR/B5sgzXhKsAzhqGtHPcfCaCVkLG1SE12pJFGEF2Zzfo/W0pqlPufTK9NpQkzC5Wtg==
   dependencies:
     camelcase-keys "^9.1.3"
     lit "^3.1.2"
