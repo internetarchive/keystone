@@ -5,7 +5,6 @@ export declare class ArchEditUserModal extends ArchModal {
     profileMode: boolean;
     onUpdate: (user: User) => void;
     form: HTMLFormElement;
-    usernameInput: HTMLInputElement;
     emailInput: HTMLInputElement;
     errorEl: HTMLElement;
     private set unhandledError(value);

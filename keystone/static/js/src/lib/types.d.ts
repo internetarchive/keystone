@@ -3,6 +3,7 @@ import { SomeJSONSchema } from "ajv/lib/types/json-schema";
 export { SomeJSONSchema };
 import { ArchJobCard } from "../archGenerateDatasetForm/src/arch-job-card";
 export type ValueOf<T> = T[keyof T];
+export type Modify<T, R> = Omit<T, keyof R> & R;
 export declare enum ProcessingState {
     SUBMITTED = "SUBMITTED",
     QUEUED = "QUEUED",
@@ -99,6 +100,7 @@ export type User = {
     date_joined: Date;
     last_login: Date;
 };
+export type UserUpdate = Pick<User, "first_name" | "last_name" | "email" | "role">;
 type GlobalJobParameters = {
     sample: boolean;
 };
@@ -141,16 +143,19 @@ export type AvailableJobsCategory = {
     jobs: Array<AvailableJob>;
 };
 export type AvailableJobs = Array<AvailableJobsCategory>;
-export type PublishedDatasetInfo = {
+export type PublishedDatasetInfoApiResponse = {
     item: string;
     source: string;
     collection: string;
     job: JobId;
     complete: boolean;
     sample: boolean;
-    time: Date;
+    time: string;
     ark: string;
 };
+export type PublishedDatasetInfo = Modify<PublishedDatasetInfoApiResponse, {
+    time: Date;
+}>;
 export type PublishedDatasetMetadataApiResponse = {
     creator?: Array<string>;
     description?: Array<string>;
