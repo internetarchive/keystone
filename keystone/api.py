@@ -726,7 +726,7 @@ def register_job_start(request, payload: JobStartIn):
     # If job is not a User-Defined Query, lookup the collection from the
     # provided inputSpec, otherwise create a new Collection to serve as the
     # job_start.collection value.
-    if job_type != JobType.objects.get(id=KnownArchJobUuids.USER_DEFINED_QUERY):
+    if job_type.id != KnownArchJobUuids.USER_DEFINED_QUERY:
         try:
             collection = Collection.get_for_input_spec(parameters.conf.inputSpec)
         except Collection.DoesNotExist as e:
@@ -834,7 +834,7 @@ def register_job_complete(request, payload: JobCompleteIn):
     job_type = job_complete.job_start.job_type
     if job_type.can_run:
         jobmail.send_dataset_finished(request, job_complete)
-    elif job_type == JobType.objects.get(id=KnownArchJobUuids.USER_DEFINED_QUERY):
+    elif job_type.id == KnownArchJobUuids.USER_DEFINED_QUERY:
         jobmail.send_custom_collection_finished(request, job_complete)
 
     return HTTPStatus.NO_CONTENT, None
@@ -877,7 +877,7 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
     """Retrieve a user's Collections, including in-progress and finished, but
     not cancelled or failed, Custom collections."""
     queryset = filters.filter(
-        Collection.get_for_user(request.user)
+        Collection.queryset_for_user(request.user)
         .exclude(
             # Need to do a NULL check first so *__in will work as expected.
             Q(metadata__state__isnull=False)
@@ -893,7 +893,7 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
 def collections_filter_values(request, field: str):
     """Retrieve the distinct values for a specific Collection field."""
     return get_model_queryset_filter_values(
-        Collection.get_for_user(request.user),
+        Collection.queryset_for_user(request.user),
         field,
         CollectionFilterSchema,
     )
@@ -911,11 +911,13 @@ def collection_dataset_states(request, collection_id: int):
       ...
     }
     """
+    collection = get_object_or_404(
+        Collection.queryset_for_user(request.user), id=collection_id
+    )
     datasets = (
         Dataset.objects.filter(
             job_start__user=request.user,
-            job_start__collection_id=collection_id,
-            job_start__collection__users=request.user,
+            job_start__collection_id=collection,
         )
         .order_by("-start_time")
         .all()
@@ -1113,7 +1115,7 @@ def generate_sub_collection(request, payload: SubCollectionCreationRequest):
 def generate_dataset(request, payload: DatasetGenerationRequest):
     """Generate a dataset"""
     collection = get_object_or_404(
-        Collection, id=payload.collection_id, users=request.user
+        Collection.queryset_for_user(request.user), id=payload.collection_id
     )
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
     return ArchAPI.generate_dataset(

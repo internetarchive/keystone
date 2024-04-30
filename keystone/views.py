@@ -152,7 +152,9 @@ def sub_collection_builder(request):
 @login_required
 def collection_detail(request, collection_id):
     """Collection detail view"""
-    collection = get_object_or_404(Collection, id=collection_id, users=request.user)
+    collection = get_object_or_404(
+        Collection.queryset_for_user(request.user), id=collection_id
+    )
     return render(
         request, "keystone/collection-detail.html", context={"collection": collection}
     )

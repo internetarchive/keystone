@@ -44,15 +44,6 @@ class ArchRequestError(Exception):
 class ArchAPI:
     """ARCH API Interface"""
 
-    @staticmethod
-    def get_arch_dataset_id(dataset):
-        """Return the ARCH dataset ID string for the specified
-        Keystone Dataset."""
-        arch_collection_id = dataset.job_start.collection.arch_id
-        sample = dataset.job_start.sample
-        job_id = dataset.job_start.job_type.id
-        return f"{arch_collection_id}:{'1' if sample else '0'}:{job_id}"
-
     @classmethod
     def encode_param_value(cls, v):
         """Encode an ARCH query param value."""

@@ -9,7 +9,7 @@ from .test_helpers import read_json_file
 
 class TestCollection:
     @mark.django_db
-    def test_get_for_user(self):
+    def test_queryset_for_user(self):
         # Given an account with one user
         account = baker.make(Account)
         user = baker.make(User, account=account)
@@ -27,7 +27,7 @@ class TestCollection:
         # When we fetch all collections for the user we get all
         # account-only, user-only, and account+user associated collections
         # (without any duplicated collections)
-        user_collections = Collection.get_for_user(user).all()
+        user_collections = Collection.queryset_for_user(user).all()
         expected = sorted([collection1, collection2, collection3], key=lambda x: x.id)
         actual = sorted(user_collections, key=lambda x: x.id)
         assert expected == actual

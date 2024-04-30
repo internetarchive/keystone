@@ -20,10 +20,7 @@ import uuid6
 
 from config import settings
 from .validators import validate_username
-from .helpers import (
-    is_uuid7,
-    strip_arch_collection_id_username,
-)
+from .helpers import is_uuid7
 
 
 # Define a namedtuple to return from JobStart.get_job_status()
@@ -172,7 +169,7 @@ class Collection(models.Model):
     latest_dataset = models.ForeignKey(
         "Dataset", blank=True, null=True, on_delete=models.PROTECT
     )
-    metadata = models.JSONField(encoder=DjangoJSONEncoder, null=True)
+    metadata = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -180,8 +177,8 @@ class Collection(models.Model):
         ]
 
     @classmethod
-    def get_for_user(cls, user):
-        """Get all Collections a given user has access to"""
+    def queryset_for_user(cls, user):
+        """Return a queryset comprising all Collections the user has access to."""
         return Collection.objects.filter(
             Q(users=user) | Q(accounts__user=user) | Q(teams__members=user)
         ).distinct()
@@ -228,11 +225,9 @@ class Collection(models.Model):
     def get_for_input_spec(cls, input_spec):
         """Return the collection that matches the specified InputSpec object."""
         if input_spec["type"] == "collection":
-            # Strip any included username.
-            arch_id = strip_arch_collection_id_username(input_spec["collectionId"])
-            return cls.objects.get(arch_id=arch_id)
+            return cls.objects.get(arch_id=input_spec["collectionId"])
 
-        if input_spec["type"] == "dataset" and input_spec["inputType"] == "cdx":
+        if input_spec["type"] == "dataset" and input_spec.get("inputType") == "cdx":
             return cls.objects.get(arch_id=f"CUSTOM-{input_spec['uuid']}")
 
         raise NotImplementedError
