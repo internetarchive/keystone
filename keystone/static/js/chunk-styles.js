@@ -172,6 +172,10 @@ import{o as t,i as e,s as o,b as r,x as n,e as i}from"./chunk-lit-element.js";
     content: "*";
     color: red;
   }
+
+  .hidden {
+    display: none;
+  }
 `,Y=e`
   table {
     width: 100%;

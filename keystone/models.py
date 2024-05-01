@@ -12,7 +12,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
 from django.db import IntegrityError
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 
@@ -165,9 +165,6 @@ class Collection(models.Model):
     users = models.ManyToManyField(User, blank=True, related_name="collections")
     created_at = models.DateTimeField(auto_now_add=True)
     size_bytes = models.PositiveBigIntegerField(default=0)
-    latest_dataset = models.ForeignKey(
-        "Dataset", blank=True, null=True, on_delete=models.PROTECT
-    )
     metadata = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
 
     class Meta:
@@ -176,7 +173,7 @@ class Collection(models.Model):
         ]
 
     @classmethod
-    def queryset_for_user(cls, user):
+    def user_queryset(cls, user):
         """Return a queryset comprising all Collections the user has access to."""
         return Collection.objects.filter(
             Q(users=user) | Q(accounts__user=user) | Q(teams__members=user)
@@ -441,6 +438,19 @@ class Dataset(models.Model):
     state = models.CharField(choices=JobEventTypes.choices, max_length=16)
     start_time = models.DateTimeField(auto_now_add=True)
     finished_time = models.DateTimeField(null=True)
+    teams = models.ManyToManyField("Team", blank=True, related_name="datasets")
+
+    @classmethod
+    def user_queryset(cls, user):
+        """Return a queryset that constrains access to the specified user."""
+        # Include datasets which are either:
+        #  - owned by the specified user
+        #  - owned by a user who is a teammate of the specified user and for
+        #    which the team is authorized to access the dataset.
+        return Dataset.objects.filter(
+            Q(job_start__user=user)
+            | (Q(teams=F("job_start__user__teams")) & Q(teams__members=user))
+        ).distinct()
 
     @classmethod
     def handle_job_start(cls, job_start):
@@ -458,17 +468,3 @@ class Dataset(models.Model):
         dataset.start_time = start_time
         dataset.finished_time = finished_time
         dataset.save()
-
-        # Maybe update the corresponding Collection.latest_dateset
-        collection = job_event.job_start.collection
-        if (
-            finished_time is not None
-            and state == JobEventTypes.FINISHED
-            and (
-                collection.latest_dataset is None
-                or collection.latest_dataset.start_time < dataset.start_time
-            )
-        ):
-            dataset.refresh_from_db()
-            collection.latest_dataset = dataset
-            collection.save()

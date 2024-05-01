@@ -98,7 +98,6 @@ class Command(BaseCommand):
             name=ait_collection["name"],
             collection_type=CollectionTypes.AIT,
             size_bytes=ait_collection["total_warc_bytes"],
-            latest_dataset=None,
             metadata=metadata,
         )
 

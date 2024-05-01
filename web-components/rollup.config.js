@@ -20,6 +20,7 @@ export default {
     "./src/archDatasetExplorerTable/src/arch-dataset-explorer-table.ts",
     "./src/archDatasetMetadataForm/src/arch-dataset-metadata-form.ts",
     "./src/archDatasetPublishingCard/src/arch-dataset-publishing-card.ts",
+    "./src/archDatasetTeamsSelector/src/arch-dataset-teams-selector.ts",
     "./src/archGenerateDatasetForm/src/arch-generate-dataset-form.ts",
     "./src/archGlobalModal/src/arch-global-modal.ts",
     "./src/archHoverTooltip/src/arch-hover-tooltip.ts",

@@ -101,6 +101,10 @@ export type User = {
     last_login: Date;
 };
 export type UserUpdate = Pick<User, "first_name" | "last_name" | "email" | "role">;
+export type Team = {
+    id: string;
+    name: string;
+};
 type GlobalJobParameters = {
     sample: boolean;
 };

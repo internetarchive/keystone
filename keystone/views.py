@@ -5,8 +5,9 @@ from io import StringIO
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import AnonymousUser
 from django.core import management
-from django.forms import SelectMultiple
+from django.forms import SelectMultiple, model_to_dict
 from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
@@ -153,7 +154,7 @@ def sub_collection_builder(request):
 def collection_detail(request, collection_id):
     """Collection detail view"""
     collection = get_object_or_404(
-        Collection.queryset_for_user(request.user), id=collection_id
+        Collection.user_queryset(request.user), id=collection_id
     )
     return render(
         request, "keystone/collection-detail.html", context={"collection": collection}
@@ -181,23 +182,29 @@ def datasets_generate(request):
 @login_required
 def dataset_detail(request, dataset_id):
     """Dataset detail page"""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
     template_filename = settings.JOB_TYPE_UUID_NON_AUT_TEMPLATE_FILENAME_MAP.get(
-        str(dataset.job_start.job_type.id), "aut-dataset.html"
+        dataset.job_start.job_type.id, "aut-dataset.html"
     )
-
     return render(
-        request, f"keystone/{template_filename}", context={"dataset": dataset}
+        request,
+        f"keystone/{template_filename}",
+        context={
+            "dataset": dataset,
+            "is_owner": request.user == dataset.job_start.user,
+            "user_teams": [model_to_dict(x) for x in request.user.teams.all()],
+            "dataset_teams": [model_to_dict(x) for x in dataset.teams.all()],
+        },
     )
 
 
 @login_required
 def dataset_file_preview(request, dataset_id, filename):
     """Download a Dataset file preview."""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    # Request on behalf of the Dataset owner in the event of teammate access.
     return ArchAPI.proxy_file_preview_download(
-        request.user,
+        dataset.job_start.user,
         dataset.job_start.id,
         filename,
     )
@@ -205,39 +212,38 @@ def dataset_file_preview(request, dataset_id, filename):
 
 def dataset_file_download(request, dataset_id, filename):
     """Download a Dataset file."""
-    # Lookup the datset without filtering by user - we'll let ARCH figure out
-    # the download permissions.
-    dataset = get_object_or_404(Dataset, id=dataset_id)
-    job_file = get_object_or_404(
-        JobFile, job_complete__job_start=dataset.job_start, filename=filename
-    )
-
     access_token = request.GET.get("access")
-    # Lookup the access_token if not specified by the dataset owner.
-    if (
-        access_token is None
-        and request.user.is_authenticated
-        and dataset.job_start.user == request.user
-    ):
-        access_token = job_file.access_token
-
-    if access_token != job_file.access_token:
-        return HttpResponseForbidden()
+    if access_token is not None:
+        # Do an anonumous, access_key-based download request.
+        user = AnonymousUser()
+        dataset = get_object_or_404(Dataset, id=dataset_id)
+        job_file = get_object_or_404(
+            JobFile, job_complete__job_start=dataset.job_start, filename=filename
+        )
+        if access_token != job_file.access_token:
+            return HttpResponseForbidden()
+    else:
+        # Do a non-access_key-based / potentially-logged-in-user download request.
+        # Lookup the Dataset using request.user.
+        dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+        # Request on behalf of the Dataset owner in the event of teammate access.
+        user = dataset.job_start.user
 
     return ArchAPI.proxy_file_download(
-        request.user, dataset.job_start.id, filename, access_token
+        user, dataset.job_start.id, filename, access_token
     )
 
 
 @login_required
 def dataset_file_colab(request, dataset_id, filename):
     """Open a Dataset file in Google Colab."""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
     job_file = get_object_or_404(
         JobFile, job_complete__job_start=dataset.job_start, filename=filename
     )
+    # Request on behalf of the Dataset owner in the event of teammate access.
     return ArchAPI.proxy_colab_redirect(
-        request.user,
+        dataset.job_start.user,
         dataset.job_start.id,
         filename,
         job_file.access_token,

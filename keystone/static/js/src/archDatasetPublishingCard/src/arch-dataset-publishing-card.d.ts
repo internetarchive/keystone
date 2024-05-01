@@ -19,6 +19,7 @@ declare enum MetadataState {
 export declare class ArchDatasetPublishingCard extends LitElement {
     datasetId: Dataset["id"];
     csrfToken: string;
+    readOnly: boolean;
     pubState: PublishState;
     pubInfo: undefined | PublishedDatasetInfo;
     metadataState: MetadataState;

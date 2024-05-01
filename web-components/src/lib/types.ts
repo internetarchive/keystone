@@ -128,6 +128,11 @@ export type UserUpdate = Pick<
   "first_name" | "last_name" | "email" | "role"
 >;
 
+export type Team = {
+  id: string;
+  name: string;
+};
+
 // AvailableJob parameters types
 
 type GlobalJobParameters = {
