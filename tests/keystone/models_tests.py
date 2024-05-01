@@ -10,27 +10,33 @@ from .test_helpers import read_json_file
 class TestCollection:
     @mark.django_db
     def test_queryset_for_user(self):
-        # Given an account with one user
+        # Given an account and a team with one user
         account = baker.make(Account)
         user = baker.make(User, account=account)
+        team = baker.make(Team, account=account)
+        team.members.add(user)
 
-        # ...and 4 collections
+        # ...and 5 collections
         collection1 = baker.make(Collection)
         collection2 = baker.make(Collection)
         collection3 = baker.make(Collection)
+        collection4 = baker.make(Collection)
         unowned_collection = baker.make(Collection)
 
-        # Make account-only, user-only, account+user associations (and one left out)
+        # Make account-only, user-only, and team-only associations
         account.collections.add(collection1, collection2)
         user.collections.add(collection2, collection3)
+        team.collections.add(collection4)
 
         # When we fetch all collections for the user we get all
-        # account-only, user-only, and account+user associated collections
+        # account-only, user-only, and team-only associated collections
         # (without any duplicated collections)
-        user_collections = Collection.queryset_for_user(user).all()
-        expected = sorted([collection1, collection2, collection3], key=lambda x: x.id)
-        actual = sorted(user_collections, key=lambda x: x.id)
-        assert expected == actual
+        assert set(Collection.queryset_for_user(user).all()) == {
+            collection1,
+            collection2,
+            collection3,
+            collection4,
+        }
 
 
 class TestArchQuota:
