@@ -36,19 +36,8 @@ export default [
     }
 
     .category-header {
-      padding: 1rem 0 0.5rem 0;
+      padding: 0.5rem;
       background-color: #eee;
-    }
-
-    .category-title {
-      font-weight: bold;
-      font-size: 1.5rem;
-    }
-
-    .category-image {
-      float: left;
-      max-height: 5em;
-      width: auto;
     }
 
     sp-tabs[name="job-tabs"] sp-tab {

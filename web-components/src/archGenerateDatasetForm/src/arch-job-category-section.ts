@@ -25,21 +25,9 @@ export class ArchJobCategorySection extends LitElement {
 
   render() {
     const { collectionId, collectionName, jobIdStatesMap } = this;
-    const {
-      categoryDescription,
-      categoryId,
-      categoryImage,
-      categoryName,
-      jobs,
-    } = this.jobsCat;
+    const { categoryDescription, jobs } = this.jobsCat;
     return html`
       <div class="category-header">
-        <img
-          class="category-image"
-          src="${categoryImage}"
-          alt="Icon for ${categoryName}"
-        />
-        <h2 id="${categoryId}" class="category-title">${categoryName}</h2>
         <p class="category-description">${categoryDescription}</p>
       </div>
 

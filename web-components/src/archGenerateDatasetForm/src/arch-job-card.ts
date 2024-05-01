@@ -46,7 +46,7 @@ export class ArchJobCard extends LitElement {
           sample: {
             type: "boolean",
             title: "Sample",
-            default: true,
+            default: false,
             description:
               "Generate a sample dataset from a small subset of records",
           },
