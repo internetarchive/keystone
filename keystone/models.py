@@ -62,7 +62,6 @@ class User(AbstractUser):
         max_length=150,
         unique=True,
         validators=[validate_username],
-        editable=False,
     )
 
     email = models.EmailField(unique=True)
