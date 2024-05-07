@@ -22,6 +22,7 @@
 
 {% block head_extra %}
 <script src="{{ static('/js/ext/jquery.min.js') }}"></script>
+<script src="{{ static('/js/arch-dataset-teams-selector.js') }}" type="module"></script>
 {% if dataset.job_start.job_type.can_publish %}
 <script src="{{ static('/js/arch-dataset-publishing-card.js') }}" type="module"></script>
 <script src="{{ static('/js/arch-hover-tooltip.js') }}" type="module"></script>
@@ -86,14 +87,34 @@
       </div>
     </div>
 
+    {% if is_owner and user_teams %}
+    <h2 id="teams">Teams</h2>
+    <p>Share this dataset with your teammates.</p>
+    <div class="card">
+      <div class="card-body">
+        <arch-dataset-teams-selector
+          datasetId="{{ dataset.id }}"
+          userTeams='{{ user_teams | tojson }}'
+          datasetTeams='{{ dataset_teams | tojson }}'
+        >
+        </arch-dataset-teams-selector>
+      </div>
+    </div>
+    {% endif %}
+
     {% if dataset.job_start.job_type.can_publish %}
     <h2 id="publishing">Publishing</h2>
+    {% if is_owner %}
     <p>Publish this dataset to <a href="https://archive.org">archive.org</a> for public access.</p>
+    {% else %}
+    <p>Information about this dataset's publication to <a href="https://archive.org">archive.org</a>.</p>
+    {% endif %}
     <div class="card">
       <div class="card-body">
         <arch-dataset-publishing-card
           datasetId="{{ dataset.id }}"
           csrfToken="{{ csrf_token }}"
+          {{ "" if is_owner else "readOnly" }}
         >
         </arch-dataset-publishing-card>
       </div>

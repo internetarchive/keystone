@@ -174,6 +174,10 @@ export const global = css`
     content: "*";
     color: red;
   }
+
+  .hidden {
+    display: none;
+  }
 `;
 
 /**

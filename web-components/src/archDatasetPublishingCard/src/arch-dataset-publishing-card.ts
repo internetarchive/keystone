@@ -55,6 +55,7 @@ function getMetadataKeyTitle(k: keyof PublishedDatasetMetadata): string {
 export class ArchDatasetPublishingCard extends LitElement {
   @property({ type: String }) datasetId!: Dataset["id"];
   @property({ type: String }) csrfToken!: string;
+  @property({ type: Boolean }) readOnly = false;
 
   @state() pubState: PublishState = PublishState.Loading;
   @state() pubInfo: undefined | PublishedDatasetInfo = undefined;
@@ -96,7 +97,7 @@ export class ArchDatasetPublishingCard extends LitElement {
   // TODO - make this less complex
   // eslint-disable-next-line complexity
   render() {
-    const { pubState } = this;
+    const { pubState, readOnly } = this;
     if (pubState === PublishState.Loading) {
       return html`<arch-loading-indicator></arch-loading-indicator>`;
     }
@@ -137,7 +138,8 @@ export class ArchDatasetPublishingCard extends LitElement {
               ? html`<i>Enter Metadata</i>`
               : "Metadata"}
             ${pubState < PublishState.Published ||
-            this.metadataState === MetadataState.Editing
+            this.metadataState === MetadataState.Editing ||
+            readOnly
               ? ""
               : html`
                   <button
@@ -242,7 +244,7 @@ export class ArchDatasetPublishingCard extends LitElement {
             ? "success"
             : pubState === PublishState.Published
             ? "danger"
-            : ""}"
+            : ""} ${readOnly ? "hidden" : ""}"
           ?disabled=${pubState === PublishState.Publishing ||
           pubState === PublishState.Unpublishing}
           @click=${this._publishButtonClickHandler}

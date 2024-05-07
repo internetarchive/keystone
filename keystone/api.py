@@ -16,6 +16,7 @@ from uuid import UUID
 
 import django.utils
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError, transaction
@@ -77,6 +78,7 @@ from .models import (
     JobFile,
     JobStart,
     JobType,
+    Team,
     User,
     UserRoles,
 )
@@ -474,6 +476,7 @@ class DatasetSchema(Schema):
     state: str
     start_time: datetime
     finished_time: Optional[datetime]
+    team_ids: List[int]
 
 
 class DatasetFilterSchema(FilterSchema):
@@ -539,6 +542,19 @@ class AvailableJobsCategory(Schema):
     jobs: List[AvailableJob]
 
 
+class UserTeamSchema(ModelSchema):
+    """Represents an element of User.teams"""
+
+    class Config:
+        """Ninja ModelSchema configuration."""
+
+        model = Team
+        model_fields = [
+            "id",
+            "name",
+        ]
+
+
 class UserSchema(Schema):
     """User schema"""
 
@@ -550,6 +566,7 @@ class UserSchema(Schema):
     role: UserRoles
     date_joined: datetime
     last_login: datetime = None
+    teams: List[UserTeamSchema]
 
 
 class CreateUserSchema(Schema):
@@ -877,15 +894,43 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
     """Retrieve a user's Collections, including in-progress and finished, but
     not cancelled or failed, Custom collections."""
     queryset = filters.filter(
-        Collection.queryset_for_user(request.user)
+        Collection.user_queryset(request.user)
         .exclude(
             # Need to do a NULL check first so *__in will work as expected.
             Q(metadata__state__isnull=False)
             & Q(metadata__state__in=(JobEventTypes.CANCELLED, JobEventTypes.FAILED))
         )
-        .annotate(dataset_count=Count("jobstart__dataset__id"))
+        .annotate(
+            dataset_count=Count(
+                "jobstart__dataset__id",
+                filter=Q(jobstart__dataset__state=JobEventTypes.FINISHED)
+                & (
+                    Q(jobstart__user=request.user)
+                    | Q(jobstart__dataset__teams__members=request.user)
+                ),
+                distinct=True,
+            )
+        )
     )
-    return apply_sort_param(request, queryset, CollectionSchema)
+    collections = list(apply_sort_param(request, queryset, CollectionSchema))
+
+    # Set latest_dataset.
+    ordered_datasets = list(
+        Dataset.user_queryset(request.user)
+        .prefetch_related("job_start")
+        .prefetch_related("job_start__job_type")
+        .prefetch_related("job_start__collection")
+        .filter(job_start__collection__in=collections, state=JobEventTypes.FINISHED)
+        .order_by("-finished_time")
+    )
+    collection_datasets_map = defaultdict(list)
+    for dataset in ordered_datasets:
+        collection_datasets_map[dataset.job_start.collection.id].append(dataset)
+    for c in collections:
+        datasets = collection_datasets_map[c.id]
+        c.latest_dataset = None if not datasets else datasets[0]
+
+    return collections
 
 
 @public_api.get("/collections/filter_values", response=List[Any])
@@ -893,7 +938,7 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
 def collections_filter_values(request, field: str):
     """Retrieve the distinct values for a specific Collection field."""
     return get_model_queryset_filter_values(
-        Collection.queryset_for_user(request.user),
+        Collection.user_queryset(request.user),
         field,
         CollectionFilterSchema,
     )
@@ -912,11 +957,11 @@ def collection_dataset_states(request, collection_id: int):
     }
     """
     collection = get_object_or_404(
-        Collection.queryset_for_user(request.user), id=collection_id
+        Collection.user_queryset(request.user), id=collection_id
     )
     datasets = (
-        Dataset.objects.filter(
-            job_start__user=request.user,
+        Dataset.user_queryset(request.user)
+        .filter(
             job_start__collection_id=collection,
         )
         .order_by("-start_time")
@@ -936,7 +981,14 @@ def collection_dataset_states(request, collection_id: int):
 @paginate
 def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
     """Retrieve the list of Datasets"""
-    queryset = filters.filter(Dataset.objects.filter(job_start__user=request.user))
+    queryset = filters.filter(
+        Dataset.user_queryset(request.user)
+        .prefetch_related("job_start")
+        .prefetch_related("job_start__job_type")
+        .prefetch_related("job_start__job_type__category")
+        .prefetch_related("job_start__collection")
+        .annotate(team_ids=ArrayAgg("teams__id", filter=Q(teams__id__isnull=False)))
+    )
     return apply_sort_param(request, queryset, DatasetSchema)
 
 
@@ -945,7 +997,7 @@ def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
 def datasets_filter_values(request, field: str):
     """Retrieve the distinct values for a specific Dataset field."""
     return get_model_queryset_filter_values(
-        Dataset.objects.filter(job_start__user=request.user),
+        Dataset.user_queryset(request.user),
         field,
         DatasetFilterSchema,
     )
@@ -955,7 +1007,36 @@ def datasets_filter_values(request, field: str):
 @public_api.get("/datasets/{int:dataset_id}", response=DatasetSchema)
 def get_dataset(request, dataset_id: int):
     """Retrieve a specific Dataset"""
-    return get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    return get_object_or_404(
+        Dataset.user_queryset(request.user)
+        .prefetch_related("job_start")
+        .prefetch_related("job_start__job_type")
+        .prefetch_related("job_start__job_type__category")
+        .prefetch_related("job_start__collection")
+        .annotate(team_ids=ArrayAgg("teams__id", filter=Q(teams__id__isnull=False))),
+        id=dataset_id,
+    )
+
+
+# Specify int:dataset_id to prevent collision with datasets/generate
+@public_api.post(
+    "/datasets/{int:dataset_id}/teams",
+    response={HTTPStatus.NO_CONTENT: None},
+)
+def update_dataset_teams(request, dataset_id: int, payload: List[UserTeamSchema]):
+    """Retrieve a specific Dataset"""
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    # Only the dataset owner is allowed to update teams.
+    if request.user != dataset.job_start.user:
+        raise PermissionDenied
+    # Check that the user is a member of all the specified teams.
+    team_ids = set(t.id for t in payload)
+    bad_teams = team_ids - set(request.user.teams.values_list("id", flat=True))
+    if bad_teams:
+        raise HttpError(400, f"Invalid team ID(s): {list(bad_teams)}")
+    # Do the update.
+    dataset.teams.set(Team.objects.filter(id__in=team_ids))
+    return HTTPStatus.NO_CONTENT, None
 
 
 @public_api.get("/job-categories", response=List[JobCategorySchema])
@@ -1097,7 +1178,7 @@ def generate_sub_collection(request, payload: SubCollectionCreationRequest):
     job_params = {k: v for k, v in dict(payload).items() if v is not None}
     sources = job_params.pop("sources")
 
-    collections = list(Collection.objects.filter(id__in=sources))
+    collections = list(Collection.user_queryset(request.user).filter(id__in=sources))
     if len(collections) != len(sources):
         raise HttpError(400, "Invalid collection ID(s)")
 
@@ -1115,7 +1196,7 @@ def generate_sub_collection(request, payload: SubCollectionCreationRequest):
 def generate_dataset(request, payload: DatasetGenerationRequest):
     """Generate a dataset"""
     collection = get_object_or_404(
-        Collection.queryset_for_user(request.user), id=payload.collection_id
+        Collection.user_queryset(request.user), id=payload.collection_id
     )
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
     return ArchAPI.generate_dataset(
@@ -1129,15 +1210,21 @@ def generate_dataset(request, payload: DatasetGenerationRequest):
 @public_api.get("/datasets/{dataset_id}/publication", response=DatasetPublicationInfo)
 def dataset_published_status(request, dataset_id: int):
     """Retrieve publication info for the specified Dataset"""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    res = ArchAPI.get_dataset_publication_info(request.user, dataset.job_start.id)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    # Request on behalf of the Dataset owner in the event of teammate access.
+    res = ArchAPI.get_dataset_publication_info(
+        dataset.job_start.user, dataset.job_start.id
+    )
     return res
 
 
 @public_api.post("/datasets/{dataset_id}/publication", response=JobStateInfo)
 def publish_dataset(request, dataset_id: int, metadata: DatasetPublicationMetadata):
     """Publish a dataset"""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    # Only the dataset owner is allowed to publish.
+    if request.user != dataset.job_start.user:
+        raise PermissionDenied
     return ArchAPI.publish_dataset(
         request.user,
         {"type": "dataset", "uuid": str(dataset.job_start.id)},
@@ -1154,8 +1241,11 @@ def publish_dataset(request, dataset_id: int, metadata: DatasetPublicationMetada
 )
 def get_published_item_metadata(request, dataset_id: int):
     """Retrieve published petabox item metadata for the specified Dataset"""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    return ArchAPI.get_published_item_metadata(request.user, dataset.job_start.id)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    # Request on behalf of the Dataset owner in the event of teammate access.
+    return ArchAPI.get_published_item_metadata(
+        dataset.job_start.user, dataset.job_start.id
+    )
 
 
 @public_api.post(
@@ -1166,7 +1256,10 @@ def update_published_item_metadata(
     request, dataset_id: int, metadata: DatasetPublicationMetadata
 ):
     """Update the metadata of a published Dataset petabox item"""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    # Only the dataset owner is allowed to update metadata.
+    if request.user != dataset.job_start.user:
+        raise PermissionDenied
     ArchAPI.update_published_item_metadata(
         request.user, dataset.job_start.id, metadata.dict(exclude_none=True)
     )
@@ -1178,7 +1271,10 @@ def update_published_item_metadata(
 )
 def delete_published_item(request, dataset_id: int):
     """Update the metadata of a published Dataset petabox item"""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    # Only the dataset owner is allowed to delete the item.
+    if request.user != dataset.job_start.user:
+        raise PermissionDenied
     ArchAPI.delete_published_item(request.user, dataset.job_start.id)
     return HTTPStatus.ACCEPTED, None
 
@@ -1186,8 +1282,11 @@ def delete_published_item(request, dataset_id: int):
 @public_api.get("/datasets/{dataset_id}/sample_viz_data", response=DatasetSampleVizData)
 def get_sample_viz_data(request, dataset_id: int):
     """Get the sample visualization data for the specific dataset."""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
-    return ArchAPI.get_dataset_sample_viz_data(request.user, dataset.job_start.id)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    # Request on behalf of the Dataset owner in the event of teammate access.
+    return ArchAPI.get_dataset_sample_viz_data(
+        dataset.job_start.user, dataset.job_start.id
+    )
 
 
 ###############################################################################
@@ -1200,7 +1299,7 @@ def get_sample_viz_data(request, dataset_id: int):
 )
 def get_file_listing(request, dataset_id: int):
     """Proxy as WASAPI datase file listing response from ARCH."""
-    dataset = get_object_or_404(Dataset, id=dataset_id, job_start__user=request.user)
+    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
     # Use the reverse for dataset-file-download to create a base download URL, to
     # which ARCH will append "/{filename}?access=..."
     base_download_url = ctx_helpers(request)["abs_url"](

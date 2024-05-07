@@ -9,7 +9,7 @@ from .test_helpers import read_json_file
 
 class TestCollection:
     @mark.django_db
-    def test_queryset_for_user(self):
+    def test_user_queryset(self):
         # Given an account and a team with one user
         account = baker.make(Account)
         user = baker.make(User, account=account)
@@ -31,7 +31,7 @@ class TestCollection:
         # When we fetch all collections for the user we get all
         # account-only, user-only, and team-only associated collections
         # (without any duplicated collections)
-        assert set(Collection.queryset_for_user(user).all()) == {
+        assert set(Collection.user_queryset(user).all()) == {
             collection1,
             collection2,
             collection3,

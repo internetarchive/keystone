@@ -63,6 +63,12 @@ class CollectionUserInline(admin.TabularInline):
     model = models.Collection.users.through
 
 
+class UserTeamsInline(admin.TabularInline):
+    """Add inline User table to TeamAdmin"""
+
+    model = models.User.teams.through
+
+
 @admin.register(models.Account)
 class AccountAdmin(admin.ModelAdmin):
     """Django admin config for Account"""
@@ -83,7 +89,8 @@ class TeamAdmin(admin.ModelAdmin):
         "name",
         "account_name",
     )
-    inlines = (CollectionTeamInline,)
+
+    inlines = (CollectionTeamInline, UserTeamsInline)
 
     @admin.display(description="Account", ordering="account__name")
     def account_name(self, team):

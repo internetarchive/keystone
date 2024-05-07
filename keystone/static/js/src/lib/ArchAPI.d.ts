@@ -1,4 +1,4 @@
-import { ApiParams, Collection, CollectionIdNamePairs, Dataset, FilteredApiResponse, PublishedDatasetInfo, PublishedDatasetMetadata, PublishedDatasetMetadataApiResponse, User, UserUpdate } from "./types";
+import { ApiParams, Collection, CollectionIdNamePairs, Dataset, FilteredApiResponse, PublishedDatasetInfo, PublishedDatasetMetadata, PublishedDatasetMetadataApiResponse, Team, User, UserUpdate } from "./types";
 export default class ArchAPI {
     static BasePath: string;
     static CSRF_REGEX: RegExp;
@@ -11,6 +11,7 @@ export default class ArchAPI {
     };
     static get datasets(): {
         get: (params?: ApiParams<Dataset>) => Promise<FilteredApiResponse<Dataset>>;
+        updateTeams: (datasetId: Dataset["id"], teams: Array<Team>) => Promise<null>;
         publication: {
             info: (datasetId: Dataset["id"]) => Promise<PublishedDatasetInfo>;
             metadata: {

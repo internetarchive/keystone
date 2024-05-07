@@ -2,6 +2,7 @@ import json
 from http import HTTPStatus
 from unittest.mock import patch
 
+from django.forms import model_to_dict
 from django.test import Client as _Client
 from model_bakery import baker
 from pytest import (
@@ -12,6 +13,7 @@ from pytest import (
 
 from keystone.api import CreateUserSchema
 from keystone.models import (
+    Dataset,
     User,
     UserRoles,
 )
@@ -56,6 +58,19 @@ class Client(_Client):
 
     def update_user(self, user, update_d):
         return self.patch(f"/api/users/{user.id}", update_d, "application/json")
+
+    def list_datasets(self):
+        return self.get(f"/api/datasets")
+
+    def get_dataset(self, dataset_id):
+        return self.get(f"/api/datasets/{dataset_id}")
+
+    def update_dataset_teams(self, dataset_id, teams):
+        return self.post(
+            f"/api/datasets/{dataset_id}/teams",
+            [model_to_dict(t) for t in teams],
+            "application/json",
+        )
 
 
 ###############################################################################
@@ -295,3 +310,126 @@ def test_username_can_not_be_updated(role, make_account, make_user):
     assert res.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     user.refresh_from_db()
     assert user.username == old_username
+
+
+###############################################################################
+# /api/datasets tests
+###############################################################################
+
+
+@mark.django_db
+def test_dataset_owner_and_team_access(make_team, make_user, make_user_dataset):
+    """A dataset can only be accessed by its owner and the members of any team for
+    which the dataset has been authorized."""
+    # Create a user and add them to a team.
+    user = make_user()
+    team = make_team(account=user.account)
+    user.teams.add(team)
+
+    # Create a second same-account user, and a different-account user.
+    other_user = make_user(account=user.account)
+    other_account_user = make_user()
+
+    # Create a couple of user datasets.
+    user_dataset_ids = (make_user_dataset(user).id, make_user_dataset(user).id)
+
+    def check_access(_user, list_result_ids, get_test_id, get_test_ok):
+        """Check a user's ability to list and retrieve datasets."""
+        client = Client(_user)
+        res = client.list_datasets()
+        assert res.status_code == HTTPStatus.OK
+        assert {x["id"] for x in res.json()["items"]} == set(list_result_ids)
+        res = client.get_dataset(get_test_id)
+        assert res.status_code == (
+            HTTPStatus.OK if get_test_ok else HTTPStatus.NOT_FOUND
+        )
+
+    # Check that the user can list and retrieve their own datasets.
+    check_access(user, user_dataset_ids, user_dataset_ids[0], True)
+
+    # Check that the other users can't do either.
+    check_access(other_user, [], user_dataset_ids[0], False)
+    check_access(other_account_user, [], user_dataset_ids[0], False)
+
+    # Add the same-account user to the same team and check that they still don't
+    # have access since the team is not yet authorized to access any datasets.
+    other_user.teams.add(team)
+    check_access(other_user, [], user_dataset_ids[0], False)
+
+    # Authorize the team to access the first dataset.
+    dataset = Dataset.objects.get(id=user_dataset_ids[0])
+    dataset.teams.add(team)
+    dataset.save()
+
+    # Check that the same-account user can now access the dataset.
+    check_access(other_user, [dataset.id], dataset.id, True)
+
+    # Remove user from the team and check that, even though the dataset is still
+    # authorized for the team, since the owning user is no longer on the team, the
+    # team (i.e. other_user) no longer has access.
+    user.teams.remove(team)
+    user.save()
+    check_access(other_user, [], dataset.id, False)
+
+    # Check that adding the user and authorizing the dataset for a completely
+    # different team doesn't restore other_user's access.
+    other_team = make_team()
+    user.teams.add(other_team)
+    user.save()
+    dataset.teams.add(other_team)
+    dataset.save()
+    check_access(other_user, [], dataset.id, False)
+
+    # Check that adding other_user to other_team restores their access.
+    other_user.teams.add(other_team)
+    other_user.save()
+    check_access(other_user, [dataset.id], dataset.id, True)
+
+
+@mark.django_db
+def test_dataset_owner_can_update_teams(make_team, make_user, make_user_dataset):
+    """A dataset owner can update the teams with which the dataset is shared."""
+    user = make_user()
+    team1 = make_team(account=user.account)
+    team2 = make_team(account=user.account)
+    team3 = make_team(account=user.account)
+    user.teams.set((team1, team2))
+    dataset = make_user_dataset(user)
+    res = Client(user).update_dataset_teams(dataset.id, [team1, team2])
+    assert res.status_code == HTTPStatus.NO_CONTENT
+    dataset_teams = set(dataset.teams.values_list("id", flat=True))
+    assert dataset_teams == {team1.id, team2.id}
+
+
+@mark.django_db
+def test_dataset_owner_can_not_update_teams_with_nonmember_team(
+    make_team, make_user, make_user_dataset
+):
+    """A dataset owner is not allowed to share a dataset to a team of which they're
+    not a member."""
+    user = make_user()
+    team = make_team(account=user.account)
+    dataset = make_user_dataset(user)
+    res = Client(user).update_dataset_teams(dataset.id, [team])
+    assert res.status_code == HTTPStatus.BAD_REQUEST
+    assert res.json()["detail"] == f"Invalid team ID(s): [{team.id}]"
+
+
+@mark.django_db
+def test_non_dataset_owner_can_not_update_teams(
+    make_team, make_user, make_user_dataset
+):
+    """A user is not allowed to update the teams of a dataset that they don't own."""
+    # Create a dataset owner and dataset.
+    owner = make_user()
+    dataset = make_user_dataset(owner)
+    # Create a non-owner user, put them on a team with owner, and authorize the team to
+    # access the dataset so that the dataset lookup in the API doesn't result in a 404.
+    non_owner = make_user(account=owner.account)
+    team = make_team(account=owner.account)
+    team.members.set((owner, non_owner))
+    dataset.teams.set((team,))
+    # Check that the attempt by the non-owner to authorize the dataset for the team
+    # is forbidden.
+    res = Client(non_owner).update_dataset_teams(dataset.id, [team])
+    assert res.status_code == HTTPStatus.FORBIDDEN

@@ -11,6 +11,7 @@ import {
   PublishedDatasetMetadata,
   PublishedDatasetMetadataApiResponse,
   ResponseError,
+  Team,
   User,
   UserUpdate,
 } from "./types";
@@ -97,6 +98,14 @@ export default class ArchAPI {
           "GET",
           "/datasets",
           params
+        ),
+
+      updateTeams: (datasetId: Dataset["id"], teams: Array<Team>) =>
+        ArchAPI.jsonRequest<Array<Team>, null>(
+          "POST",
+          `/datasets/${datasetId}/teams`,
+          undefined,
+          teams
         ),
 
       publication: {

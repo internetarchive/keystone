@@ -69,6 +69,7 @@ ARCH_WASAPI_BASE_URL = env.get("KEYSTONE_ARCH_WASAPI_BASE_URL", "")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get("KEYSTONE_DJANGO_DEBUG", "false") == "true"
+DB_QUERY_DEBUG = False
 
 ALLOWED_HOSTS = (
     [
@@ -236,13 +237,20 @@ LOGGING = {
     },
     "handlers": {
         "file": {
-            "level": "INFO",
+            "level": "DEBUG" if DEBUG else "INFO",
             "class": "logging.FileHandler",
             "formatter": "verbose",
             "filename": env.get("KEYSTONE_LOG_FILE_PATH", "/var/log/keystone.log"),
         },
     },
-    "loggers": {"root": {"handlers": ["file"]}},
+    "loggers": {
+        "root": {"handlers": ["file"]},
+        "django.db.backends": {
+            "handlers": ["file"],
+            "level": "DEBUG" if DB_QUERY_DEBUG else "INFO",
+            "propagate": False,
+        },
+    },
 }
 
 EMAIL_HOST = env.get("KEYSTONE_EMAIL_HOST")
