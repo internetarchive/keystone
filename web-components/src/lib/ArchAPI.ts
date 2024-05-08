@@ -5,12 +5,16 @@ import {
   CollectionIdNamePairs,
   Dataset,
   FilteredApiResponse,
+  JobId,
+  JobParameters,
+  JobState,
   ObjectApiResponse,
   PublishedDatasetInfo,
   PublishedDatasetInfoApiResponse,
   PublishedDatasetMetadata,
   PublishedDatasetMetadataApiResponse,
   ResponseError,
+  RunJobRequest,
   Team,
   User,
   UserUpdate,
@@ -87,6 +91,26 @@ export default class ArchAPI {
           "GET",
           "/collections",
           params
+        ),
+    };
+  }
+
+  static get jobs() {
+    return {
+      run: (
+        collectionId: Collection["id"],
+        jobId: JobId,
+        jobParameters: JobParameters
+      ) =>
+        ArchAPI.jsonRequest<RunJobRequest, JobState>(
+          "POST",
+          "/datasets/generate",
+          undefined,
+          {
+            collection_id: collectionId,
+            job_type_id: jobId,
+            params: jobParameters,
+          }
         ),
     };
   }

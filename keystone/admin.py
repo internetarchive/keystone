@@ -69,6 +69,33 @@ class UserTeamsInline(admin.TabularInline):
     model = models.User.teams.through
 
 
+class JobCategoryJobTypesInline(admin.TabularInline):
+    """Add inline JobType table to JobCategory"""
+
+    model = models.JobType
+
+    fields = (
+        "id",
+        "name",
+    )
+
+    readonly_fields = (
+        "id",
+        "name",
+    )
+
+    show_change_link = True
+
+    def has_add_permission(self, *args, **kwargs):
+        return False
+
+    def has_change_permission(self, *args, **kwargs):
+        return False
+
+    def has_delete_permission(self, *args, **kwargs):
+        return False
+
+
 @admin.register(models.Account)
 class AccountAdmin(admin.ModelAdmin):
     """Django admin config for Account"""
@@ -216,6 +243,18 @@ class ArchQuotaAdmin(admin.ModelAdmin):
         "content_object",
         "quota_input_bytes",
     )
+
+
+@admin.register(models.JobCategory)
+class JobCatgegoryAdmin(admin.ModelAdmin):
+    """Django admin config for JobCategory"""
+
+    list_display = (
+        "id",
+        "name",
+    )
+
+    inlines = (JobCategoryJobTypesInline,)
 
 
 @admin.register(models.JobType)

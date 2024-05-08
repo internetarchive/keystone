@@ -271,25 +271,11 @@ export class ArchGenerateDatasetForm extends LitElement {
     void this.pollDatasetStates();
   }
 
-  private async runJob(jobId: string, sample: boolean) {
-    return fetch("/api/datasets/generate", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "X-CSRFToken": this.csrfToken },
-      mode: "cors",
-      body: JSON.stringify({
-        collection_id: this.sourceCollectionId,
-        job_type_id: jobId,
-        is_sample: sample,
-      }),
-    });
-  }
-
   private async generateDatasetHandler(e: Event) {
     const archJobCard = (e as CustomEvent<GenerateDatasetDetail>).detail
       .archJobCard;
     const jobId = archJobCard.job.id;
-    const sample = (archJobCard.jobParameters as JobParameters).sample;
+    const jobParameters = archJobCard.jobParameters as JobParameters;
     // Update the internal state of this job to SUBMITTED.
     const { collectionJobIdStatesMapMap } = this;
     const sourceCollectionId = this.sourceCollectionId as Collection["id"];
@@ -311,9 +297,9 @@ export class ArchGenerateDatasetForm extends LitElement {
     // Request a manual re-render.
     archJobCard.jobButton.requestUpdate();
     // Make the request.
-    const res = await this.runJob(jobId, sample);
-
-    if (!res.ok) {
+    try {
+      await ArchAPI.jobs.run(sourceCollectionId, jobId, jobParameters);
+    } catch {
       // Delete the synthetic DatasetState object and request a manual re-render.
       datasetStates[jobId].shift();
       archJobCard.jobButton.requestUpdate();

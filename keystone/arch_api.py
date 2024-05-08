@@ -284,14 +284,20 @@ class ArchAPI:
         )
 
     @classmethod
-    def generate_dataset(cls, user, input_spec, job_id, sample):
+    def generate_dataset(cls, user, input_spec, job_id, params):
         """(Re)Generate a Dataset."""
+        # ARCH expects 'sample' to be specified as a query parameter,
+        # so pop it from the params dict.
+        sample = params.pop("sample")
         return cls.run_job(
             user=user,
             input_spec=input_spec,
             job_id=job_id,
             sample=sample,
-            job_params={"dataset": job_id},
+            job_params={
+                "dataset": job_id,
+                **params,
+            },
         )
 
     @classmethod

@@ -275,6 +275,7 @@ private_api = NinjaAPI(
     urls_namespace="private", auth=[ApiKey()], parser=KeystoneRequestParser()
 )
 
+
 wasapi_api = NinjaAPI(
     urls_namespace="wasapi",
     csrf=True,
@@ -642,12 +643,24 @@ class DatasetPublicationMetadata(Schema):
     title: List[str] = None
 
 
+class GlobalJobParameters(Schema):
+    """Configuration parameters common to all jobs."""
+
+    sample: bool
+
+
+class NamedEntityExtractionParameters(GlobalJobParameters):
+    """NamedEntityExtraction-specific job configuration parameters."""
+
+    lang: str
+
+
 class DatasetGenerationRequest(Schema):
     """Request POST payload schema for Dataset generation."""
 
     collection_id: int
     job_type_id: str
-    is_sample: bool
+    params: NamedEntityExtractionParameters | GlobalJobParameters
 
 
 class SubCollectionCreationRequest(Schema):
@@ -1054,6 +1067,13 @@ def list_available_jobs(request):
     def cat_img_url(job_cat):
         return static(f"/img/category/{job_cat.name.lower().replace(' ', '-')}.png")
 
+    exclude_job_uuids = (
+        # Legacy NamedEntities is replaced by ArchiveSparkEntityExtraction
+        KnownArchJobUuids.NAMED_ENTITIES,
+        KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE,
+        KnownArchJobUuids.ARCHIVESPARK_NOOP,
+    )
+
     return [
         {
             "categoryName": job_cat.name,
@@ -1067,20 +1087,12 @@ def list_available_jobs(request):
                     "description": job.description,
                     "parameters_schema": job.parameters_schema,
                 }
-                for job in job_cat.jobtype_set.filter(can_run=True)
+                for job in job_cat.jobtype_set.filter(can_run=True).exclude(
+                    id__in=exclude_job_uuids
+                )
             ],
         }
-        for job_cat in (
-            JobCategory.objects.filter(jobtype__can_run=True)
-            # Filter out ArchiveSpark* jobs for the time being.
-            .exclude(
-                jobtype__id__in=(
-                    KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION,
-                    KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE,
-                    KnownArchJobUuids.ARCHIVESPARK_NOOP,
-                )
-            ).distinct()
-        )
+        for job_cat in (JobCategory.objects.exclude(name__in=("System", "")))
     ]
 
 
@@ -1199,11 +1211,12 @@ def generate_dataset(request, payload: DatasetGenerationRequest):
         Collection.user_queryset(request.user), id=payload.collection_id
     )
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
+
     return ArchAPI.generate_dataset(
         request.user,
         collection.input_spec,
         str(job_type.id),  # Cast UUID to serializable
-        payload.is_sample,
+        payload.params.dict(),
     )
 
 
