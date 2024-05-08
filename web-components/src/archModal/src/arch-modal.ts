@@ -34,7 +34,7 @@ export class ArchModal extends ModalMixin(LitElement) {
   @property({ type: String }) cancelButtonClass = "";
   @property({ type: String }) cancelButtonText = "Cancel";
   @property({ type: String }) submitButtonClass = "primary";
-  @property({ type: String }) submitButtonText = "Ok";
+  @property({ type: String }) submitButtonText = "Confirm";
   @property({ type: String }) title = "";
   @property() content: TemplateResult = html``;
 

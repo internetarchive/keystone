@@ -1,10 +1,6 @@
 import { css } from "lit";
 
-import {
-  archLogoBackgroundColor,
-  archLogoForegroundColor,
-  global,
-} from "../../lib/styles";
+import { global } from "../../lib/styles";
 import defaultFormStyles from "../../archJsonSchemaForm/src/styles";
 
 export default [
@@ -17,8 +13,8 @@ export default [
     }
 
     label {
-      background-color: ${archLogoBackgroundColor};
-      color: ${archLogoForegroundColor};
+      background-color: #666;
+      color: #fff;
       padding: 0.5rem;
       display: block;
       font-size: 0.9rem;

@@ -1,6 +1,8 @@
 import { LitElement, TemplateResult, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
+import { DefaultSelectElementPromptText } from "../../lib/constants";
+
 @customElement("arch-select-adder")
 export class ArchSelectAdder<T> extends LitElement {
   @property({ type: String }) deselectButtonText = "remove";
@@ -87,7 +89,9 @@ export class ArchSelectAdder<T> extends LitElement {
             <label>
               ${selectCtaText}
               <select ?disabled=${disabled} @change=${this.selectHandler}>
-                <option selected value>~ choose ~</option>
+                <option selected value>
+                  ${DefaultSelectElementPromptText}
+                </option>
                 ${this.availableOptions.map(
                   (x) =>
                     html`<option value="${valueGetter(x)}">

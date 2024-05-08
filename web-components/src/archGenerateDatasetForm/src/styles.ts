@@ -1,16 +1,12 @@
 import { css } from "lit";
-import {
-  global,
-  archLogoBackgroundColor,
-  archLogoForegroundColor,
-} from "../../lib/styles";
+import { global } from "../../lib/styles";
 
 export default [
   global,
   css`
     label {
-      background-color: ${archLogoBackgroundColor};
-      color: ${archLogoForegroundColor};
+      background-color: #000;
+      color: #fff;
       padding: 0.5rem;
       display: block;
       font-size: 0.9rem;
@@ -19,12 +15,6 @@ export default [
 
     select[name="source-collection"] {
       width: 100%;
-      direction: rtl;
-      text-align: left;
-    }
-
-    select[name="source-collection"] > option {
-      direction: ltr;
     }
 
     label[for="job-category"] {

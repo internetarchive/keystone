@@ -33,3 +33,5 @@ export const UrlCollectionParamName = "cid";
 
 // The URL params to use for specifying an array of Collection.id values.
 export const UrlCollectionsParamName = "cid[]";
+
+export const DefaultSelectElementPromptText = "Please select...";

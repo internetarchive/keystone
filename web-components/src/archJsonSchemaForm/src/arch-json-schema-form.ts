@@ -435,6 +435,7 @@ export class ArchJsonSchemaForm<T> extends LitElement {
     const values = data[dataKey as keyof T] as Array<T[keyof T]>;
     values.push("" as T[keyof T]);
     this.requestUpdate();
+    this.onChange(data);
   }
 
   private _updateDataValue(
@@ -449,6 +450,7 @@ export class ArchJsonSchemaForm<T> extends LitElement {
       (data[dataKey as keyof T] as Array<T[keyof T]>)[valueIndex] = value;
     }
     this.requestUpdate();
+    this.onChange(data);
   }
 
   private _removeDataValue(dataKey: string, valueIndex?: number) {
@@ -468,5 +470,10 @@ export class ArchJsonSchemaForm<T> extends LitElement {
       }
     }
     this.requestUpdate();
+    this.onChange(data);
+  }
+
+  onChange(data: T) {
+    this.dispatchEvent(new CustomEvent("data-change", { detail: { data } }));
   }
 }

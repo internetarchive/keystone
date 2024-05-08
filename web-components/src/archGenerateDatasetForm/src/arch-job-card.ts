@@ -103,14 +103,17 @@ export class ArchJobCard extends LitElement {
   }
 
   renderConfigureJob() {
-    const { job } = this;
+    const { job, jobParameters } = this;
+    // Call jobButton.requestUpdate() on data-change event in to ensure that it
+    // has a fresh copy of jobParameters to display in the confirmation modal.
     return html`
-      <h4>Configure Job</h4>
+      <h4>Configure</h4>
       <arch-job-parameters-form
         .schema=${this.extendParamsSchemaWithDefaultOptions(
           job.parameters_schema
         )}
-        .data=${this.jobParameters as JobParameters}
+        .data=${jobParameters as JobParameters}
+        @data-change=${() => this.jobButton.requestUpdate()}
       ></arch-job-parameters-form>
     `;
   }
@@ -128,7 +131,8 @@ export class ArchJobCard extends LitElement {
 
   render() {
     // Get the current job states.
-    const { collectionId, collectionName, job, jobIdStatesMap } = this;
+    const { collectionId, collectionName, job, jobIdStatesMap, jobParameters } =
+      this;
     const { id: jobId } = job;
     // Use undefined to indicate that a job state is loading, and null to
     // indicate that no such job run exists.
@@ -150,6 +154,7 @@ export class ArchJobCard extends LitElement {
               .jobName=${job.name}
               .collectionName=${collectionName}
               .jobStateTuples=${stateTuples}
+              .jobParameters=${jobParameters}
               @submit=${this.emitGenerateDataset.bind(this)}
             >
             </arch-job-button>

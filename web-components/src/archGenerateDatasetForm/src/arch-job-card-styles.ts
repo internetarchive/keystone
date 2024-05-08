@@ -5,6 +5,25 @@ export default [
   global,
   Bootstrap4Alerts,
   css`
+    dl {
+      padding-inline-start: 1rem;
+      line-height: 1.4rem;
+    }
+
+    dt {
+      display: inline-block;
+      font-weight: normal;
+    }
+
+    dd {
+      font-weight: bold;
+    }
+
+    dd:after {
+      content: "";
+      padding: 0;
+    }
+
     div > h3 {
       margin-top: 0;
     }

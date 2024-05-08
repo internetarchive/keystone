@@ -15,7 +15,10 @@ import "@spectrum-web-components/theme/sp-theme.js";
 import "@spectrum-web-components/theme/src/themes.js";
 
 import { Paths } from "../../lib/helpers";
-import { UrlCollectionParamName } from "../../lib/constants";
+import {
+  DefaultSelectElementPromptText,
+  UrlCollectionParamName,
+} from "../../lib/constants";
 import ArchAPI from "../../lib/ArchAPI";
 import {
   AvailableJob,
@@ -104,7 +107,7 @@ export class ArchGenerateDatasetForm extends LitElement {
       >
         ${this.collections === null
           ? html`<option>Loading...</option>`
-          : html`<option value="">~ Choose Source Collection ~</option>`}
+          : html`<option value="">${DefaultSelectElementPromptText}</option>`}
         ${(this.collections ?? []).map(
           (collection) => html`
             <option

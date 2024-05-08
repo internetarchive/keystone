@@ -4,7 +4,12 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 
 import "../../archLoadingIndicator/index";
 
-import { JobIdStatesMap, ProcessingState, ValueOf } from "../../lib/types";
+import {
+  JobIdStatesMap,
+  JobParameters,
+  ProcessingState,
+  ValueOf,
+} from "../../lib/types";
 
 import "../../archModal/src/arch-modal";
 import styles from "./arch-job-card-styles";
@@ -15,6 +20,7 @@ export class ArchJobButton extends LitElement {
   @property() buttonHTML: TemplateResult = html``;
   @property() jobName = "";
   @property() collectionName = "";
+  @property() jobParameters!: JobParameters;
   @property() jobStateTuples: ValueOf<JobIdStatesMap> = [];
 
   static styles = styles;
@@ -80,13 +86,25 @@ export class ArchJobButton extends LitElement {
   }
 
   render() {
-    const { jobName, collectionName } = this;
+    const { jobParameters, jobName, collectionName } = this;
     return html`
       <arch-modal title="Generate Dataset">
-        <p slot="content">
-          You're about to generate a <strong>${jobName}</strong> dataset from
-          the <strong>${collectionName}</strong> collection.
-        </p>
+        <div slot="content">
+          <p>
+            You're about to generate a <strong>${jobName}</strong> dataset from
+            the <strong>${collectionName}</strong> collection with the following
+            configuration:
+            <dl>
+            ${Object.entries(jobParameters).map(
+              ([k, v]) => html`
+                <dt>${k}</dt>
+                <dd>${typeof v === "boolean" ? (v ? "Yes" : "No") : v}</dd>
+                <br />
+              `
+            )}
+            </dl>
+          </p>
+        </div>
         ${this.renderButton()}
       </arch-modal>
     `;
