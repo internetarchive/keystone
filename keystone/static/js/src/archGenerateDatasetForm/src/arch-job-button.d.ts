@@ -1,12 +1,13 @@
 import { LitElement, TemplateResult } from "lit";
 import "../../archLoadingIndicator/index";
-import { JobIdStatesMap, ValueOf } from "../../lib/types";
+import { JobIdStatesMap, JobParameters, ValueOf } from "../../lib/types";
 import "../../archModal/src/arch-modal";
 export declare class ArchJobButton extends LitElement {
     buttonClass: string;
     buttonHTML: TemplateResult;
     jobName: string;
     collectionName: string;
+    jobParameters: JobParameters;
     jobStateTuples: ValueOf<JobIdStatesMap>;
     static styles: import("lit").CSSResult[];
     static shadowRootOptions: {

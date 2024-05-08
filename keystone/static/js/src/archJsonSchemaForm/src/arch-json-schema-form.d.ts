@@ -23,4 +23,5 @@ export declare class ArchJsonSchemaForm<T> extends LitElement {
     private _addDataValue;
     private _updateDataValue;
     private _removeDataValue;
+    onChange(data: T): void;
 }

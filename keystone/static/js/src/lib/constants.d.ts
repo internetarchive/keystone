@@ -6,3 +6,4 @@ export declare const EventTypeDisplayMap: Record<ProcessingState, string>;
 export declare const CollectionTypeDisplayMap: Record<CollectionType, string>;
 export declare const UrlCollectionParamName = "cid";
 export declare const UrlCollectionsParamName = "cid[]";
+export declare const DefaultSelectElementPromptText = "Please select...";
