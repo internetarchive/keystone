@@ -1,4 +1,4 @@
-import { ApiParams, Collection, CollectionIdNamePairs, Dataset, FilteredApiResponse, PublishedDatasetInfo, PublishedDatasetMetadata, PublishedDatasetMetadataApiResponse, Team, User, UserUpdate } from "./types";
+import { ApiParams, Collection, CollectionIdNamePairs, Dataset, FilteredApiResponse, JobId, JobParameters, PublishedDatasetInfo, PublishedDatasetMetadata, PublishedDatasetMetadataApiResponse, Team, User, UserUpdate } from "./types";
 export default class ArchAPI {
     static BasePath: string;
     static CSRF_REGEX: RegExp;
@@ -8,6 +8,9 @@ export default class ArchAPI {
     static jsonRequest<Item_T, Resp_T>(method: "DELETE" | "GET" | "PATCH" | "POST" | "PUT", path: string, params?: ApiParams<Item_T>, data?: Item_T, responseTranslator?: (response: unknown) => Resp_T): Promise<Resp_T>;
     static get collections(): {
         get: (params?: ApiParams<Collection>) => Promise<FilteredApiResponse<Collection>>;
+    };
+    static get jobs(): {
+        run: (collectionId: Collection["id"], jobId: JobId, jobParameters: JobParameters) => Promise<Dataset>;
     };
     static get datasets(): {
         get: (params?: ApiParams<Dataset>) => Promise<FilteredApiResponse<Dataset>>;

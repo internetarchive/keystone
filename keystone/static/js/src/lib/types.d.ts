@@ -115,24 +115,7 @@ export type JobParameters = NamedEntityExtractionParameters;
 export type JobParametersKey = keyof JobParameters;
 export type JobParametersValue = JobParameters[JobParametersKey];
 export type JobState = Dataset;
-export declare enum JobId {
-    ArsLgaGeneration = "ArsLgaGeneration",
-    ArsWaneGeneration = "ArsWaneGeneration",
-    ArsWatGeneration = "ArsWatGeneration",
-    AudioInformationExtraction = "AudioInformationExtraction",
-    DomainFrequencyExtraction = "DomainFrequencyExtraction",
-    DomainGraphExtraction = "DomainGraphExtraction",
-    ImageGraphExtraction = "ImageGraphExtraction",
-    ImageInformationExtraction = "ImageInformationExtraction",
-    PdfInformationExtraction = "PdfInformationExtraction",
-    PresentationProgramInformationExtraction = "PresentationProgramInformationExtraction",
-    SpreadsheetInformationExtraction = "SpreadsheetInformationExtraction",
-    TextFilesInformationExtraction = "TextFilesInformationExtraction",
-    VideoInformationExtraction = "VideoInformationExtraction",
-    WebGraphExtraction = "WebGraphExtraction",
-    WebPagesExtraction = "WebPagesExtraction",
-    WordProcessorInformationExtraction = "WordProcessorInformationExtraction"
-}
+export type JobId = string;
 export type AvailableJob = {
     id: JobId;
     name: string;
@@ -206,4 +189,9 @@ export type GlobalModalDetail = {
     elementToFocusOnClose: HTMLElement;
     title: string;
     message: string;
+};
+export type RunJobRequest = {
+    collection_id: Collection["id"];
+    job_type_id: JobId;
+    params: JobParameters;
 };
