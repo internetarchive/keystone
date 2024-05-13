@@ -2,7 +2,6 @@ import functools
 import json
 from io import StringIO
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
@@ -20,6 +19,7 @@ from django.shortcuts import (
     render,
 )
 
+from config import settings
 from .arch_api import ArchAPI
 from .context_processors import helpers as ctx_helpers
 from .forms import CSVUploadForm
@@ -182,10 +182,18 @@ def datasets_generate(request):
 @login_required
 def dataset_detail(request, dataset_id):
     """Dataset detail page"""
-    dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
+    dataset = get_object_or_404(
+        Dataset.user_queryset(request.user)
+        .select_related("job_start")
+        .select_related("job_start__job_type")
+        .select_related("job_start__user")
+        .select_related("job_start__jobcomplete"),
+        id=dataset_id
+    )
     template_filename = settings.JOB_TYPE_UUID_NON_AUT_TEMPLATE_FILENAME_MAP.get(
         dataset.job_start.job_type.id, "aut-dataset.html"
     )
+    files = dataset.job_start.jobcomplete.jobfile_set.all()
     return render(
         request,
         f"keystone/{template_filename}",
@@ -194,6 +202,8 @@ def dataset_detail(request, dataset_id):
             "is_owner": request.user == dataset.job_start.user,
             "user_teams": [model_to_dict(x) for x in request.user.teams.all()],
             "dataset_teams": [model_to_dict(x) for x in dataset.teams.all()],
+            "files": files,
+            "showSingleFilePreview": len(files) == 1 and files[0].line_count > 0
         },
     )
 
