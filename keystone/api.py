@@ -530,6 +530,8 @@ class AvailableJob(Schema):
     id: str
     name: str
     description: str
+    info_url: str
+    code_url: str
     parameters_schema: Optional[dict]
 
 
@@ -1085,6 +1087,8 @@ def list_available_jobs(request):
                     "id": str(job.id),
                     "name": job.name,
                     "description": job.description,
+                    "info_url": job.info_url,
+                    "code_url": job.code_url,
                     "parameters_schema": job.parameters_schema,
                 }
                 for job in job_cat.jobtype_set.filter(can_run=True).exclude(

@@ -295,6 +295,8 @@ class JobType(models.Model):
     download_quota_eligible = models.BooleanField()
     created_at = models.DateTimeField(auto_now_add=True)
     parameters_schema = models.JSONField(null=True)
+    info_url = models.URLField()
+    code_url = models.URLField()
 
     def __str__(self):
         return f"{self.id} - {self.name}"

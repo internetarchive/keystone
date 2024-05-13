@@ -142,7 +142,11 @@ export class ArchJobCard extends LitElement {
 
     return html` <div>
       <h3>${job.name}</h3>
-      <p>${job.description}</p>
+      <p>
+        ${job.description}
+        <a href="${job.info_url}">Learn&nbsp;more &gt;</a>.
+        <a href="${job.code_url}">Read&nbsp;the&nbsp;code &gt;</a>.
+      </p>
       ${collectionId === null
         ? html`<p class="alert alert-info">
             Select a Source Collection above to display the options for

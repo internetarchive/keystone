@@ -157,6 +157,8 @@ export type AvailableJob = {
   id: JobId;
   name: string;
   description: string;
+  info_url: string;
+  code_url: string;
   parameters_schema: JSONSchemaType<JobParameters>;
 };
 
