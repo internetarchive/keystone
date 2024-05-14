@@ -72,7 +72,7 @@ export class ArchUserTable extends ArchDataTable<User> {
     ];
     this.filterableColumns = [false, false, false, false, false, true];
     this.pageLength = 50;
-    this.persistSearchStateInUrl = false;
+    this.persistSearchStateInUrl = true;
     this.pluralName = "Account Users";
     this.rowClickEnabled = true;
     this.searchColumns = ["username", "first_name", "last_name", "email"];

@@ -14,6 +14,7 @@ from pytest import (
 from keystone.api import CreateUserSchema
 from keystone.models import (
     Dataset,
+    Team,
     User,
     UserRoles,
 )
@@ -25,13 +26,15 @@ from keystone.models import (
 
 
 @fixture
-def make_create_user_dict():
+def make_create_user_dict(make_team):
     def f(account):
         prepared_user = baker.prepare(User, account=account)
+        teams = [make_team(account=account), make_team(account=account)]
         return {
             k: getattr(prepared_user, k)
             for k in CreateUserSchema.schema()["properties"].keys()
-        }
+            if k != "teams"
+        } | {"teams": [model_to_dict(t) for t in teams]}
 
     return f
 
@@ -59,6 +62,19 @@ class Client(_Client):
     def update_user(self, user, update_d):
         return self.patch(f"/api/users/{user.id}", update_d, "application/json")
 
+    def list_teams(self):
+        return self.get("/api/teams")
+
+    def create_team(self, team_d):
+        return self.put(
+            f"/api/teams",
+            team_d,
+            "application/json",
+        )
+
+    def update_team(self, team, update_d):
+        return self.patch(f"/api/teams/{team.id}", update_d, "application/json")
+
     def list_datasets(self):
         return self.get(f"/api/datasets")
 
@@ -68,7 +84,7 @@ class Client(_Client):
     def update_dataset_teams(self, dataset_id, teams):
         return self.post(
             f"/api/datasets/{dataset_id}/teams",
-            [model_to_dict(t) for t in teams],
+            [{"id": t.id, "name": t.name} for t in teams],
             "application/json",
         )
 
@@ -181,7 +197,12 @@ def test_admin_can_create_same_account_user(
     assert res.status_code == HTTPStatus.CREATED
     new_user = User.objects.get(username=new_user_d["username"])
     for k, v in new_user_d.items():
-        assert getattr(new_user, k) == v
+        if k == "teams":
+            assert set(new_user.teams.values_list("id", flat=True)) == {
+                t["id"] for t in v
+            }
+        else:
+            assert getattr(new_user, k) == v
 
     # Check that a welcome email was sent.
     if not send_welcome_email:
@@ -196,16 +217,17 @@ def test_admin_can_create_same_account_user(
 
 
 @mark.django_db
-def test_admin_cant_create_other_account_user(
-    make_account, make_user, make_create_user_dict
+@mark.parametrize("role", (UserRoles.ADMIN, UserRoles.USER))
+def test_no_user_can_create_other_account_user(
+    role, make_account, make_user, make_create_user_dict
 ):
-    """Users with role=ADMIN can not create a user in a different account."""
+    """No user is allowed to create a user in a different account."""
     account = make_account()
-    admin_user = make_user(account=account, role=UserRoles.ADMIN)
+    user = make_user(account=account, role=role)
 
     # Attempt to create a user belonging to a different account.
     new_user_d = make_create_user_dict(make_account())
-    res = Client(admin_user).create_user(new_user_d, False)
+    res = Client(user).create_user(new_user_d, False)
 
     # Check that the user was not created.
     assert res.status_code == HTTPStatus.FORBIDDEN
@@ -261,11 +283,12 @@ def test_admin_can_not_update_own_role(make_account, make_user):
 
 
 @mark.django_db
-def test_admin_can_not_update_other_account_user(make_account, make_user):
-    """Users with role=ADMIN can not update a user in a different account."""
-    admin_user = make_user(account=make_account(), role=UserRoles.ADMIN)
+@mark.parametrize("role", (UserRoles.ADMIN, UserRoles.USER))
+def test_no_user_can_update_other_account_user(role, make_account, make_user):
+    """No user is allowed to update another account's user."""
+    user = make_user(account=make_account(), role=role)
     other_account_user = make_user(account=make_account(), role=UserRoles.USER)
-    res = Client(admin_user).update_user(other_account_user, {"email": "new@email.com"})
+    res = Client(user).update_user(other_account_user, {"email": "new@email.com"})
     assert res.status_code == HTTPStatus.FORBIDDEN
 
 
@@ -310,6 +333,81 @@ def test_username_can_not_be_updated(role, make_account, make_user):
     assert res.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     user.refresh_from_db()
     assert user.username == old_username
+
+
+###############################################################################
+# /api/teams tests
+###############################################################################
+
+
+@mark.django_db
+def test_any_user_can_list_account_teams(make_user, make_team):
+    """Any user can list their account's teams"""
+    # Create a user on a team.
+    user = make_user()
+    team1 = make_team(account=user.account)
+    user.teams.add(team1)
+    # Create a second account team of which the user is not a member.
+    team2 = make_team(account=user.account)
+    # Create a different-account team.
+    other_account_team = make_team()
+    # Check that the user can list its account teams.
+    res = Client(user).list_teams()
+    assert res.status_code == HTTPStatus.OK
+    assert {x["id"] for x in res.json()["items"]} == {team1.id, team2.id}
+
+
+@mark.django_db
+def test_admin_can_create_same_account_team(make_user):
+    """An ADMIN-type user can create an account team."""
+    user = make_user(role=UserRoles.ADMIN)
+    team_name = baker.prepare(Team).name
+    client = Client(user)
+    assert client.list_teams().json()["items"] == []
+    res = client.create_team({"account_id": user.account.id, "name": team_name})
+    assert res.status_code == HTTPStatus.CREATED
+    assert {x["name"] for x in client.list_teams().json()["items"]} == {team_name}
+
+
+@mark.django_db
+def test_admin_can_not_create_different_account_team(make_account, make_user):
+    """An ADMIN-type user can not create a team in a different account."""
+    user = make_user(role=UserRoles.ADMIN)
+    other_account = make_account()
+    res = Client(user).create_team({"account_id": other_account.id, "name": "test"})
+    assert res.status_code == HTTPStatus.FORBIDDEN
+
+
+@mark.django_db
+def test_non_admin_not_create_any_team(make_account, make_user):
+    """A normal user can not create a team in their own or other account."""
+    user = make_user()
+    for account in (user.account, make_account()):
+        res = Client(user).create_team({"account_id": account.id, "name": "test"})
+        assert res.status_code == HTTPStatus.FORBIDDEN
+
+
+@mark.django_db
+def test_admin_can_edit_account_team(make_user, make_team):
+    """An ADMIN-type user can edit an account team."""
+    user = make_user(role=UserRoles.ADMIN)
+    team = make_team(account=user.account)
+    new_name = baker.prepare(Team).name
+    assert new_name != team.name
+    client = Client(user)
+    res = client.update_team(team, {"name": new_name})
+    assert res.status_code == HTTPStatus.OK
+    assert {x["name"] for x in client.list_teams().json()["items"]} == {new_name}
+
+
+@mark.django_db
+@mark.parametrize("role", (UserRoles.ADMIN, UserRoles.USER))
+def test_no_user_can_edit_other_account_team(role, make_user, make_team):
+    """No user is allowed to edit another account's team."""
+    user = make_user(role=role)
+    team = make_team()
+    res = Client(user).update_team(team, {"name": "test"})
+    assert res.status_code == HTTPStatus.FORBIDDEN
 
 
 ###############################################################################

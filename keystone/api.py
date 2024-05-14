@@ -89,7 +89,7 @@ from .models import (
 ###############################################################################
 
 
-INTEGRITY_ERROR_REGEX = re.compile(r"Key \(([^\)]+)\)=\(([^\)]+)\) already exists")
+INTEGRITY_ERROR_REGEX = re.compile(r"Key \((.+)\)=\((.+)\) already exists")
 
 
 ###############################################################################
@@ -258,7 +258,12 @@ def public_api_integrityerror_error_handler(request, exc):
     match = INTEGRITY_ERROR_REGEX.search(exc.args[0])
     if match:
         field, value = match.groups()
-        details = f"value ({value}) already exists for field ({field})"
+        if "," in field:
+            values = tuple(value.split(", "))
+            fields = tuple(field.split(", "))
+            details = f"values {values} already exists for fields {fields}"
+        else:
+            details = f"value ({value}) already exists for field ({field})"
     else:
         details = "Unhandled IntegrityError"
     return JsonResponse({"details": details}, status=400)
@@ -545,17 +550,51 @@ class AvailableJobsCategory(Schema):
     jobs: List[AvailableJob]
 
 
-class UserTeamSchema(ModelSchema):
-    """Represents an element of User.teams"""
+class MinimalUserSchema(Schema):
+    """Represents a minial user."""
 
-    class Config:
-        """Ninja ModelSchema configuration."""
+    id: int
+    username: str
 
-        model = Team
-        model_fields = [
-            "id",
-            "name",
-        ]
+
+class TeamSchema(Schema):
+    """Represents a Team."""
+
+    id: int
+    name: str
+    members: List[MinimalUserSchema]
+
+
+class MinimalTeamSchema(Schema):
+    """Represents a minimal Team."""
+
+    id: int
+    name: str
+
+
+class CreateTeamSchema(Schema):
+    """New Team creation schema"""
+
+    account_id: int
+    name: str
+
+
+class UpdateTeamSchema(Schema):
+    """Existing Team update schema"""
+
+    name: Optional[str]
+    members: Optional[List[MinimalUserSchema]]
+
+
+class TeamFilterSchema(FilterSchema):
+    """Team filters"""
+
+    # Suppress "Method 'custom_expression' is abstract in class 'FilterSchema' ..."
+    # pylint: disable=abstract-method
+
+    search: Optional[str] = Field(
+        None, q=["name__icontains", "members__username__icontains"]
+    )
 
 
 class UserSchema(Schema):
@@ -569,7 +608,7 @@ class UserSchema(Schema):
     role: UserRoles
     date_joined: datetime
     last_login: datetime = None
-    teams: List[UserTeamSchema]
+    teams: List[MinimalTeamSchema]
 
 
 class CreateUserSchema(Schema):
@@ -581,6 +620,7 @@ class CreateUserSchema(Schema):
     last_name: str
     email: str
     role: UserRoles
+    teams: List[MinimalTeamSchema]
 
 
 class UpdateUserSchema(Schema):
@@ -590,6 +630,7 @@ class UpdateUserSchema(Schema):
     last_name: Optional[str]
     email: Optional[str]
     role: Optional[UserRoles]
+    teams: Optional[List[MinimalTeamSchema]]
 
     class Config:
         """Reject any requests that specify username."""
@@ -1038,7 +1079,7 @@ def get_dataset(request, dataset_id: int):
     "/datasets/{int:dataset_id}/teams",
     response={HTTPStatus.NO_CONTENT: None},
 )
-def update_dataset_teams(request, dataset_id: int, payload: List[UserTeamSchema]):
+def update_dataset_teams(request, dataset_id: int, payload: List[MinimalTeamSchema]):
     """Retrieve a specific Dataset"""
     dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
     # Only the dataset owner is allowed to update teams.
@@ -1138,7 +1179,12 @@ def create_user(request, payload: CreateUserSchema, send_welcome: bool):
     # Deny if the requesting and target user accounts are not the same.
     if payload.account_id != request.user.account_id:
         raise PermissionDenied
-    new_user = User.objects.create(**payload.dict())
+    payload_d = payload.dict()
+    teams = payload_d.pop("teams", ())
+    new_user = User.objects.create(**payload_d)
+    # Handle "teams".
+    new_user.teams.set(Team.objects.filter(id__in={t["id"] for t in teams}))
+    # Maybe send welcome email.
     if send_welcome:
         send_email(
             "new_user_welcome_email",
@@ -1174,11 +1220,66 @@ def update_user(request, payload: UpdateUserSchema, user_id: int):
             # A user is not allowed to modify their own role.
             if k == "role" and existing_user == request.user:
                 raise PermissionDenied("self role modification not allowed")
-            setattr(existing_user, k, v)
-            updated = True
+            # Handle "teams".
+            if k == "teams":
+                team_ids = {x["id"] for x in v}
+                if team_ids != set(existing_user.teams.values_list("id", flat=True)):
+                    existing_user.teams.set(Team.objects.filter(id__in=team_ids))
+            else:
+                setattr(existing_user, k, v)
+                updated = True
     if updated:
         existing_user.save()
+
     return existing_user
+
+
+@public_api.get("/teams", response=List[TeamSchema])
+@paginate
+def list_account_teams(request, filters: TeamFilterSchema = Query(...)):
+    """Return the teams that are members of the requesting ADMIN-type user's
+    account."""
+    queryset = filters.filter(
+        Team.objects.filter(account=request.user.account).prefetch_related("members")
+    )
+    return apply_sort_param(request, queryset, TeamSchema)
+
+
+@public_api.put("/teams", response={HTTPStatus.CREATED: TeamSchema})
+@require_admin
+def create_team(request, payload: CreateTeamSchema):
+    """Create a new Team."""
+    # Deny if the requesting and target user accounts are not the same.
+    if payload.account_id != request.user.account_id:
+        raise PermissionDenied
+    new_team = Team.objects.create(**payload.dict())
+    return HTTPStatus.CREATED, new_team
+
+
+@public_api.patch("/teams/{team_id}", response=TeamSchema)
+def update_team(request, payload: UpdateTeamSchema, team_id: int):
+    """Update an existing Team."""
+    req_user = request.user
+    # Deny request if not admin or target is not self.
+    if req_user.role != UserRoles.ADMIN:
+        raise PermissionDenied
+    existing_team = Team.objects.get(id=team_id)
+    # Deny if the requesting and target accounts are not the same.
+    if existing_team.account_id != req_user.account_id:
+        raise PermissionDenied
+    payload_d = payload.dict()
+    # Handle 'name'.
+    name = payload_d.get("name")
+    if name and name != existing_team.name:
+        existing_team.name = payload.name
+        existing_team.save()
+    # Handle 'members'.
+    members = payload_d.get("members")
+    if members is not None:
+        member_ids = {x["id"] for x in members}
+        if member_ids != set(existing_team.members.values_list("id", flat=True)):
+            existing_team.members.set(User.objects.filter(id__in=member_ids))
+    return existing_team
 
 
 ###############################################################################

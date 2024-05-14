@@ -125,11 +125,30 @@ def collection_surveyor(request):
 
 @login_required
 def account(request):
-    """Account admin"""
+    """Redirect to account-users view."""
+    return redirect("account-users")
+
+
+@login_required
+def account_users(request):
+    """Account users admin"""
     # Deny non-admins.
     if request.user.role != UserRoles.ADMIN:
         return HttpResponseNotFound()
-    return render(request, "keystone/account.html", context={"user": request.user})
+    return render(
+        request, "keystone/account-users.html", context={"user": request.user}
+    )
+
+
+@login_required
+def account_teams(request):
+    """Account teams admin"""
+    # Deny non-admins.
+    if request.user.role != UserRoles.ADMIN:
+        return HttpResponseNotFound()
+    return render(
+        request, "keystone/account-teams.html", context={"user": request.user}
+    )
 
 
 @login_required

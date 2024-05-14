@@ -1,0 +1,44 @@
+{% set breadcrumbs = (("Account", "account"),) %}
+{% extends 'keystone/base.html' %}
+
+{% block header_title %}
+Account
+{% endblock %}
+
+{% block head_extra %}
+  <script src="{{ static('/js/arch-user-table.js') }}" type="module"></script>
+{% endblock %}
+
+{% block subnav %}
+<subnav data="state.menus.research_services">
+  <div class="row subnav">
+    <div class="small-12 columns">
+      <div class="row">
+        <div class="subnav-box columns">
+          <div class="left subnav-link research_services active">
+            <span><a href="{{ url('account-users') }}">Users</a></span>
+          </div>
+          <div class="left subnav-link research_services">
+            <span><a href="{{ url('account-teams') }}">Teams</a></span>
+          </div>
+          <hr />
+        </div>
+      </div>
+    </div>
+  </div>
+</subnav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="large-12 columns">
+    <arch-user-table
+      accountId="{{ user.account.id }}"
+      userId="{{ user.id }}"
+      {{ "userIsStaff" if user.is_superuser or user.is_staff else "" }}
+      userRole='{{ user.role }}'
+    >
+    </arch-user-table>
+  </div>
+</div>
+{% endblock %}

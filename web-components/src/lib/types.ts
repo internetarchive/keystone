@@ -121,16 +121,28 @@ export type User = {
   role: UserRoles;
   date_joined: Date;
   last_login: Date;
+  teams: Array<MinimalTeam>;
 };
+
+export type MinimalUser = Pick<User, "id" | "username">;
 
 export type UserUpdate = Pick<
   User,
-  "first_name" | "last_name" | "email" | "role"
+  "first_name" | "last_name" | "email" | "role" | "teams"
 >;
 
 export type Team = {
-  id: string;
+  account_id: number;
+  id: number;
   name: string;
+  members: Array<MinimalUser>;
+};
+
+export type MinimalTeam = Pick<Team, "id" | "name">;
+
+export type TeamUpdate = {
+  name?: string;
+  members?: Array<MinimalUser>;
 };
 
 // AvailableJob parameters types

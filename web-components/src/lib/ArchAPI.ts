@@ -16,6 +16,7 @@ import {
   ResponseError,
   RunJobRequest,
   Team,
+  TeamUpdate,
   User,
   UserUpdate,
 } from "./types";
@@ -178,6 +179,11 @@ export default class ArchAPI {
 
   static get users() {
     return {
+      list: () =>
+        ArchAPI.jsonRequest<undefined, FilteredApiResponse<User>>(
+          "GET",
+          `/users`
+        ),
       get: (userId: User["id"]) =>
         ArchAPI.jsonRequest<User, ObjectApiResponse<User>>(
           "GET",
@@ -196,6 +202,35 @@ export default class ArchAPI {
           `/users/${userId}`,
           undefined,
           user
+        ),
+    };
+  }
+
+  static get teams() {
+    return {
+      list: () =>
+        ArchAPI.jsonRequest<undefined, FilteredApiResponse<Team>>(
+          "GET",
+          `/teams`
+        ),
+      get: (teamId: Team["id"]) =>
+        ArchAPI.jsonRequest<Team, ObjectApiResponse<Team>>(
+          "GET",
+          `/teams/${teamId}`
+        ),
+      create: (team: Partial<Team>) =>
+        ArchAPI.jsonRequest<Partial<Team>, ObjectApiResponse<Team>>(
+          "PUT",
+          `/teams`,
+          undefined,
+          team
+        ),
+      update: (teamId: Team["id"], team: TeamUpdate) =>
+        ArchAPI.jsonRequest<TeamUpdate, ObjectApiResponse<Team>>(
+          "PATCH",
+          `/teams/${teamId}`,
+          undefined,
+          team
         ),
     };
   }

@@ -1,8 +1,10 @@
 import { html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import ArchAPI from "../../lib/ArchAPI";
-import { ResponseError, User, UserRoles } from "../../lib/types";
+import { ResponseError, Team, User, UserRoles } from "../../lib/types";
 
+import "../../archUserTeamsSelector";
+import { ArchUserTeamsSelector } from "../../archUserTeamsSelector";
 import { ArchModal } from "../../archModal/index";
 
 import styles from "./styles";
@@ -16,6 +18,19 @@ export class ArchCreateNewUserModal extends ArchModal {
   @query("form > input#user-name") usernameInput!: HTMLInputElement;
   @query("form > input#user-email") emailInput!: HTMLInputElement;
   @query("div.error") errorEl!: HTMLElement;
+
+  @query("arch-user-teams-selector")
+  teamsSelector!: ArchUserTeamsSelector;
+
+  @state() accountTeams: Array<Team> = [];
+
+  constructor() {
+    super();
+    void ArchAPI.teams.list().then((response) => {
+      this.accountTeams = response.items;
+      this.renderContent();
+    });
+  }
 
   private set unhandledError(showError: boolean) {
     const { errorEl } = this;
@@ -34,6 +49,11 @@ export class ArchCreateNewUserModal extends ArchModal {
     this.modalSize = "m";
     this.title = "Create a New User";
     this.submitButtonText = "Create";
+    this.renderContent();
+    this.addEventListener("sp-closed", this.onCloseHandler.bind(this));
+  }
+
+  renderContent() {
     this.content = html`
       <form validate>
         <input type="hidden" name="account-id" value=${this.accountId} />
@@ -71,19 +91,28 @@ export class ArchCreateNewUserModal extends ArchModal {
             `
           )}
         </select>
+
+        <label for="user-teams-selector">Teams</label>
+        <arch-user-teams-selector
+          .accountTeams=${this.accountTeams}
+          .userTeams=${[]}
+          id="user-teams-selector"
+        >
+        </arch-user-teams-selector>
+
+        <br />
         <input type="checkbox" id="send-email" name="send-email" checked />
         <label for="send-email">Send welcome email</label>
       </form>
+
       <div class="error alert-danger">
         Something went wrong. Please try again.
       </div>
     `;
-
-    this.addEventListener("sp-closed", this.onCloseHandler.bind(this));
   }
 
   submit() {
-    const { form } = this;
+    const { form, teamsSelector } = this;
 
     // Validate the form and show any errors.
     if (!form.checkValidity()) {
@@ -99,6 +128,10 @@ export class ArchCreateNewUserModal extends ArchModal {
       last_name: formData.get("last-name") as string,
       role: formData.get("user-role") as User["role"],
       username: formData.get("user-name") as string,
+      teams: teamsSelector.selectedOptions.map((t) => ({
+        id: t.id,
+        name: t.name,
+      })),
     };
     this.createUser(data, formData.has("send-email"));
   }
@@ -174,6 +207,7 @@ export class ArchCreateNewUserModal extends ArchModal {
     // ensure any previously entered text in the form field
     // is reset so it doesn't show on subsequent renders
     this.form?.reset();
+    this.teamsSelector.reset();
     this.clearErrors();
   }
 }

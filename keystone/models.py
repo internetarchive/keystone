@@ -13,6 +13,7 @@ from django.db import models
 from django.db import transaction
 from django.db import IntegrityError
 from django.db.models import F, Q
+from django.db.models.functions import Lower
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 
@@ -140,6 +141,9 @@ class Team(models.Model):
     class Meta:
         permissions = [
             ("manage_membership", "Can add or remove members from teams"),
+        ]
+        constraints = [
+            models.UniqueConstraint(Lower("name"), "account", name="team_unique")
         ]
 
     def __str__(self):

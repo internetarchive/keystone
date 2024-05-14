@@ -23,7 +23,7 @@ export class ArchDatasetTeamsSelector extends ArchSelectAdder<Team> {
     this.deselectButtonText = "stop sharing";
     this.selectCtaText = "Add a team";
     this.selectedOptionsTitle = "Currently Sharing With";
-    this.valueGetter = (x) => x.id;
+    this.valueGetter = (x) => String(x.id);
     this.labelGetter = (x) => x.name;
     super.connectedCallback();
   }

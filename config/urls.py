@@ -28,6 +28,8 @@ from keystone.api import private_api, public_api, wasapi_api
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     path("account", views.account, name="account"),
+    path("account/users", views.account_users, name="account-users"),
+    path("account/teams", views.account_teams, name="account-teams"),
     path("collections", views.collections, name="collections"),
     path(
         "collections/custom-collection-builder",

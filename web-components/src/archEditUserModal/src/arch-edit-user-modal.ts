@@ -1,8 +1,16 @@
 import { html } from "lit";
-import { customElement, property, query } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import ArchAPI from "../../lib/ArchAPI";
-import { ResponseError, User, UserRoles, UserUpdate } from "../../lib/types";
+import {
+  ResponseError,
+  Team,
+  User,
+  UserRoles,
+  UserUpdate,
+} from "../../lib/types";
 
+import "../../archUserTeamsSelector";
+import { ArchUserTeamsSelector } from "../../archUserTeamsSelector";
 import { ArchModal } from "../../archModal/index";
 
 import styles from "./styles";
@@ -17,6 +25,17 @@ export class ArchEditUserModal extends ArchModal {
   @query("form") form!: HTMLFormElement;
   @query("form > input#user-email") emailInput!: HTMLInputElement;
   @query("div.error") errorEl!: HTMLElement;
+  @query("arch-user-teams-selector")
+  teamsSelector!: ArchUserTeamsSelector;
+
+  @state() accountTeams: Array<Team> = [];
+
+  constructor() {
+    super();
+    void ArchAPI.teams
+      .list()
+      .then((response) => (this.accountTeams = response.items));
+  }
 
   private set unhandledError(showError: boolean) {
     const { errorEl } = this;
@@ -30,7 +49,7 @@ export class ArchEditUserModal extends ArchModal {
   static styles = styles;
 
   set user(user: undefined | User) {
-    const { profileMode, userId } = this;
+    const { accountTeams, profileMode, userId } = this;
     // Clear the content if user has been set to undefined.
     if (user === undefined) {
       this.content = html``;
@@ -88,6 +107,14 @@ export class ArchEditUserModal extends ArchModal {
                 )}
               </select>
             `}
+
+        <label for="user-teams-selector">Teams</label>
+        <arch-user-teams-selector
+          .accountTeams=${accountTeams}
+          .userTeams=${user.teams}
+          id="user-teams-selector"
+        >
+        </arch-user-teams-selector>
       </form>
       <div class="error alert-danger">
         Something went wrong. Please try again.
@@ -107,7 +134,7 @@ export class ArchEditUserModal extends ArchModal {
   }
 
   submit() {
-    const { form } = this;
+    const { form, teamsSelector } = this;
 
     // Validate the form and show any errors.
     if (!form.checkValidity()) {
@@ -122,6 +149,7 @@ export class ArchEditUserModal extends ArchModal {
       first_name: formData.get("first-name") as string,
       last_name: formData.get("last-name") as string,
       role: formData.get("user-role") as User["role"],
+      teams: teamsSelector.selectedOptions,
     };
     this.updateUser(userId, data);
   }
@@ -195,6 +223,7 @@ export class ArchEditUserModal extends ArchModal {
      */
     const { profileMode } = this;
     this.form?.reset();
+    this.teamsSelector.reset();
     this.clearErrors();
     if (profileMode) {
       this.user = undefined;

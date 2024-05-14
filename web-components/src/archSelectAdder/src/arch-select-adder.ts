@@ -7,12 +7,14 @@ import { DefaultSelectElementPromptText } from "../../lib/constants";
 export class ArchSelectAdder<T> extends LitElement {
   @property({ type: String }) deselectButtonText = "remove";
   @property({ type: Number }) headingLevel = 3;
-  @property({ type: String }) labelGetter!: (obj: T) => string;
+  @property() labelGetter!: (obj: T) => string;
   @property({ type: Array }) options!: Array<T>;
+  @property() optionsSortCompareFn: undefined | ((a: T, b: T) => number) =
+    undefined;
   @property({ type: Array }) selectedOptions!: Array<T>;
   @property({ type: Array }) selectedOptionsTitle = "Selected Options";
   @property({ type: String }) selectCtaText = "Select value to add";
-  @property({ type: String }) valueGetter!: (obj: T) => string;
+  @property() valueGetter!: (obj: T) => string;
 
   @state() availableOptions: Array<T> = [];
   @state() disabled = false;
@@ -23,6 +25,20 @@ export class ArchSelectAdder<T> extends LitElement {
     ...LitElement.shadowRootOptions,
     delegatesFocus: true,
   };
+
+  private sortByLabel(a: T, b: T) {
+    /* Default optionsSortCompareFn */
+    const { labelGetter } = this;
+    const aLabel = labelGetter(a);
+    const bLabel = labelGetter(b);
+    if (aLabel > bLabel) {
+      return 1;
+    } else if (aLabel < bLabel) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
 
   private heading(text: string): TemplateResult {
     const { headingLevel } = this;
@@ -105,11 +121,12 @@ export class ArchSelectAdder<T> extends LitElement {
   }
 
   updateAvailableOptions() {
-    const { options, selectedOptions, valueGetter } = this;
+    const { options, optionsSortCompareFn, selectedOptions, valueGetter } =
+      this;
     const selectedValues = new Set(selectedOptions.map(valueGetter));
-    this.availableOptions = options.filter(
-      (x) => !selectedValues.has(valueGetter(x))
-    );
+    this.availableOptions = options
+      .filter((x) => !selectedValues.has(valueGetter(x)))
+      .sort(optionsSortCompareFn ?? this.sortByLabel.bind(this));
   }
 
   private selectOption(option: T) {

@@ -79,7 +79,12 @@ export class ArchModal extends ModalMixin(LitElement) {
     `;
   }
 
-  submit() {
+  submit(e: null | Event) {
+    // Prevent default form submit action.
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     /* Emit a submit event and close the dialog. */
     this.dispatchEvent(new Event("submit", { bubbles: true, composed: true }));
     this.open = false;
