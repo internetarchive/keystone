@@ -14,7 +14,7 @@ import "@spectrum-web-components/tabs/sp-tab-panel.js";
 import "@spectrum-web-components/theme/sp-theme.js";
 import "@spectrum-web-components/theme/src/themes.js";
 
-import { Paths } from "../../lib/helpers";
+import { Paths, isActiveProcessingState } from "../../lib/helpers";
 import {
   DefaultSelectElementPromptText,
   UrlCollectionParamName,
@@ -59,6 +59,8 @@ const catNameSortedJobNamesMap: Record<
     "Word processing file information",
   ],
 };
+
+const activeStatusPollPeriodSeconds = 10;
 
 @customElement("arch-generate-dataset-form")
 export class ArchGenerateDatasetForm extends LitElement {
@@ -181,6 +183,7 @@ export class ArchGenerateDatasetForm extends LitElement {
     if (collectionId) {
       this.collectionJobIdStatesMapMap[collectionId] =
         await this.fetchJobIdStatesMap(collectionId);
+      this.maybeStartPolling();
     }
   }
 
@@ -252,9 +255,12 @@ export class ArchGenerateDatasetForm extends LitElement {
     for (const startTimeStateTuples of Object.values(
       this.collectionJobIdStatesMapMap[sourceCollectionId]
     )) {
-      if (startTimeStateTuples[0][2] === ProcessingState.RUNNING) {
+      if (isActiveProcessingState(startTimeStateTuples[0][2])) {
         // A job is active, set a polling timeout and return.
-        setTimeout(() => void this.pollDatasetStates(), 2000);
+        setTimeout(
+          () => void this.pollDatasetStates(),
+          activeStatusPollPeriodSeconds * 1000
+        );
         return;
       }
     }
@@ -262,13 +268,22 @@ export class ArchGenerateDatasetForm extends LitElement {
     this.activePollCollectionId = null;
   }
 
-  private startPolling() {
-    // Abort if polling is already active.
-    if (this.activePollCollectionId !== null) {
+  private maybeStartPolling() {
+    const { collectionJobIdStatesMapMap, sourceCollectionId } = this;
+    // Abort if no collection is selected or polling is already active.
+    if (sourceCollectionId === null || this.activePollCollectionId !== null) {
       return;
     }
-    this.activePollCollectionId = this.sourceCollectionId;
-    void this.pollDatasetStates();
+    for (const startTimeStateTuples of Object.values(
+      collectionJobIdStatesMapMap[sourceCollectionId]
+    )) {
+      if (isActiveProcessingState(startTimeStateTuples[0][2])) {
+        // A job is active, start polling.
+        this.activePollCollectionId = sourceCollectionId;
+        void this.pollDatasetStates();
+        return;
+      }
+    }
   }
 
   private async generateDatasetHandler(e: Event) {
@@ -315,7 +330,7 @@ export class ArchGenerateDatasetForm extends LitElement {
       `You will receive an email when your dataset is ready. You can monitor its progress on the <a href="${Paths.datasets}">Dataset list</a>.`,
       archJobCard.jobButton
     );
-    this.startPolling();
+    this.maybeStartPolling();
   }
 }
 
