@@ -188,7 +188,7 @@ def dataset_detail(request, dataset_id):
         .select_related("job_start__job_type")
         .select_related("job_start__user")
         .select_related("job_start__jobcomplete"),
-        id=dataset_id
+        id=dataset_id,
     )
     template_filename = settings.JOB_TYPE_UUID_NON_AUT_TEMPLATE_FILENAME_MAP.get(
         dataset.job_start.job_type.id, "aut-dataset.html"
@@ -203,7 +203,7 @@ def dataset_detail(request, dataset_id):
             "user_teams": [model_to_dict(x) for x in request.user.teams.all()],
             "dataset_teams": [model_to_dict(x) for x in dataset.teams.all()],
             "files": files,
-            "showSingleFilePreview": len(files) == 1 and files[0].line_count > 0
+            "showSingleFilePreview": len(files) == 1 and files[0].line_count > 0,
         },
     )
 

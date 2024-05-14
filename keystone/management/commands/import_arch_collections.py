@@ -14,33 +14,48 @@ from keystone.models import (
 )
 
 
-ARCH_ID_AIT_ID_REGEX = re.compile("^.+[\-:](\d+)$")
+ARCH_ID_NORMALIZATION_REGEX = re.compile(
+    r"^((?:ARCHIVEIT|SPECIAL)-)(?:ks\:[^\:]+\:)?(.+)$"
+)
 
 
-def parse_ait_id(arch_id):
-    match = ARCH_ID_AIT_ID_REGEX.match(arch_id)
-    if not match:
-        raise AssertionError(f"Could not parse AIT ID from arch_id: {arch_id}")
-    return int(match.group(1))
+def normalize_arch_id(arch_id):
+    """Strip any embedded username from AIT and SPECIAL collection IDs because
+    their inclusion will cause requests made to the UUID-based job running endpoint
+    to return a collection size of -1 (which will cause a Keystone IntegrityError)
+    and result in an empty job output.
+    """
+    match = ARCH_ID_NORMALIZATION_REGEX.match(arch_id)
+    if match:
+        return "".join(match.groups())
+    if arch_id.startswith(("ARCHIVEIT-", "SPECIAL-")):
+        raise AssertionError(f"arch_id normalization failed for: {arch_id}")
+    return arch_id
 
 
-def get_arch_collection_type(arch_c):
-    if arch_c["id"].startswith("ARCHIVEIT-"):
+def get_arch_collection_type(normalized_arch_id):
+    if normalized_arch_id.startswith("ARCHIVEIT-"):
         return CollectionTypes.AIT
-    elif arch_c["id"].startswith("CUSTOM-"):
+    elif normalized_arch_id.startswith("CUSTOM-"):
         return CollectionTypes.CUSTOM
-    elif arch_c["id"].startswith("SPECIAL-"):
+    elif normalized_arch_id.startswith("SPECIAL-"):
         return CollectionTypes.SPECIAL
-    raise ValueError(f"Could not determine type for collection: {arch_c['id']}")
+    raise ValueError(f"Could not determine type for collection: {normalized_arch_id}")
+
+
+def parse_ait_id(normalized_arch_id):
+    return int(normalized_arch_id.split("-")[1])
 
 
 def import_user_collections(user):
     for arch_c in ArchAPI.get_json(user, "collections")["results"]:
+        # Normalize the ARCH Collection ID and detect the collection type.
+        normalized_arch_id = normalize_arch_id(arch_c["id"])
+        collection_type = get_arch_collection_type(normalized_arch_id)
         # Create the metadata dict.
-        collection_type = get_arch_collection_type(arch_c)
         if collection_type == CollectionTypes.AIT:
             metadata = {
-                "ait_id": parse_ait_id(arch_c["id"]),
+                "ait_id": parse_ait_id(normalized_arch_id),
                 "is_public": arch_c["public"],
                 "seed_count": arch_c["seeds"],
                 "last_crawl_date": (
@@ -58,7 +73,7 @@ def import_user_collections(user):
             metadata = None
 
         # Lookup any existing Collection.
-        ks_c = Collection.objects.filter(arch_id=arch_c["id"]).first()
+        ks_c = Collection.objects.filter(arch_id=normalized_arch_id).first()
         if ks_c:
             # Collection exists. Maybe update it.
             updated = False
@@ -85,7 +100,7 @@ def import_user_collections(user):
         else:
             # Collection does not exist, so create it.
             ks_c = Collection(
-                arch_id=arch_c["id"],
+                arch_id=normalized_arch_id,
                 name=arch_c["name"],
                 collection_type=collection_type,
                 size_bytes=arch_c["sortSize"],
@@ -100,6 +115,14 @@ def import_user_collections(user):
 class Command(BaseCommand):
     help = "Import ARCH Collections"
 
+    def add_arguments(self, parser):
+        parser.add_argument("--username", type=str, help="Import for single username")
+
     def handle(self, *args, **options):
+        username = options.get("username")
+        if username:
+            import_user_collections(User.objects.get(username=username))
+            return
+
         for user in User.objects.all():
             import_user_collections(user)
