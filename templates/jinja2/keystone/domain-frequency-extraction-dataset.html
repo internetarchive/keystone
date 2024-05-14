@@ -10,11 +10,17 @@
 
 <script>
   async function initSampleViz() {
+    // Show a loading indicator.
+    const chartTargetEl = document.getElementById("chartjs-1");
+    const loadingEl = document.createElement("arch-loading-indicator");
+    chartTargetEl.parentElement.insertBefore(loadingEl, chartTargetEl);
     const res = await fetch("/api/datasets/{{ dataset.id }}/sample_viz_data");
     if (!res.ok) {
       return;
     }
     const { nodes: data } = await res.json()
+    // Remove the loading indicator.
+    loadingEl.remove();
     if (data.length === 0) {
       return;
     }
@@ -53,7 +59,7 @@
 <div id="viz-wrapper" class="hidden">
 {% endif %}
   <div class="charts">
-    <h1>Domains</h1>
+    <h2>Domains</h2>
     <p>
       <div class="chartjs-wrapper">
         <canvas id="chartjs-1" class="chartjs" width="undefined" height="undefined"></canvas>

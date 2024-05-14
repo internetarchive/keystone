@@ -91,6 +91,7 @@ div.graph-description {
 }
 
 .csv-preview [data-preview-url] {
+    min-height: 2em;
     max-height: 30em;
     overflow: auto;
 }

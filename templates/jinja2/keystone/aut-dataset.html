@@ -33,9 +33,14 @@
     // Initialize previews.
     Array.from(document.querySelectorAll("div[data-preview-url]"))
       .forEach(el => {
-        let {previewUrl} = el.dataset;
+        const {previewUrl} = el.dataset;
+        // Show a loading indicator.
+        const loadingEl = document.createElement("arch-loading-indicator");
+        el.appendChild(loadingEl);
         d3.text(previewUrl, data => {
           const previewCSV = d3.csv.parseRows(data);
+          // Remove the loading indicator.
+          loadingEl.remove();
           const previewTbl = d3.select(el)
                 .append("table")
                 .attr("class", "large-12 columns margin-top one csv-preview");

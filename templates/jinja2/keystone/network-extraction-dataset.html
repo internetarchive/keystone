@@ -14,6 +14,10 @@
 
 <script>
   async function initSampleViz() {
+    const containerEl = document.getElementById('graph');
+    // Show a loading indicator.
+    const loadingEl = document.createElement("arch-loading-indicator");
+    containerEl.appendChild(loadingEl);
     const res = await fetch("/api/datasets/{{ dataset.id }}/sample_viz_data");
     if (!res.ok) {
       return;
@@ -35,11 +39,12 @@
       )),
       edges: data.edges.map(([source, target], i) => ({id: i, source, target}))
     };
-
+    // Remove the loading indicator.
+    loadingEl.remove();
     var s = new sigma({
       graph: graphData,
       renderer: {
-        container: document.getElementById('graph'),
+        container: containerEl,
         type: sigma.renderers.canvas,
       },
       settings: {
@@ -99,7 +104,7 @@
 <div id="viz-wrapper" class="hidden">
 {% endif %}
   <div class="charts">
-    <h1>Top Hosts Sample</h1>
+    <h2>Top Hosts Sample</h2>
     <div class="card card-body">
       <div id="card-body graph-wrapper">
         <button type="button" id="zoom-in" class="zoom-in" aria-label="Zoom in">
