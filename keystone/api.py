@@ -19,7 +19,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, transaction
 from django.db.models import Count, Exists, OuterRef, Q, QuerySet
 from django.templatetags.static import static
 from django.http import (
@@ -89,7 +89,11 @@ from .models import (
 ###############################################################################
 
 
-INTEGRITY_ERROR_REGEX = re.compile(r"Key \((.+)\)=\((.+)\) already exists")
+UNIQUE_INTEGRITY_ERROR_REGEX = re.compile(r"Key \((.+)\)=\((.+)\) already exists")
+
+MAX_USERS_INTEGRITY_ERROR_REGEX = re.compile(
+    r"Account \((\d+)\) has reached its max users limit"
+)
 
 
 ###############################################################################
@@ -255,18 +259,35 @@ def public_api_arch_request_error_handler(request, exc):
 @public_api.exception_handler(IntegrityError)
 def public_api_integrityerror_error_handler(request, exc):
     """Convert IntegrityErrors to JSON responses."""
-    match = INTEGRITY_ERROR_REGEX.search(exc.args[0])
+
+    def make_response(details):
+        return JsonResponse({"details": details}, status=400)
+
+    # Check for unique constraint violation.
+    match = UNIQUE_INTEGRITY_ERROR_REGEX.search(exc.args[0])
     if match:
         field, value = match.groups()
         if "," in field:
             values = tuple(value.split(", "))
             fields = tuple(field.split(", "))
-            details = f"values {values} already exists for fields {fields}"
-        else:
-            details = f"value ({value}) already exists for field ({field})"
-    else:
-        details = "Unhandled IntegrityError"
-    return JsonResponse({"details": details}, status=400)
+            return make_response(f"values {values} already exists for fields {fields}")
+        return make_response(f"value ({value}) already exists for field ({field})")
+    # Check for account max users check violation.
+    match = MAX_USERS_INTEGRITY_ERROR_REGEX.search(exc.args[0])
+    if match:
+        return make_response("Account has reached its max users limit")
+    return make_response("Unhandled IntegrityError")
+
+
+@public_api.exception_handler(OperationalError)
+def public_api_operationalerror_error_handler(request, exc):
+    """Convert expected OperationalErrors (i.e. those that we explicitly raise
+    from within DB triggers) to JSON responses."""
+    # Get the first line of the detail string.
+    exc_detail = exc.args[0].split("\n")[0]
+    if exc_detail == "account max users limit reached" or " is immutable" in exc_detail:
+        return JsonResponse({"details": exc_detail}, status=400)
+    return HttpResponse(status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 @public_api.exception_handler(ObjectDoesNotExist)
@@ -1077,7 +1098,14 @@ def get_dataset(request, dataset_id: int):
         .prefetch_related("job_start__job_type")
         .prefetch_related("job_start__job_type__category")
         .prefetch_related("job_start__collection")
-        .annotate(team_ids=ArrayAgg("teams__id", filter=Q(teams__id__isnull=False))),
+        .annotate(team_ids=ArrayAgg("teams__id", filter=Q(teams__id__isnull=False)))
+        .annotate(
+            collection_access=Exists(
+                Collection.user_queryset(request.user).filter(
+                    id=OuterRef("job_start__collection__id")
+                )
+            )
+        ),
         id=dataset_id,
     )
 

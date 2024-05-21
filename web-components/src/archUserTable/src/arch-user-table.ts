@@ -18,6 +18,7 @@ export class ArchUserTable extends ArchDataTable<User> {
   @property({ type: Number }) userId!: number;
   @property({ type: Boolean }) userIsStaff!: boolean;
   @property({ type: String }) userRole!: UserRoles;
+  @property({ type: Boolean }) accountMaxUsersReached = false;
 
   @state() createNewUserModalTrigger!: HTMLElement;
   @state() editUserModal!: ArchEditUserModal;
@@ -116,6 +117,20 @@ export class ArchUserTable extends ArchDataTable<User> {
       createNewUserModal,
       this.editUserModal,
     ] as Array<HTMLElement>;
+  }
+
+  updated(_changedProperties: PropertyValues) {
+    super.updated(_changedProperties);
+
+    // If account max users has been reached, disable the Create New User button.
+    if (this.accountMaxUsersReached) {
+      const createNewUserButton = this.dataTable.querySelector(
+        "div.non-selection-buttons button"
+      ) as HTMLButtonElement;
+      createNewUserButton.disabled = true;
+      createNewUserButton.title =
+        "Your account has reached its maximum number of allowed users. Please contact your account administrator.";
+    }
   }
 
   showEditUserModal(user: User) {

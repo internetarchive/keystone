@@ -14,7 +14,7 @@ from django.db import transaction
 from django.db import IntegrityError
 from django.db.models import F, Q
 from django.db.models.functions import Lower
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 import uuid6
@@ -42,7 +42,9 @@ class Account(models.Model):
     """Top-level for a group of Users."""
 
     name = models.CharField(max_length=255, unique=True)
-    max_users = models.PositiveIntegerField(default=1)
+    max_users = models.PositiveIntegerField(
+        default=1 if settings.DEPLOYMENT_ENVIRONMENT != "DEV" else 10
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -115,18 +117,6 @@ class User(AbstractUser):
             return None
         except IntegrityError as e:
             return str(e)
-
-
-@receiver(pre_save, sender=User)
-def enforce_username_immutability(sender, instance, **kwargs):
-    """Raise an IntegrityError on attempted username update."""
-    try:
-        db_user = sender.objects.get(pk=instance.pk)
-    except sender.DoesNotExist:
-        pass
-    else:
-        if not db_user.username == instance.username:
-            raise IntegrityError("Can not update immutable field User.username")
 
 
 class Team(models.Model):

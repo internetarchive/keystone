@@ -193,6 +193,16 @@ export class ArchCreateNewUserModal extends ArchModal {
                 unhandledError = false;
               }
 
+              // Maybe handle an account max_users error.
+              if (details === "account max users limit reached") {
+                this.usernameInput.setCustomValidity(
+                  "Your account has reached its maximum number of allowed users"
+                );
+                this.usernameInput.reportValidity();
+                this.clearInputValidityOnChange(this.usernameInput);
+                unhandledError = false;
+              }
+
               // Maybe handle an unknown error.
               this.unhandledError = unhandledError;
             })

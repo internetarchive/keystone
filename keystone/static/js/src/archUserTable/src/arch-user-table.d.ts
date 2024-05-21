@@ -7,6 +7,7 @@ export declare class ArchUserTable extends ArchDataTable<User> {
     userId: number;
     userIsStaff: boolean;
     userRole: UserRoles;
+    accountMaxUsersReached: boolean;
     createNewUserModalTrigger: HTMLElement;
     editUserModal: ArchEditUserModal;
     editUserModalTrigger: HTMLElement;
@@ -14,6 +15,7 @@ export declare class ArchUserTable extends ArchDataTable<User> {
     willUpdate(_changedProperties: PropertyValues): void;
     _createHiddenModalTriggerButton(): HTMLButtonElement;
     render(): HTMLElement[];
+    updated(_changedProperties: PropertyValues): void;
     showEditUserModal(user: User): void;
     selectionActionHandler(action: string, selectedRows: Array<User>): void;
     nonSelectionActionHandler(action: string): void;
