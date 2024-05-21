@@ -25,6 +25,7 @@ export default {
     "./src/archGenerateDatasetForm/src/arch-generate-dataset-form.ts",
     "./src/archGlobalModal/src/arch-global-modal.ts",
     "./src/archHoverTooltip/src/arch-hover-tooltip.ts",
+    "./src/archLoadingIndicator/src/arch-loading-indicator.ts",
     "./src/archRecentDatasetsCard/src/arch-recent-datasets-card.ts",
     "./src/archSubCollectionBuilder/src/arch-sub-collection-builder.ts",
     "./src/archTeamTable/src/arch-team-table.ts",
