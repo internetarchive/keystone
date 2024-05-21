@@ -20,8 +20,8 @@
 {% endblock %}
 
 {% block head_extra %}
-{% if dataset.job_start.job_type.can_publish %}
 <script src="{{ static('/js/arch-dataset-teams-selector.js') }}" type="module"></script>
+{% if dataset.job_start.job_type.can_publish %}
 <script src="{{ static('/js/arch-dataset-publishing-card.js') }}" type="module"></script>
 <script src="{{ static('/js/arch-hover-tooltip.js') }}" type="module"></script>
 {% endif %}
