@@ -1,4 +1,4 @@
-import{i as t,_ as a,a as e}from"./chunk-lit-element.js";import{t as s}from"./chunk-state.js";import{A as i}from"./chunk-arch-data-table.js";import{i as l,P as o,a as r,B as h,E as n}from"./chunk-helpers.js";import{i as m}from"./chunk-helpers2.js";import"./chunk-styles.js";import"./chunk-arch-loading-indicator.js";import"./arch-hover-tooltip.js";import"./chunk-scale-large.js";import"./chunk-sp-overlay.js";var d=[t`
+import{i as t,_ as a,a as e}from"./chunk-lit-element.js";import{t as s}from"./chunk-state.js";import{A as i}from"./chunk-arch-data-table.js";import{i as l,P as o,a as r,B as h,E as n}from"./chunk-helpers.js";import{i as m}from"./chunk-helpers2.js";import"./chunk-styles.js";import"./arch-loading-indicator.js";import"./arch-hover-tooltip.js";import"./chunk-scale-large.js";import"./chunk-sp-overlay.js";var d=[t`
     data-table {
       min-width: 60rem;
     }

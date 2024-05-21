@@ -43,5 +43,5 @@ import{i as a,_ as l,e as s,s as n,y as t,a as e}from"./chunk-lit-element.js";va
         <span>&#x2B24;</span>
         <span>&#x2B24;</span>
       </div>
-    `}};p.styles=i,l([s({type:String})],p.prototype,"text",void 0),p=l([e("arch-loading-indicator")],p);
-//# sourceMappingURL=chunk-arch-loading-indicator.js.map
+    `}};p.styles=i,l([s({type:String})],p.prototype,"text",void 0),p=l([e("arch-loading-indicator")],p);export{p as ArchLoadingIndicator};
+//# sourceMappingURL=arch-loading-indicator.js.map
