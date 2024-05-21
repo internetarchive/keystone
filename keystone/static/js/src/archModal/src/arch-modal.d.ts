@@ -17,7 +17,7 @@ export declare class ArchModal extends ArchModal_base {
     content: TemplateResult;
     static styles: import("lit").CSSResult[];
     renderDialogContent(): TemplateResult<1>;
-    submit(): void;
+    submit(e: null | Event): void;
 }
 declare global {
     interface HTMLElementTagNameMap {

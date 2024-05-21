@@ -4,6 +4,7 @@ export declare class ArchSelectAdder<T> extends LitElement {
     headingLevel: number;
     labelGetter: (obj: T) => string;
     options: Array<T>;
+    optionsSortCompareFn: undefined | ((a: T, b: T) => number);
     selectedOptions: Array<T>;
     selectedOptionsTitle: string;
     selectCtaText: string;
@@ -16,6 +17,7 @@ export declare class ArchSelectAdder<T> extends LitElement {
         slotAssignment?: SlotAssignmentMode | undefined;
         customElements?: CustomElementRegistry | undefined;
     };
+    private sortByLabel;
     private heading;
     render(): TemplateResult<1>;
     updateAvailableOptions(): void;

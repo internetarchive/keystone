@@ -1,4 +1,4 @@
-import { ApiParams, Collection, CollectionIdNamePairs, Dataset, FilteredApiResponse, JobId, JobParameters, PublishedDatasetInfo, PublishedDatasetMetadata, PublishedDatasetMetadataApiResponse, Team, User, UserUpdate } from "./types";
+import { ApiParams, Collection, CollectionIdNamePairs, Dataset, FilteredApiResponse, JobId, JobParameters, PublishedDatasetInfo, PublishedDatasetMetadata, PublishedDatasetMetadataApiResponse, Team, TeamUpdate, User, UserUpdate } from "./types";
 export default class ArchAPI {
     static BasePath: string;
     static CSRF_REGEX: RegExp;
@@ -25,9 +25,16 @@ export default class ArchAPI {
         };
     };
     static get users(): {
+        list: () => Promise<FilteredApiResponse<User>>;
         get: (userId: User["id"]) => Promise<User>;
         create: (user: Partial<User>, sendWelcomeEmail: boolean) => Promise<User>;
         update: (userId: User["id"], user: UserUpdate) => Promise<User>;
+    };
+    static get teams(): {
+        list: () => Promise<FilteredApiResponse<Team>>;
+        get: (teamId: Team["id"]) => Promise<Team>;
+        create: (team: Partial<Team>) => Promise<Team>;
+        update: (teamId: Team["id"], team: TeamUpdate) => Promise<Team>;
     };
     static allCollectionIdNamePairs(accountId: number): Promise<CollectionIdNamePairs>;
 }
