@@ -7,6 +7,11 @@ from django.db import models
 import sentry_sdk
 
 
+def identity(x):
+    """An identity function."""
+    return x
+
+
 def is_uuid7(s):
     """Return a bool indicate whether a string is a valid UUID7."""
     try:

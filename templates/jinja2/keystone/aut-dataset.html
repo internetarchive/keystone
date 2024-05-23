@@ -11,6 +11,8 @@
   )
 %}
 
+{% set job_params_schema = dataset.job_start.job_type.parameters_schema %}
+
 {% set breadcrumbs = (("Datasets", "datasets-explore"), (dataset_displayname, ("dataset-detail", dataset.id))) %}
 
 {% extends 'keystone/base.html' %}
@@ -73,6 +75,23 @@
 <br>
 <div class="row">
   <div class="large-12 columns">
+
+    {% if job_params_schema %}
+    <h2 id="datasets">Configuration</h2>
+    <p>
+      The configuration used to generate this Dataset.
+    </p>
+    <div class="card">
+      <div class="card-body">
+        <dl>
+          {% for param_key, param_schema in job_params_schema["properties"].items() %}
+          <dt>{{ param_schema["title"] }}</dt>
+          <dd>{{ dataset.job_start.parameters["conf"]["params"][param_key] }}</dd>
+          {% endfor %}
+        </dl>
+      </div>
+    </div>
+    {% endif %}
 
     <h2 id="datasets">File(s)</h2>
     <p>

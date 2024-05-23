@@ -36,6 +36,83 @@ button:hover {
 }
 /* End partner-site styles accessability improvements */
 
+/* Begin global element styles */
+dl {
+  margin-block-start: 0;
+  margin-block-end: 0;
+}
+
+dl > div {
+  margin-bottom: 1rem;
+}
+
+dl > div:last-child {
+  margin-bottom: 0;
+}
+
+dt {
+  display: inline;
+  font-weight: bold;
+}
+
+dt:after {
+  content: ":";
+  margin-right: 0.5em;
+}
+
+dd {
+  display: inline;
+  margin: 0;
+  line-height: 1.2em;
+  font-style: italic;
+}
+
+dd::after {
+  content: ",";
+  padding-right: 0.2em;
+}
+
+dd:last-child::after {
+  content: none;
+  padding-right: 0;
+}
+/* End global element styles */
+
+/* Begin collection detail view custom collection config */
+#custom-collection-config > h3 {
+  font-size: 1.1rem;
+}
+
+#custom-collection-config > ul {
+  padding-inline-start: 1rem;
+}
+
+#custom-collection-config > dl {
+  display: grid;
+  grid-template-columns: max-content auto;
+}
+
+#custom-collection-config > dl > dt {
+  grid-column-start: 1;
+  font-weight: normal;
+  padding-inline-start: 1rem;
+}
+
+#custom-collection-config > dl > dd {
+  grid-column-start: 2;
+  line-height: inherit;
+  margin-bottom: 0;
+}
+
+#custom-collection-config > dl > dd::after {
+  content: "";
+}
+
+#custom-collection-config > dl > dd > em {
+  font-weight: bold;
+}
+/* End collection detail view custom collection config */
+
 div.job-card-flex {
     display: flex;
 }

@@ -1,5 +1,6 @@
 import functools
 import json
+from datetime import datetime
 from io import StringIO
 
 from django.contrib import messages
@@ -23,10 +24,11 @@ from config import settings
 from .arch_api import ArchAPI
 from .context_processors import helpers as ctx_helpers
 from .forms import CSVUploadForm
-from .helpers import parse_csv, parse_solr_facet_data
+from .helpers import identity, parse_csv, parse_solr_facet_data
 from .models import (
     Account,
     Collection,
+    CollectionTypes,
     Dataset,
     JobFile,
     Team,
@@ -38,6 +40,28 @@ from . import ait
 
 
 ###############################################################################
+# Globals
+###############################################################################
+
+
+CUSTOM_COLLECTION_PARAM_KEY_LABEL_FORMATTER_TUPLES = (
+    ("surtPrefixesOR", "SURT Prefix(es)", identity),
+    (
+        "timestampFrom",
+        "Crawl Date (start)",
+        lambda x: f"on or after {format_custom_collection_crawl_date(x)}",
+    ),
+    (
+        "timestampTo",
+        "Crawl Date (end)",
+        lambda x: f"on or before {format_custom_collection_crawl_date(x)}",
+    ),
+    ("statusPrefixesOR", "HTTP Status(es)", identity),
+    ("mimesOR", "MIME Type(s)", identity),
+)
+
+
+###############################################################################
 # Helpers
 ###############################################################################
 
@@ -46,6 +70,12 @@ def request_user_is_staff_or_superuser(request):
     """Return true if user is staff or a superuser"""
 
     return request.user.is_staff or request.user.is_superuser
+
+
+def format_custom_collection_crawl_date(s):
+    """Parse a custom collection crawl date string."""
+
+    return datetime.strftime(datetime.strptime(s, "%Y%m%d%H%M%S00"), "%h %d, %Y")
 
 
 ###############################################################################
@@ -175,8 +205,44 @@ def collection_detail(request, collection_id):
     collection = get_object_or_404(
         Collection.user_queryset(request.user), id=collection_id
     )
+    if collection.collection_type != CollectionTypes.CUSTOM:
+        custom_context = None
+    else:
+        # Lookup the custom collection job configuration.
+        custom_conf = collection.jobstart_set.get(
+            job_type__id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
+        ).parameters["conf"]
+        # Create the list of input collections.
+        input_spec = custom_conf["inputSpec"]
+        input_collections = (
+            [Collection.get_for_input_spec(x) for x in input_spec["specs"]]
+            if input_spec["type"] == "multi-specs"
+            else [Collection.get_for_input_spec(input_spec)]
+        )
+        # Create the list of param label/value pairs.
+        custom_params = custom_conf["params"]
+        custom_param_pairs = []
+        for (
+            param_key,
+            param_label,
+            param_formatter,
+        ) in CUSTOM_COLLECTION_PARAM_KEY_LABEL_FORMATTER_TUPLES:
+            if param_key not in custom_params:
+                continue
+            custom_param_pairs.append(
+                (param_label, param_formatter(custom_params[param_key]))
+            )
+        custom_context = {
+            "input_collections": input_collections,
+            "param_label_value_pairs": custom_param_pairs,
+        }
     return render(
-        request, "keystone/collection-detail.html", context={"collection": collection}
+        request,
+        "keystone/collection-detail.html",
+        context={
+            "collection": collection,
+            "custom_context": custom_context,
+        },
     )
 
 

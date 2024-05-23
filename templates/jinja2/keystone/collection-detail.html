@@ -1,4 +1,5 @@
 {% set breadcrumbs = (("Collections", "collections"), (collection.name, ("collection-detail", collection.id))) %}
+
 {% set metadata = collection.metadata or {} %}
 
 {% extends 'keystone/base.html' %}
@@ -68,6 +69,42 @@
 
       </div>
     </div>
+
+    {% if custom_context %}
+    <h2 id="datasets">Custom Collection Configuration</h2>
+    <p>
+      The configuration used to generate this Custom Collection.
+    </p>
+    <div class="card">
+      <div class="card-body" id="custom-collection-config">
+        <h3>Input Collections</h3>
+        <ul>
+          {% for input_collection in custom_context["input_collections"] %}
+          <li>
+            <a href="{{ url('collection-detail', args=(input_collection.id,)) }}">
+              {{ input_collection.name }}
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if custom_context["param_label_value_pairs"] %}
+        <h3>Filters</h3>
+        <dl>
+          {% for label, value in custom_context["param_label_value_pairs"] %}
+          <dt>{{ label }}</dt>
+          {% if isinstance(value, list) %}
+          <dd>
+            {{ ("<em>" + "</em> or <em>".join(value) + "</em>") | safe }}
+          </dd>
+          {% else %}
+          <dd><em>{{ value }}</em></dd>
+          {% endif %}
+          {% endfor %}
+        </dl>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
 
     <div>
       <h2>Datasets</h2>

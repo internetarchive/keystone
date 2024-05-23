@@ -11,6 +11,7 @@ def extra_builtins(request):
     return {
         "datetime": datetime,
         "isinstance": isinstance,
+        "list": list,
         "str": str,
         "tuple": tuple,
     }
