@@ -15,14 +15,51 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from importlib import import_module
+
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import path
+from django.urls import path, include
 
+from config.settings import (
+    is_plugin_module_name,
+    get_plugin_module_app_name,
+)
 from keystone import forms as keystone_forms
 from keystone import views
 from keystone.api import private_api, public_api, wasapi_api
+
+
+def get_installed_plugin_urlpatterns():
+    """Return the urlpatterns list for all installed plugins.
+    Plugins must be specified in settings.INSTALLED_APPS with a name in the
+    format: "keystone_{plugin_name}_plugin"
+    If a keystone_*_plugin.urls module exists that defines a urlpatterns
+    list, we'll include those urls here, at a base path specified by either
+    any defined keystone_*_plugin.urls.URL_NAMESPACE value, or at a
+    default of "plugins/{app_name}".
+    """
+    plugin_urlpatterns = []
+    for app_name in settings.INSTALLED_APPS:
+        if not is_plugin_module_name(app_name):
+            continue
+        try:
+            urls_mod = import_module(f"{app_name}.urls")
+        except ModuleNotFoundError:
+            continue
+        if not hasattr(urls_mod, "urlpatterns"):
+            continue
+        base_path = (
+            getattr(
+                urls_mod,
+                "URL_NAMESPACE",
+                f"plugins/{get_plugin_module_app_name(app_name)}",
+            ).strip("/")
+            + "/"
+        )
+        plugin_urlpatterns.append(path(base_path, include(urls_mod.urlpatterns)))
+    return plugin_urlpatterns
 
 
 urlpatterns = [
@@ -117,36 +154,6 @@ urlpatterns = [
         name="collection_surveyor",
     ),
     path(
-        "admin/keystone/user/import_ait_users",
-        views.import_ait_users,
-        name="import_ait_users",
-    ),
-    path(
-        "admin/keystone/user/get_ait_user_info",
-        views.get_ait_user_info,
-        name="get_ait_user_info",
-    ),
-    path(
-        "admin/keystone/user/get_ait_account_users_info",
-        views.get_ait_account_users_info,
-        name="get_ait_account_users_info",
-    ),
-    path(
-        "admin/keystone/collection/import_ait_collections",
-        views.import_ait_collections,
-        name="import_ait_collections",
-    ),
-    path(
-        "admin/keystone/collection/get_ait_collection_info",
-        views.get_ait_collection_info,
-        name="get_ait_collection_info",
-    ),
-    path(
-        "admin/keystone/collection/get_ait_account_collections_info",
-        views.get_ait_account_collections_info,
-        name="get_ait_account_collections_info",
-    ),
-    path(
         "admin/arch_logs/<log_type>",
         views.get_arch_job_logs,
         name="get_arch_job_logs",
@@ -155,4 +162,4 @@ urlpatterns = [
     path("api/", public_api.urls),
     path("private/api/", private_api.urls),
     path("wasapi/v1/", wasapi_api.urls),
-]
+] + get_installed_plugin_urlpatterns()

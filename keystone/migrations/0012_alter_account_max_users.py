@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('keystone', '0011_user_insert_update_triggers'),
+        ("keystone", "0011_user_insert_update_triggers"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='account',
-            name='max_users',
+            model_name="account",
+            name="max_users",
             field=models.PositiveIntegerField(default=10),
         ),
     ]
