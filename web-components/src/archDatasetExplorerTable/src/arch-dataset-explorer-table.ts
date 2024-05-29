@@ -40,9 +40,14 @@ export class ArchDatasetExplorerTable extends ArchDataTable<Dataset> {
             </a>`,
       (categoryName) => categoryName as Dataset["category_name"],
       (collectionName, dataset) =>
-        `<a href="${Paths.collection(dataset.collection_id)}">
-           <span class="highlightable">${collectionName as string}</span>
-        </a>`,
+        !dataset.collection_access
+          ? `<span class="highlightable no-collection-access"
+                   title="You are not authorized to access this collection">
+            ${collectionName as string}
+          </span>`
+          : `<a href="${Paths.collection(dataset.collection_id)}">
+            <span class="highlightable">${collectionName as string}</span>
+          </a>`,
       (isSample) =>
         BoolDisplayMap[(isSample as Dataset["is_sample"]).toString()],
       (state) => EventTypeDisplayMap[state as Dataset["state"]],
