@@ -1431,8 +1431,9 @@ def get_file_listing(request, dataset_id: int):
     base_download_url = ctx_helpers(request)["abs_url"](
         "dataset-file-download", args=[dataset.id, "dummy"]
     ).rsplit("/", 1)[0]
+    # Request on behalf of the Dataset owner in the event of teammate access.
     return ArchAPI.proxy_wasapi_request(
-        request.user,
+        dataset.job_start.user,
         dataset.job_start.id,
         base_download_url,
     )
