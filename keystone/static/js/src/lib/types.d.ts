@@ -73,6 +73,7 @@ export interface CollectionRemovedFromCartDetail {
 }
 export type Dataset = {
     category_name: string;
+    collection_access: boolean;
     collection_id: number;
     collection_name: string;
     finished_time: Date;
