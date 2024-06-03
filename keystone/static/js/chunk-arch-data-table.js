@@ -536,6 +536,7 @@ const je=new Map,Ue=(e=>(t,...o)=>{var r;const a=o.length;let i,n;const s=[],_=[
       margin-left: 0;
     }
 
+    data-table .action-button-wrapper > .non-selection-buttons button:disabled,
     data-table .action-button-wrapper > .selection-buttons button:disabled,
     data-table
       .action-button-wrapper
