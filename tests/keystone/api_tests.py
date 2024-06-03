@@ -212,7 +212,7 @@ def test_admin_can_create_same_account_user(
         jobmail_send_call_args = jobmail_send.call_args
         assert jobmail_send_call_args.args[0] == "new_user_welcome_email"
         assert jobmail_send_call_args.kwargs["context"]["user"] == new_user
-        assert jobmail_send_call_args.kwargs["subject"] == "Welcome to ARCH"
+        assert jobmail_send_call_args.kwargs["subject"] == "Welcome to ARCH!"
         assert jobmail_send_call_args.kwargs["to"] == new_user.email
 
 
