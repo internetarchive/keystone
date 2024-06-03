@@ -1,12 +1,22 @@
-Dear {{ user.first_name or user.get_username() }},
+{% if not user.first_name %}
+Dear {{ user.get_username() }},
+{% elif user.last_name %}
+Dear {{ user.first_name }} {{ user.last_name }},
+{% else %}
+Dear {{ user.first_name }},
+{% endif %}
+Thank you for using the Archive Research Compute Hub (ARCH), the Internet Archive's service to derive machine actionable data from web archive collections. You may access your ARCH account here: https://arch.archive-it.org/
 
-You're receiving this email because a new ARCH account has been created for you.
+- Your username is: {{ user.get_username() }}
+- Please set your password here: {{ base_url }}{{ url('password_reset_confirm', kwargs={'uidb64': uid, 'token': token}) }}
 
-Please go to {{ protocol }}://{{ domain }}{{ url('password_reset_confirm', kwargs={"uidb64": uid, "token": token}) }} to set your password.
+Here are some resources to help you get started anytime:
 
-Your username is: {{ user.get_username() }}
+- Quick guide to using ARCH: https://arch-webservices.zendesk.com/hc/en-us/articles/16748739627668
+- Sample ARCH datasets and tutorials: https://arch-webservices.zendesk.com/hc/en-us/articles/15772545086612
 
-If you experience any issues, please create a support ticket at: {{ arch_support_ticket_url }}
+Need help? Let us know here: {{ arch_support_ticket_url }}
+We value your feedback on how ARCH can meet your needs.
 
-All the best,
+Best,
 The ARCH Team

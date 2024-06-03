@@ -1,25 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
   </head>
   <body>
-    <p>
-      Dear {{ user.first_name or user.get_username() }},
-    </p>
-    <p>
-      You're receiving this email because a new ARCH account has been created for you.
-      <br><br>
-      Your username is: <strong>{{ user.get_username() }}</strong>
-      <br><br>
-      Please <a href="{{ base_url }}{{ url('password_reset_confirm', kwargs={'uidb64': uid, 'token': token}) }}"> click here to set your password</a>.
-      <br><br>
-      If you experience any issues, please create a support ticket at: {{ arch_support_ticket_url }}
-    </p>
-    <p>
-      All the best,
-      <br>
-      The ARCH Team
-    </p>
+    {% if not user.first_name %}
+    Dear {{ user.get_username() }},
+    {% elif user.last_name %}
+    Dear {{ user.first_name }} {{ user.last_name }},
+    {% else %}
+    Dear {{ user.first_name }},
+    {% endif %}
+    <br><br>
+    Thank you for using the Archive Research Compute Hub (ARCH), the Internet Archive's service to derive machine actionable data from web archive collections. You may access your ARCH account here: <a href="https://arch.archive-it.org/">https://arch.archive-it.org/</a>
+
+    <ul>
+      <li>Your username is: <strong>{{ user.get_username() }}</strong></li>
+      <li>Please <a href="{{ base_url }}{{ url('password_reset_confirm', kwargs={'uidb64': uid, 'token': token}) }}"> click here to set your password</a></li>
+    </ul>
+
+    Here are some resources to help you get started anytime:
+
+    <ul>
+      <li><a href="https://arch-webservices.zendesk.com/hc/en-us/articles/16748739627668">Quick guide to using ARCH</a></li>
+      <li><a href="https://arch-webservices.zendesk.com/hc/en-us/articles/15772545086612">Sample ARCH datasets and tutorials</a></li>
+    </ul>
+
+    Need help? <a href="{{ arch_support_ticket_url }}">Let us know!</a> We value your feedback on how ARCH can meet your needs.
+
+    <br><br>
+
+    Best,
+    <br>
+    The ARCH Team
   </body>
 </html>

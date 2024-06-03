@@ -1233,7 +1233,7 @@ def create_user(request, payload: CreateUserSchema, send_welcome: bool):
                 "token": PasswordResetTokenGenerator().make_token(new_user),
                 "arch_support_ticket_url": ARCH_SUPPORT_TICKET_URL,
             },
-            subject="Welcome to ARCH",
+            subject="Welcome to ARCH!",
             to=new_user.email,
         )
     return HTTPStatus.CREATED, new_user
