@@ -20,7 +20,7 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, Exists, OuterRef, Q, QuerySet
 from django.templatetags.static import static
 from django.http import (
     Http404,
@@ -475,6 +475,7 @@ class DatasetSchema(Schema):
     id: int
     collection_id: int = Field(..., alias="job_start.collection.id")
     collection_name: str = Field(..., alias="job_start.collection.name")
+    collection_access: bool
     is_sample: bool = Field(..., alias="job_start.sample")
     job_id: UUID = Field(..., alias="job_start.job_type.id")
     category_name: str = Field(..., alias="job_start.job_type.category.name")
@@ -1044,6 +1045,13 @@ def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
         .prefetch_related("job_start__job_type__category")
         .prefetch_related("job_start__collection")
         .annotate(team_ids=ArrayAgg("teams__id", filter=Q(teams__id__isnull=False)))
+        .annotate(
+            collection_access=Exists(
+                Collection.user_queryset(request.user).filter(
+                    id=OuterRef("job_start__collection__id")
+                )
+            )
+        )
     )
     return apply_sort_param(request, queryset, DatasetSchema)
 
@@ -1423,8 +1431,9 @@ def get_file_listing(request, dataset_id: int):
     base_download_url = ctx_helpers(request)["abs_url"](
         "dataset-file-download", args=[dataset.id, "dummy"]
     ).rsplit("/", 1)[0]
+    # Request on behalf of the Dataset owner in the event of teammate access.
     return ArchAPI.proxy_wasapi_request(
-        request.user,
+        dataset.job_start.user,
         dataset.job_start.id,
         base_download_url,
     )

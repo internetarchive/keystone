@@ -33,5 +33,10 @@ export default [
     data-table > table > thead > tr > th {
       max-width: none;
     }
+
+    span.no-collection-access {
+      cursor: not-allowed;
+      text-decoration: underline;
+    }
   `,
 ];
