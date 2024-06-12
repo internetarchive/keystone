@@ -7,6 +7,8 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+NULL_JOB_CATEGORY_NAME = ""
+
 JOB_TYPE_ID_JOB_CATEGORY_NAME_MAP = {
     "018950a2-21cb-7034-8d2a-03dff990cc1a": "System",
     "01895067-92fb-739c-a99d-037fde1798a4": "Network",
@@ -17,6 +19,8 @@ JOB_TYPE_ID_JOB_CATEGORY_NAME_MAP = {
     "01895065-8f59-7a8a-b432-79e20d749f4a": "Text",
     "0189506a-46f3-7d73-9dcf-a8fce59c50cc": "Text",
     "01895069-6750-73bb-b758-a64b417097f0": "Text",
+    "018d114d-3426-730e-94a1-b56ca73fc1ad": "Text",
+    "018d1151-3a3a-7184-b6ed-8ec176ee750e": "Text",
     "01895066-7db2-794b-b91b-e3f5a340e859": "File Formats",
     "01895067-d598-7db8-88ad-46fed66e27f5": "File Formats",
     "01895068-3e02-72cb-b0d9-4e1bacc42c37": "File Formats",
@@ -26,6 +30,7 @@ JOB_TYPE_ID_JOB_CATEGORY_NAME_MAP = {
     "0189506a-d09d-7571-9d3c-a44698d58d39": "File Formats",
     "018950a1-6773-79f3-8eb2-fba4356e23b9": "System",
     "01895067-417d-7665-ba60-a9bb9ca0aa3e": "Network",
+    "018d1cef-c91d-7d51-9cf4-05fe51900321": NULL_JOB_CATEGORY_NAME,
 }
 
 
@@ -76,7 +81,9 @@ def fix_jobtype_jobcategory_values(apps, schema_editor):
     name_jobcategory_map = {jobcat.name: jobcat for jobcat in JobCategory.objects.all()}
     for job_type in JobType.objects.all():
         job_type.category = name_jobcategory_map[
-            JOB_TYPE_ID_JOB_CATEGORY_NAME_MAP[str(job_type.id)]
+            JOB_TYPE_ID_JOB_CATEGORY_NAME_MAP.get(
+                str(job_type.id), NULL_JOB_CATEGORY_NAME
+            )
         ]
         job_type.save()
 
