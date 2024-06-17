@@ -15,6 +15,7 @@ services:
       - db
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings
+      - KEYSTONE_VENV_PATH=/home/keystone/venv
     env_file:
       - .env
   db:

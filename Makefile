@@ -5,18 +5,18 @@ UID = $$(id -u)
 ENV ?= LOCAL
 PYTEST_REPORT ?= pytest.xml
 PYLINT_REPORT ?= pylint.json
-VENV_PATH = /home/keystone/venv
-PIP_PATH = $(VENV_PATH)/bin/pip
+KEYSTONE_VENV_PATH ?= /opt/keystone/venv
+PIP_PATH = $(KEYSTONE_VENV_PATH)/bin/pip
 
 ###############################################################################
 # Setup and Install targets
 ###############################################################################
 
-$(VENV_PATH):
-	python3 -m venv $(VENV_PATH) --prompt .
+$(KEYSTONE_VENV_PATH):
+	python3 -m venv $(KEYSTONE_VENV_PATH) --prompt .
 	$(PIP_PATH) install -U pip setuptools wheel pip-tools
 
-venv: $(VENV_PATH)
+venv: $(KEYSTONE_VENV_PATH)
 
 requirements.txt: venv
 	$(PIP_PATH)-compile \
@@ -53,10 +53,10 @@ install-prod:
 test:
 ifeq ($(ENV),LOCAL)
 	@# pass extra params on to pytest: https://stackoverflow.com/a/6273809
-	DJANGO_SETTINGS_MODULE=config.settings $(VENV_PATH)/bin/pytest $(filter-out $@,$(MAKECMDGOALS))
+	DJANGO_SETTINGS_MODULE=config.settings $(KEYSTONE_VENV_PATH)/bin/pytest $(filter-out $@,$(MAKECMDGOALS))
 else ifeq ($(ENV),CI)
 	DJANGO_SETTINGS_MODULE=config.settings \
-	   $(VENV_PATH)/bin/pytest \
+	   $(KEYSTONE_VENV_PATH)/bin/pytest \
 		--junit-xml=$(PYTEST_REPORT) \
 		--cov=keystone \
 		--cov=config \
@@ -66,21 +66,21 @@ endif
 .PHONY: lint
 lint:
 ifeq ($(ENV),LOCAL)
-	DJANGO_SETTINGS_MODULE=config.settings $(VENV_PATH)/bin/pylint keystone config
+	DJANGO_SETTINGS_MODULE=config.settings $(KEYSTONE_VENV_PATH)/bin/pylint keystone config
 else ifeq ($(ENV),CI)
 	DJANGO_SETTINGS_MODULE=config.settings \
-		$(VENV_PATH)/bin/pylint keystone config \
+		$(KEYSTONE_VENV_PATH)/bin/pylint keystone config \
 		--output-format=pylint_gitlab.GitlabCodeClimateReporter \
 		--reports=y > $(PYLINT_REPORT)
 endif
 
 .PHONY: format
 format:
-	$(VENV_PATH)/bin/black .
+	$(KEYSTONE_VENV_PATH)/bin/black .
 
 .PHONY: ck-format
 ck-format:
-	$(VENV_PATH)/bin/black --check .
+	$(KEYSTONE_VENV_PATH)/bin/black --check .
 
 ###############################################################################
 # Container targets
