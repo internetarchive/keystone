@@ -1,18 +1,25 @@
-PYTHON_VERSION = 3.11
+# Read the current user's ID so that we can assign the same ID to "keystone" Docker user.
+UID = $$(id -u)
 
 # where's the Makefile running? Valid options: LOCAL, CI
 ENV ?= LOCAL
 PYTEST_REPORT ?= pytest.xml
 PYLINT_REPORT ?= pylint.json
+VENV_PATH = /home/keystone/venv
+PIP_PATH = $(VENV_PATH)/bin/pip
 
-venv:
-	python3 -m venv venv --prompt . && . \
-	venv/bin/activate && \
-	pip install -U pip setuptools wheel pip-tools
+###############################################################################
+# Setup and Install targets
+###############################################################################
+
+$(VENV_PATH):
+	python3 -m venv $(VENV_PATH) --prompt .
+	$(PIP_PATH) install -U pip setuptools wheel pip-tools
+
+venv: $(VENV_PATH)
 
 requirements.txt: venv
-	venv/bin/pip install -U pip setuptools wheel pip-tools
-	venv/bin/pip-compile \
+	$(PIP_PATH)-compile \
 	--generate-hashes \
 	--output-file requirements.txt \
 	--strip-extras \
@@ -20,7 +27,7 @@ requirements.txt: venv
 
 requirements-dev.txt: requirements.txt
 	echo "--constraint $$(pwd)/requirements.txt" | \
-	venv/bin/pip-compile \
+	$(PIP_PATH)-compile \
 	--generate-hashes \
 	--output-file requirements-dev.txt \
 	--strip-extras \
@@ -28,24 +35,28 @@ requirements-dev.txt: requirements.txt
 	- \
 	pyproject.toml
 
-.PHONY: install
-install:
-	venv/bin/pip-sync requirements-dev.txt
-	venv/bin/pip install --no-deps -e .
+.PHONY: install-dev
+install: venv
+	$(PIP_PATH)-sync requirements-dev.txt
+	$(PIP_PATH) install --no-deps -e .
 
-.PHONY: install-prod
+.PHONY: install
 install-prod:
-	venv/bin/pip-sync requirements.txt
-	venv/bin/pip install --no-deps -e .
+	$(PIP_PATH)-sync requirements.txt
+	$(PIP_PATH) install --no-deps -e .
+
+###############################################################################
+# Development targets
+###############################################################################
 
 .PHONY: test
 test:
 ifeq ($(ENV),LOCAL)
 	@# pass extra params on to pytest: https://stackoverflow.com/a/6273809
-	DJANGO_SETTINGS_MODULE=config.settings venv/bin/pytest $(filter-out $@,$(MAKECMDGOALS))
+	DJANGO_SETTINGS_MODULE=config.settings $(VENV_PATH)/bin/pytest $(filter-out $@,$(MAKECMDGOALS))
 else ifeq ($(ENV),CI)
 	DJANGO_SETTINGS_MODULE=config.settings \
-	   venv/bin/pytest \
+	   $(VENV_PATH)/bin/pytest \
 		--junit-xml=$(PYTEST_REPORT) \
 		--cov=keystone \
 		--cov=config \
@@ -55,23 +66,38 @@ endif
 .PHONY: lint
 lint:
 ifeq ($(ENV),LOCAL)
-	DJANGO_SETTINGS_MODULE=config.settings venv/bin/pylint keystone config
+	DJANGO_SETTINGS_MODULE=config.settings $(VENV_PATH)/bin/pylint keystone config
 else ifeq ($(ENV),CI)
 	DJANGO_SETTINGS_MODULE=config.settings \
-		venv/bin/pylint keystone config \
+		$(VENV_PATH)/bin/pylint keystone config \
 		--output-format=pylint_gitlab.GitlabCodeClimateReporter \
 		--reports=y > $(PYLINT_REPORT)
 endif
 
 .PHONY: format
 format:
-	venv/bin/black .
+	$(VENV_PATH)/bin/black .
 
 .PHONY: ck-format
 ck-format:
-	venv/bin/black --check .
+	$(VENV_PATH)/bin/black --check .
 
-.PHONY: run-prod-containers
-run-prod-containers:
-	# add BUILDKIT_PROGRESS=plain in front for debugging build issues
-	docker-compose -f docker-compose.prod.yml up -d --build
+###############################################################################
+# Container targets
+###############################################################################
+
+.env:
+	cp sample.env .env
+
+arch-shared:
+	mkdir -p arch-shared/in/collections;
+	mkdir arch-shared/log;
+	mkdir -p arch-shared/out/custom-collections;
+	mkdir arch-shared/out/datasets;
+
+dev/arch:
+	git clone --branch=derekenos/become-api-driven-job-server-dockerfile-update git@github.com:helgeho/arch dev/arch
+
+.PHONY: build-images
+build-images: .env dev/arch arch-shared
+	docker compose build --build-arg UID=$(UID)

@@ -20,6 +20,40 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 
+###############################################################################
+# Helpers
+###############################################################################
+
+
+def is_plugin_module_name(mod_name):
+    """Return a bool indicated whether mod_name matches the expected Keystone
+    plugin module name format of: 'keystone_{app_name}_plugin'.
+    """
+    return mod_name.startswith("keystone_") and mod_name.endswith("_plugin")
+
+
+def assert_is_plugin_module_name(mod_name):
+    """Raise an ValueError if mod_name if not a valid plugin module name,
+    otherwise return mod_name."""
+    if not is_plugin_module_name(mod_name):
+        raise ValueError(
+            f"Invalid Keystone plugin module name: '{mod_name}', "
+            "expected: 'keystone_{app_name}_plugin'"
+        )
+    return mod_name
+
+
+def get_plugin_module_app_name(mod_name):
+    """Return the app_name portion of the plugin module name, or raise a ValueError
+    if mod_name is not a valid plugin module name."""
+    return assert_is_plugin_module_name and "_".join(mod_name.split("_")[1:-1])
+
+
+###############################################################################
+# Config
+###############################################################################
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -43,8 +77,15 @@ sentry_sdk.init(
 
 PUBLIC_BASE_URL = env.get("KEYSTONE_PUBLIC_BASE_URL", "")
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+# Note that enabling the Google Colab feature requires that ARCH be
+# configured with a valid githubBearer value, and for this Keystone instance
+# be served at a publicly-accessible URL from which Colab can fetch the data.
+COLAB_DISABLED = env.get("KEYSTONE_COLAB_DISABLED", False)
+
+# Note that publishing to archive.org requires that ARCH be configured
+# with valid arkMintBearer, iaS3AuthHeader, pboxCollection, and pboxS3Url
+# values, which is currently only possible internally within IA.
+PUBLISHING_DISABLED = env.get("KEYSTONE_PUBLISHING_DISABLED", False)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env.get(
@@ -53,11 +94,6 @@ SECRET_KEY = env.get(
 )
 
 PRIVATE_API_KEY = env.get("KEYSTONE_PRIVATE_API_KEY", "supersecret")
-
-AIT_DB_HOST = env.get("KEYSTONE_AIT_DB_HOST", "")
-AIT_DB_NAME = env.get("KEYSTONE_AIT_DB_NAME", "")
-AIT_DB_PORT = env.get("KEYSTONE_AIT_DB_PORT", "")
-AIT_DB_USER = env.get("KEYSTONE_AIT_DB_USER", "")
 
 ARCH_SYSTEM_USER = env.get("KEYSTONE_ARCH_SYSTEM_USER", "")
 ARCH_SYSTEM_API_KEY = env.get("KEYSTONE_ARCH_SYSTEM_API_KEY", "")
@@ -91,8 +127,21 @@ CSRF_TRUSTED_ORIGINS = (
 
 ARCH_SUPPORT_TICKET_URL = "https://arch-webservices.zendesk.com/hc/en-us/requests/new"
 
-# Application definition
+# Get and validate the list of installed Keystone plugins.
+INSTALLED_PLUGINS = list(
+    map(
+        assert_is_plugin_module_name,
+        filter(
+            bool,
+            map(
+                str.strip,
+                env.get("KEYSTONE_INSTALLED_PLUGINS", "").split(","),
+            ),
+        ),
+    )
+)
 
+# Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -102,7 +151,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.staticfiles",
     "keystone",
-]
+] + INSTALLED_PLUGINS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

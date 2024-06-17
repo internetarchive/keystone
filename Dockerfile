@@ -1,35 +1,43 @@
 FROM python:3.11.4-slim-bookworm
 
-ENV HOME=/opt/keystone
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Build using the command: docker build --build-arg UID=$UID . -t keystone
 
-# Create directories and user
-RUN mkdir -p $HOME \
-    && mkdir -p $HOME/staticfiles \
-    && mkdir -p $HOME/mediafiles \
-    && groupadd keystone \
-    && useradd -g keystone keystone
-WORKDIR $HOME
+ARG UID
+ARG DEBIAN_FRONTEND=noninteractive
+ARG KEYSTONE_USER_HOME=/home/keystone
+ARG KEYSTONE_INSTALL_DIR=/opt/keystone
+ARG KEYSTONE_VENV_DIR=/home/keystone/venv
+
+ARG DJANGO_SETTINGS_MODULE=config.settings
+ENV DJANGO_SETTINGS_MODULE $DJANGO_SETTINGS_MODULE
 
 # Install required packages
 RUN apt-get update \
     && apt-get install -y \
     gcc \
+    make \
     python3-dev \
     libpq-dev \
     libpq5 \
-    build-essential \
-    netcat-traditional
+    postgresql-client
 
-# Copy container entrypoint and make it executable
-COPY ./dev/app/entrypoint.prod.sh .
-RUN chmod +x  $HOME/entrypoint.prod.sh
+# Create the keystone user
+RUN useradd --create-home --home-dir=$KEYSTONE_USER_HOME --uid $UID keystone
 
-# Setup Keystone project code
-COPY . $HOME
-RUN chown -R keystone:keystone $HOME
+# Create the log file.
+RUN touch /var/log/keystone.log && chown keystone:keystone /var/log/keystone.log
+
+# Copy in the Keystone source
 USER keystone
-RUN make venv && make install-prod
+WORKDIR $KEYSTONE_INSTALL_DIR
+COPY --chown=keystone ./ .
 
-ENTRYPOINT ["/opt/keystone/entrypoint.prod.sh"]
+# Create a virtualenv and install deps and Keystone into it
+RUN make venv && make install
+
+# Copy in the entrypoint scripts
+COPY --chown=keystone dev/entrypoint.sh /entrypoint.sh
+COPY --chown=keystone dev/entrypoint.py /entrypoint.py
+ENTRYPOINT ["/entrypoint.sh"]
+
+EXPOSE 12342
