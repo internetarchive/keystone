@@ -373,10 +373,20 @@ class DatasetAdmin(KeystoneModelAdmin):
 
     list_display = (
         "job_start",
+        "user",
+        "job_type",
         "state",
         "start_time",
         "finished_time",
     )
+
+    def user(self, dataset):
+        """Return the associated User.username"""
+        return dataset.job_start.user.username
+
+    def job_type(self, dataset):
+        """Return the associated JobType.name"""
+        return dataset.job_start.job_type.name
 
 
 @admin.register(models.ArchQuota)

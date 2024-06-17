@@ -2,8 +2,6 @@ import re
 from datetime import datetime
 
 from django.core.management.base import BaseCommand
-from django.core.management.base import CommandError
-from django.db.utils import IntegrityError
 
 from keystone.arch_api import ArchAPI
 from keystone.models import (
@@ -34,20 +32,23 @@ def normalize_arch_id(arch_id):
 
 
 def get_arch_collection_type(normalized_arch_id):
+    """Return the appropriate Arch ID CollectionTypes value."""
     if normalized_arch_id.startswith("ARCHIVEIT-"):
         return CollectionTypes.AIT
-    elif normalized_arch_id.startswith("CUSTOM-"):
+    if normalized_arch_id.startswith("CUSTOM-"):
         return CollectionTypes.CUSTOM
-    elif normalized_arch_id.startswith("SPECIAL-"):
+    if normalized_arch_id.startswith("SPECIAL-"):
         return CollectionTypes.SPECIAL
     raise ValueError(f"Could not determine type for collection: {normalized_arch_id}")
 
 
 def parse_ait_id(normalized_arch_id):
+    """Return the interger-type AIT collection ID."""
     return int(normalized_arch_id.split("-")[1])
 
 
 def import_user_collections(user):
+    """Import all collection for the specified user."""
     for arch_c in ArchAPI.get_json(user, "collections")["results"]:
         # Normalize the ARCH Collection ID and detect the collection type.
         normalized_arch_id = normalize_arch_id(arch_c["id"])
@@ -90,7 +91,8 @@ def import_user_collections(user):
                 ks_c.metadata = metadata
                 updated = True
                 print(
-                    f"Updated metadata for collection ({ks_c.arch_id}), was: {old_metadata}, id: {metadata}"
+                    f"Updated metadata for collection ({ks_c.arch_id}), "
+                    f"was: {old_metadata}, id: {metadata}"
                 )
 
             if updated:
@@ -113,6 +115,8 @@ def import_user_collections(user):
 
 
 class Command(BaseCommand):
+    """Import ARCH Collections"""
+
     help = "Import ARCH Collections"
 
     def add_arguments(self, parser):

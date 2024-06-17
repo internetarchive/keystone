@@ -6,6 +6,8 @@ from keystone.models import Account
 
 
 class Command(BaseCommand):
+    """Create an Account"""
+
     help = "Create an Account"
 
     def add_arguments(self, parser):

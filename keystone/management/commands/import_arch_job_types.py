@@ -1,6 +1,4 @@
 from django.core.management.base import BaseCommand
-from django.core.management.base import CommandError
-from django.db.utils import IntegrityError
 
 from config import settings
 
@@ -13,6 +11,7 @@ from keystone.models import (
 
 
 def import_job_types():
+    """Import all job types"""
     user = User.objects.get(username=settings.ARCH_SYSTEM_USER)
     for category_section in ArchAPI.get_json(user, "available-jobs"):
         # Create or update the JobCategory instance.
@@ -22,7 +21,8 @@ def import_job_types():
             job_cat = JobCategory.objects.get(name=cat_name)
             if job_cat.description != cat_description:
                 print(
-                    f'Updating category ({cat_name}) description from "{job_cat.description}" to "{cat_description}"'
+                    f"Updating category ({cat_name}) description from "
+                    f'"{job_cat.description}" to "{cat_description}"'
                 )
                 job_cat.description = cat_description
                 job_cat.save()
@@ -87,6 +87,8 @@ def import_job_types():
 
 
 class Command(BaseCommand):
+    """Import ARCH Job Types"""
+
     help = "Import ARCH Job Types"
 
     def handle(self, *args, **options):

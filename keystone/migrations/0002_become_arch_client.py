@@ -135,7 +135,8 @@ class Migration(migrations.Migration):
             field=models.PositiveBigIntegerField(default=0),
         ),
         migrations.RunPython(
-            maybe_create_default_job_start_collection_target, lambda apps, schema_editor: None
+            maybe_create_default_job_start_collection_target,
+            lambda apps, schema_editor: None,
         ),
         migrations.AddField(
             model_name="jobstart",
