@@ -278,7 +278,7 @@ class ArchAPI:
         """Return a WASAPI dataset file listing response."""
         return cls.get(
             user,
-            f"/job/{job_run_uuid}/files",
+            f"/job/{job_run_uuid}/result",
             proxy=True,
             base_download_url=base_download_url,
         )
