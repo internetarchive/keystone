@@ -34,7 +34,7 @@ JOB_TYPE_ID_JOB_CATEGORY_NAME_MAP = {
 }
 
 
-DUMMY_JOB_START_COLLECTION_TARGET_ID = -1
+JOB_START_COLLECTION_DEFAULT = -1
 
 
 migration_dir = path.abspath(
@@ -48,13 +48,16 @@ def read_fixture(filename):
         return json.load(f)
 
 
-def create_dummy_job_start_collection_target(apps, schema_editor):
+def maybe_create_default_job_start_collection_target(apps, schema_editor):
     """All the new JobStart.collection field needs to be set to something for
-    existing rows, so create a dummy value for them to point to."""
+    existing rows, so if rows exist, create a default value for them to point to."""
+    # Abort if no JobStart rows exist.
+    if apps.get_model("keystone", "JobStart").objects.count() == 0:
+        return
     Collection = apps.get_model("keystone", "Collection")
     kwargs = {
-        "id": DUMMY_JOB_START_COLLECTION_TARGET_ID,
-        "name": "Something for the new collection_id field of existing jobstart rows to reference",
+        "id": JOB_START_COLLECTION_DEFAULT,
+        "name": "JobStart.collection migration default",
         "collection_type": "SPECIAL",
     }
     if not Collection.objects.filter(**kwargs).exists():
@@ -132,13 +135,13 @@ class Migration(migrations.Migration):
             field=models.PositiveBigIntegerField(default=0),
         ),
         migrations.RunPython(
-            create_dummy_job_start_collection_target, lambda apps, schema_editor: None
+            maybe_create_default_job_start_collection_target, lambda apps, schema_editor: None
         ),
         migrations.AddField(
             model_name="jobstart",
             name="collection",
             field=models.ForeignKey(
-                default=DUMMY_JOB_START_COLLECTION_TARGET_ID,
+                default=JOB_START_COLLECTION_DEFAULT,
                 on_delete=django.db.models.deletion.PROTECT,
                 to="keystone.collection",
             ),
