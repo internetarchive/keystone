@@ -207,11 +207,16 @@ def collection_detail(request, collection_id):
         ).parameters["conf"]
         # Create the list of input collections.
         input_spec = custom_conf["inputSpec"]
-        input_collections = (
-            [Collection.get_for_input_spec(x) for x in input_spec["specs"]]
-            if input_spec["type"] == "multi-specs"
-            else [Collection.get_for_input_spec(input_spec)]
-        )
+        try:
+            input_collections = (
+                [Collection.get_for_input_spec(x) for x in input_spec["specs"]]
+                if input_spec["type"] == "multi-specs"
+                else [Collection.get_for_input_spec(input_spec)]
+            )
+        except Collection.DoesNotExist:
+            # If for some reason an input_spec can't be resolved to a collection,
+            # set input_collection=None and display a message on the frontend.
+            input_collections = None
         # Create the list of param label/value pairs.
         custom_params = custom_conf["params"]
         custom_param_pairs = []

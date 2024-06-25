@@ -75,6 +75,9 @@
     <div class="card">
       <div class="card-body" id="custom-collection-config">
         <h3>Input Collections</h3>
+        {% if not custom_context["input_collections"] %}
+        <i>An error occurred while retrieving these collections</i>
+        {% else %}
         <ul>
           {% for input_collection in custom_context["input_collections"] %}
           <li>
@@ -84,6 +87,7 @@
           </li>
           {% endfor %}
         </ul>
+        {% endif %}
         {% if custom_context["param_label_value_pairs"] %}
         <h3>Filters</h3>
         <dl>

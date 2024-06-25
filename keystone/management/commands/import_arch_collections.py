@@ -1,13 +1,16 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
 
+from config.settings import KnownArchJobUuids
 from keystone.arch_api import ArchAPI
 from keystone.models import (
     Collection,
     CollectionTypes,
     JobEventTypes,
+    JobStart,
+    JobType,
     User,
 )
 
@@ -45,6 +48,54 @@ def get_arch_collection_type(normalized_arch_id):
 def parse_ait_id(normalized_arch_id):
     """Return the interger-type AIT collection ID."""
     return int(normalized_arch_id.split("-")[1])
+
+
+def ts_to_dt(timestamp):
+    """Return timestampt as a timezone-aware datetime."""
+    return datetime.fromtimestamp(timestamp).replace(tzinfo=timezone.utc)
+
+
+def maybe_create_custom_collection_job_start(collection, params):
+    """Create a JobStart for the specified custom collection so that
+    the collection_detail view will be able to lookup the job params."""
+    if JobStart.objects.filter(collection=collection).exists():
+        return False
+    user = collection.users.first()
+
+    # Pop/parse any specified input/location from params.
+    single_collection_id = params.pop("location", None)
+    collection_ids = params.pop("input", None)
+    # A non-array-type "input" value has been observed in the wild, which we'll
+    # handle here by converting to a single ID.
+    if isinstance(collection_ids, str):
+        single_collection_id = collection_ids
+        collection_ids = None
+    if collection_ids:
+        input_spec = {
+            "type": "multi-specs",
+            "specs": [
+                {"type": "collection", "collectionId": normalize_arch_id(cid)}
+                for cid in collection_ids
+            ],
+        }
+    else:
+        input_spec = {
+            "type": "collection",
+            "collectionId": normalize_arch_id(single_collection_id),
+        }
+
+    JobStart.objects.create(
+        collection=collection,
+        job_type=JobType.objects.get(id=KnownArchJobUuids.USER_DEFINED_QUERY),
+        user=user,
+        input_bytes=collection.size_bytes,
+        sample=False,
+        parameters={"conf": {"inputSpec": input_spec, "params": params}},
+        commit_hash="",
+        # Parse the creation time from the trailing timestamp in arch_id.
+        created_at=ts_to_dt(int(collection.arch_id.rsplit("_", 1)[1][:-3])),
+    )
+    return True
 
 
 def import_user_collections(user):
@@ -95,6 +146,13 @@ def import_user_collections(user):
                     f"was: {old_metadata}, id: {metadata}"
                 )
 
+            if (
+                ks_c.collection_type == CollectionTypes.CUSTOM
+                and maybe_create_custom_collection_job_start(ks_c, arch_c["params"])
+            ):
+                updated = True
+                print(f"Created JobStart for custom collection ({ks_c.arch_id})")
+
             if updated:
                 ks_c.save()
             else:
@@ -111,7 +169,37 @@ def import_user_collections(user):
             ks_c.save()
             ks_c.users.add(user)
 
+            if ks_c.collection_type == CollectionTypes.CUSTOM:
+                maybe_create_custom_collection_job_start(ks_c, arch_c["params"])
+
             print(f"Imported collection ({ks_c.arch_id}) for user ({user.username})")
+
+
+def assert_that_custom_collection_inputs_are_valid():
+    """Check that all input collections referenced by custom-type collection
+    JobStart.parameters.input_spec values actually exist."""
+
+    def assert_exists(custom_collection, input_spec):
+        try:
+            Collection.get_for_input_spec(input_spec)
+        except Collection.DoesNotExist:
+            print(
+                f"JobStart for custom Collection ({custom_collection.arch_id}) "
+                f"specifies invalid input_spec: {input_spec}"
+            )
+
+    for job_start in JobStart.objects.filter(
+        job_type__id=KnownArchJobUuids.USER_DEFINED_QUERY
+    ):
+        # Ignore existing legacy, JobStart rows.
+        if not isinstance(job_start.parameters, dict):
+            continue
+        input_spec = job_start.parameters["conf"]["inputSpec"]
+        if input_spec["type"] == "multi-specs":
+            for spec in input_spec["specs"]:
+                assert_exists(job_start.collection, spec)
+        else:
+            assert_exists(job_start.collection, input_spec)
 
 
 class Command(BaseCommand):
@@ -126,7 +214,7 @@ class Command(BaseCommand):
         username = options.get("username")
         if username:
             import_user_collections(User.objects.get(username=username))
-            return
-
-        for user in User.objects.all():
-            import_user_collections(user)
+        else:
+            for user in User.objects.all():
+                import_user_collections(user)
+        assert_that_custom_collection_inputs_are_valid()
