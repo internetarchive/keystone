@@ -22,6 +22,7 @@ from django.shortcuts import get_object_or_404
 from django.db import IntegrityError, OperationalError, transaction
 from django.db.models import Count, Exists, OuterRef, Q, QuerySet
 from django.templatetags.static import static
+from django.utils.datastructures import MultiValueDict
 from django.http import (
     Http404,
     HttpRequest,
@@ -32,6 +33,7 @@ from django.http import (
 from ninja.errors import HttpError
 from ninja.pagination import paginate
 from ninja.parser import Parser
+from ninja.types import DictStrAny
 from ninja import (
     Field,
     FilterSchema,
@@ -169,9 +171,17 @@ class KeystoneRequestParser(Parser):
     expects.
     """
 
-    def parse_querydict(self, *args, **kwargs):
-        qd = super().parse_querydict(*args, **kwargs)
-        return {dot_to_dunder(k): v for k, v in qd.items()}
+    def parse_querydict(
+        self, data: MultiValueDict, list_fields: List[str], request: HttpRequest
+    ) -> DictStrAny:
+        result: DictStrAny = {}
+        for key in data.keys():
+            final_key = dot_to_dunder(key)
+            if final_key in list_fields:
+                result[final_key] = data.getlist(key)
+            else:
+                result[final_key] = data[key]
+        return result
 
 
 def apply_sort_param(
