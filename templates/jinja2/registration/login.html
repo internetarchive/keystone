@@ -17,7 +17,12 @@
       <input type="password" id='pass' name="password">
       <input type="hidden" name="next" value="{{ next }}">
       <button class='padding-top padding-bottom half small'>Log In</button>
-      <a href="{{ url('password_reset') }}" class='smaller right margin-top one'>Forgot Password?</a>
+      <a href="{{ url('password_reset') }}" class="smaller right margin-top one">Forgot Password?</a>
     </form>
+
+    <p class="smaller" style="text-align: center; padding-top: 1rem; color: #444;">
+      Don't have an ARCH account? <a href="https://webservices.archive.org/pages/arch">Get started here.</a>
+    </p>
+
   </div>
 {% endblock %}
