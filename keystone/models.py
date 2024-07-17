@@ -42,9 +42,7 @@ class Account(models.Model):
     """Top-level for a group of Users."""
 
     name = models.CharField(max_length=255, unique=True)
-    max_users = models.PositiveIntegerField(
-        default=1 if settings.DEPLOYMENT_ENVIRONMENT != "DEV" else 10
-    )
+    max_users = models.PositiveIntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -392,7 +390,7 @@ class JobFile(models.Model):
     filename = models.CharField(max_length=255)
     size_bytes = models.PositiveBigIntegerField()
     mime_type = models.CharField(max_length=255)
-    line_count = models.IntegerField()
+    line_count = models.PositiveBigIntegerField()
     file_type = models.CharField(max_length=32)
     creation_time = models.DateTimeField()
     md5_checksum = models.CharField(max_length=128, null=True)
