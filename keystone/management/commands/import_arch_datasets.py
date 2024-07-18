@@ -114,6 +114,7 @@ MERGED_RECORD_KEYS = {
     "user",
     "uuid",
 }
+STARTED_NOT_FINISHED_RECORD_KEYS = MERGED_RECORD_KEYS - {"finished"}
 
 
 class NotKeystoneUser(Exception):
@@ -150,15 +151,30 @@ def get_merged_dataset_records(json_fh):
         # Merge the records.
         uuid_record_map[uuid] |= record
     # Ensure that every record has a fully-populated field set.
-    dataset_records = uuid_record_map.values()
-    incomplete_dataset_records = [
-        r for r in dataset_records if set(r.keys()) != MERGED_RECORD_KEYS
-    ]
-    if incomplete_dataset_records:
-        raise CommandError(
-            f"Incomplete dataset records:\n{pformat(incomplete_dataset_records)}"
+    incomplete_record_uuids = {
+        uuid for uuid, r in uuid_record_map.items() if set(r.keys()) != MERGED_RECORD_KEYS
+    }
+    # Get UUIDs for records that specify all but the "finished" key, indicating that
+    # they were started but never finished.
+    started_not_finished_record_uuids = {
+        uuid for uuid in incomplete_record_uuids
+        if set(uuid_record_map[uuid].keys()) == STARTED_NOT_FINISHED_RECORD_KEYS
+    }
+    if started_not_finished_record_uuids:
+        # Remove the started-not-finished records from the incomplete list.
+        incomplete_record_uuids -= started_not_finished_record_uuids
+        print(
+            f"Record UUIDs missing a 'finished' key:\n{pformat(started_not_finished_record_uuids)}"
         )
-    return dataset_records
+    if incomplete_record_uuids:
+        raise CommandError(
+            f"Incomplete record UUIDs:\n{pformat(incomplete_record_uuids)}"
+        )
+    # Return only complete/finished records.
+    return [
+        r for uuid, r in uuid_record_map.items()
+        if uuid not in started_not_finished_record_uuids
+    ]
 
 
 def get_job_type(record):
@@ -292,21 +308,26 @@ def maybe_create_job_files(record, user, job_complete):
     if user.username == KEYSTONE_GLOBAL_USER_USERNAME:
         user.__class__ = ArchGlobalUser
 
-    # Specify a long timeout to account for hashing time.
-    for f in ArchAPI.get_json(user, f"job/{record['uuid']}/files", timeout=180):
+    # Disable request timeout because some jobs include tons (e.g. 100K) of files,
+    # and can take a while.
+    for f in ArchAPI.get_json(user, f"job/{record['uuid']}/files", timeout=None):
         job_file_kwargs = {
             "job_complete": job_complete,
             "filename": f["filename"],
             "size_bytes": f["sizeBytes"],
             "mime_type": f["mimeType"],
-            "line_count": f["lineCount"],
+            "line_count": max(f["lineCount"], 0),
             "file_type": f["fileType"],
             "creation_time": datetime.fromisoformat(f["creationTime"]),
             "md5_checksum": f["md5Checksum"],
             "access_token": f["accessToken"],
         }
         if not JobFile.objects.filter(**job_file_kwargs).exists():
-            JobFile.objects.create(**job_file_kwargs)
+            try:
+                JobFile.objects.create(**job_file_kwargs)
+            except Exception:
+                print(f"Error creating JobFile with kwargs: {job_file_kwargs}")
+                raise
             print(f"Imported Dataset ({record['uuid']}) job file: ({f['filename']})")
 
 
@@ -329,7 +350,11 @@ def import_arch_dataset(record):
 def import_arch_datasets(json_fh):
     """Import the dataset represented in the concatenated json file."""
     for dataset_record in get_merged_dataset_records(json_fh):
-        import_arch_dataset(dataset_record)
+        try:
+            import_arch_dataset(dataset_record)
+        except Exception:
+            print(f"Error while attempting to import record: {pformat(dataset_record)}")
+            raise
 
 
 class Command(BaseCommand):
