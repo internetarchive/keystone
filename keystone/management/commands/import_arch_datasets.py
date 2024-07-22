@@ -346,7 +346,15 @@ def import_arch_dataset(record):
     job_start = get_or_create_job_start(record, collection, user, job_type)
     job_complete = get_or_create_job_complete(record, job_start)
     update_dataset(record, job_start, job_complete)
-    maybe_create_job_files(record, user, job_complete)
+    # Temporarily omit WAT/WANE datasets from JobFile import.
+    # see: https://webarchive.jira.com/browse/WT-2870
+    if job_type.id in {
+        settings.KnownArchJobUuids.WEB_ARCHIVE_TRANSFORMATION,
+        settings.KnownArchJobUuids.NAMED_ENTITIES,
+    }:
+        print(f"Skipping JobFile import for WAT/WANE Dataset: {record['uuid']}")
+    else:
+        maybe_create_job_files(record, user, job_complete)
 
 
 def import_arch_datasets(json_fh):

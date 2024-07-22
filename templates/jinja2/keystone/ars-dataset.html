@@ -14,6 +14,7 @@
 {% set wasapi_result_abs_url = abs_url('wasapi:file_listing', args=[dataset.id]) %}
 
 {% set job_params_schema = dataset.job_start.job_type.parameters_schema %}
+{% set file_count = dataset.job_start.jobcomplete.jobfile_set.count() %}
 
 {% set breadcrumbs = (("Datasets", "datasets-explore"), (dataset_displayname, ("dataset-detail", dataset.id))) %}
 {% extends 'keystone/base.html' %}
@@ -57,13 +58,15 @@
     <p>
       {{ dataset.job_start.job_type.description }}
     </p>
+    {% if file_count > 0 %}
     <div class="card">
       <div class="card-body">
         <p class="card-text">
-          <strong>Number of files</strong>: {{ dataset.job_start.jobcomplete.jobfile_set.count() }}
+          <strong>Number of files</strong>: {{ file_count }}
         </p>
       </div>
     </div>
+    {% endif %}
     <div class="card">
       <div class="card-body">
         <h2 id="download" class="card-title">Download</h2>

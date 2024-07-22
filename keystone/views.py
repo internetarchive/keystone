@@ -309,14 +309,9 @@ def dataset_file_download(request, dataset_id, filename):
     """Download a Dataset file."""
     access_token = request.GET.get("access")
     if access_token is not None:
-        # Do an anonumous, access_key-based download request.
+        # Do an anonymous, access_key-based download request.
         user = AnonymousUser()
         dataset = get_object_or_404(Dataset, id=dataset_id)
-        job_file = get_object_or_404(
-            JobFile, job_complete__job_start=dataset.job_start, filename=filename
-        )
-        if access_token != job_file.access_token:
-            return HttpResponseForbidden()
     else:
         # Do a non-access_key-based / potentially-logged-in-user download request.
         # Lookup the Dataset using request.user.
