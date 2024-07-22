@@ -81,6 +81,8 @@ class User(AbstractUser):
     @property
     def arch_username(self):
         """Return the user's corresponding ARCH username."""
+        if self.username == settings.GLOBAL_USER_USERNAME:
+            return settings.ARCH_GLOBAL_USERNAME
         return f"ks:{self.username}"
 
     def save(self, *args, **kwargs):

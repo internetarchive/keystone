@@ -88,6 +88,7 @@ from django.core.management.base import (
     CommandError,
 )
 
+from config import settings
 from keystone.arch_api import ArchAPI
 from keystone.models import (
     Account,
@@ -102,9 +103,6 @@ from keystone.models import (
 )
 
 
-ARCH_GLOBAL_USERNAME = "arch:__global__"
-KEYSTONE_GLOBAL_USER_USERNAME = "global-datasets"
-KEYSTONE_GLOBAL_USER_ACCOUNT_NAME = KEYSTONE_GLOBAL_USER_USERNAME + "-account"
 MERGED_RECORD_KEYS = {
     "conf",
     "finished",
@@ -152,12 +150,15 @@ def get_merged_dataset_records(json_fh):
         uuid_record_map[uuid] |= record
     # Ensure that every record has a fully-populated field set.
     incomplete_record_uuids = {
-        uuid for uuid, r in uuid_record_map.items() if set(r.keys()) != MERGED_RECORD_KEYS
+        uuid
+        for uuid, r in uuid_record_map.items()
+        if set(r.keys()) != MERGED_RECORD_KEYS
     }
     # Get UUIDs for records that specify all but the "finished" key, indicating that
     # they were started but never finished.
     started_not_finished_record_uuids = {
-        uuid for uuid in incomplete_record_uuids
+        uuid
+        for uuid in incomplete_record_uuids
         if set(uuid_record_map[uuid].keys()) == STARTED_NOT_FINISHED_RECORD_KEYS
     }
     if started_not_finished_record_uuids:
@@ -172,7 +173,8 @@ def get_merged_dataset_records(json_fh):
         )
     # Return only complete/finished records.
     return [
-        r for uuid, r in uuid_record_map.items()
+        r
+        for uuid, r in uuid_record_map.items()
         if uuid not in started_not_finished_record_uuids
     ]
 
@@ -206,17 +208,17 @@ def get_collection(record):
 def get_or_create_global_datasets_user():
     """Get or create a user to serve as the global datasets owner."""
     try:
-        return User.objects.get(username=KEYSTONE_GLOBAL_USER_USERNAME)
+        return User.objects.get(username=settings.GLOBAL_USER_USERNAME)
     except User.DoesNotExist:
         pass
     # Get or create the global user account.
     try:
-        account = Account.objects.get(name=KEYSTONE_GLOBAL_USER_ACCOUNT_NAME)
+        account = Account.objects.get(name=settings.GLOBAL_USER_ACCOUNT_NAME)
     except Account.DoesNotExist:
-        account = Account.objects.create(name=KEYSTONE_GLOBAL_USER_ACCOUNT_NAME)
+        account = Account.objects.create(name=settings.GLOBAL_USER_ACCOUNT_NAME)
     return User.objects.create(
-        username=KEYSTONE_GLOBAL_USER_USERNAME,
-        email=f"{KEYSTONE_GLOBAL_USER_USERNAME}+arch@archive.org",
+        username=settings.GLOBAL_USER_USERNAME,
+        email=f"{settings.GLOBAL_USER_USERNAME}+arch@archive.org",
         account=account,
     )
 
@@ -224,7 +226,7 @@ def get_or_create_global_datasets_user():
 def get_user(record):
     """Attempt to retrieve the User."""
     record_user = record["user"]
-    is_global = record_user == ARCH_GLOBAL_USERNAME
+    is_global = record_user == settings.ARCH_GLOBAL_USERNAME
     if is_global:
         return get_or_create_global_datasets_user()
     if not record_user.startswith("ks:"):
@@ -298,14 +300,14 @@ class ArchGlobalUser(User):
 
     @property
     def arch_username(self):
-        return ARCH_GLOBAL_USERNAME
+        return settings.ARCH_GLOBAL_USERNAME
 
 
 def maybe_create_job_files(record, user, job_complete):
     """Ensure a JobFile exists for each item in the ARCH API /api/job/{uuid}/files
     response."""
     # If user is the global import user, cast it to ArchGlobalUser.
-    if user.username == KEYSTONE_GLOBAL_USER_USERNAME:
+    if user.username == settings.GLOBAL_USER_USERNAME:
         user.__class__ = ArchGlobalUser
 
     # Disable request timeout because some jobs include tons (e.g. 100K) of files,

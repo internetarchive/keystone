@@ -103,6 +103,13 @@ ARCH_API_BASE_URL = env.get("KEYSTONE_ARCH_API_BASE_URL", "")
 ARCH_FILES_BASE_URL = env.get("KEYSTONE_ARCH_FILES_BASE_URL", "")
 ARCH_WASAPI_BASE_URL = env.get("KEYSTONE_ARCH_WASAPI_BASE_URL", "")
 
+# Define the user to which we want ARCH to internally attribute global datasets.
+ARCH_GLOBAL_USERNAME = env.get("KEYSTONE_ARCH_GLOBAL_USER", "arch:__global__")
+
+# Define the Keystone user we want to serve as the owner of global datasets.
+GLOBAL_USER_USERNAME = "global-datasets"
+GLOBAL_USER_ACCOUNT_NAME = GLOBAL_USER_USERNAME + "-account"
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.get("KEYSTONE_DJANGO_DEBUG", "false") == "true"
 DB_QUERY_DEBUG = False

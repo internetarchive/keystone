@@ -51,7 +51,9 @@ from pydantic import PositiveInt
 
 
 from config.settings import (
+    ARCH_GLOBAL_USERNAME,
     ARCH_SUPPORT_TICKET_URL,
+    GLOBAL_USER_USERNAME,
     PUBLIC_BASE_URL,
     PRIVATE_API_KEY,
     KnownArchJobUuids,
@@ -799,10 +801,13 @@ def register_job_start(request, payload: JobStartIn):
     """Tell Keystone a user has started a job."""
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
     username = payload.username
-    # Strip any specified "ks:" username prefix.
-    user = get_object_or_404(
-        User, username=username[3:] if username.startswith("ks:") else username
-    )
+    # Maybe retrieve the global dataset user, or strip any "ks:" username
+    # prefix.
+    if username == ARCH_GLOBAL_USERNAME:
+        username = GLOBAL_USER_USERNAME
+    elif username.startswith("ks:"):
+        username = username[3:]
+    user = get_object_or_404(User, username=username)
 
     parameters = payload.parameters
 

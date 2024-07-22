@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('keystone', '0012_alter_account_max_users'),
+        ("keystone", "0012_alter_account_max_users"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='jobfile',
-            name='line_count',
+            model_name="jobfile",
+            name="line_count",
             field=models.PositiveBigIntegerField(),
         ),
     ]
