@@ -249,7 +249,7 @@ def get_or_create_job_start(record, collection, user, job_type):
             collection=collection,
             job_type=job_type,
             user=user,
-            sample=record["conf"]["sample"] == -1,
+            sample=record["conf"]["sample"] != -1,
             parameters={"imported": True},
             commit_hash="",
             created_at=ts_to_dt(record["started"]),

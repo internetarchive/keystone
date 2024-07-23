@@ -64,7 +64,7 @@ class ArchAPI:
         expect_response_body=JSON,
         proxy=False,
         follow_redirects=True,
-        timeout=30,
+        timeout=120,
         **params,
     ):
         """Issue an ARCH API request."""
