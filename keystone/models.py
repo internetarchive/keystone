@@ -442,10 +442,16 @@ class Dataset(models.Model):
         # Include datasets which are either:
         #  - owned by the specified user
         #  - owned by a user who is a teammate of the specified user and for
-        #    which the team is authorized to access the dataset.
+        #    which the team is authorized to access the dataset
+        #  - owned by the global datasets user and is associated with a
+        #    collection to which the user has access
         return Dataset.objects.filter(
             Q(job_start__user=user)
             | (Q(teams=F("job_start__user__teams")) & Q(teams__members=user))
+            | (
+                Q(job_start__user__username=settings.GLOBAL_USER_USERNAME)
+                & Q(job_start__collection__users=user)
+            )
         ).distinct()
 
     @classmethod
