@@ -6,7 +6,7 @@
     + dataset.job_start.job_type.name
     + " ("
     + ("Sample, " if dataset.job_start.sample else "")
-    + dataset.job_start.created_at.strftime("%m-%d-%Y %H:%M")
+    + dataset.job_start.created_at.strftime("%Y-%m-%d %H:%M")
     + ")"
   )
 %}
