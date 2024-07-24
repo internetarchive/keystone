@@ -20,7 +20,8 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError, OperationalError, transaction
-from django.db.models import Count, Exists, OuterRef, Q, QuerySet
+from django.db.models import Count, Exists, OuterRef, Q, QuerySet, Subquery
+from django.db.models.functions import Coalesce
 from django.templatetags.static import static
 from django.utils.datastructures import MultiValueDict
 from django.http import (
@@ -986,6 +987,16 @@ def user_can_run_job(
 def list_collections(request, filters: CollectionFilterSchema = Query(...)):
     """Retrieve a user's Collections, including in-progress and finished, but
     not cancelled or failed, Custom collections."""
+    # https://stackoverflow.com/a/65613047
+    datasets_count_subquery = Subquery(
+        Dataset.user_queryset(request.user)
+        .filter(job_start__collection__id=OuterRef("id"), state=JobEventTypes.FINISHED)
+        .order_by()
+        .values("job_start__collection__id")
+        .annotate(count=Count("id", distinct=True))
+        .values("count")
+    )
+
     queryset = filters.filter(
         Collection.user_queryset(request.user)
         .exclude(
@@ -993,17 +1004,7 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
             Q(metadata__state__isnull=False)
             & Q(metadata__state__in=(JobEventTypes.CANCELLED, JobEventTypes.FAILED))
         )
-        .annotate(
-            dataset_count=Count(
-                "jobstart__dataset__id",
-                filter=Q(jobstart__dataset__state=JobEventTypes.FINISHED)
-                & (
-                    Q(jobstart__user=request.user)
-                    | Q(jobstart__dataset__teams__members=request.user)
-                ),
-                distinct=True,
-            )
-        )
+        .annotate(dataset_count=Coalesce(datasets_count_subquery, 0))
     )
     collections = list(apply_sort_param(request, queryset, CollectionSchema))
 
