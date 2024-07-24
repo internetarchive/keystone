@@ -111,7 +111,7 @@
               <strong>Result count</strong>:  {{ file.line_count }} lines
               <br />
               {% endif %}
-              <strong>Date completed</strong>:  {{ file.creation_time.date() }}
+              <strong>Date completed</strong>:  {{ dataset.finished_time.date() }}
               {% if file.md5_checksum: %}
               <br />
               <strong>MD5 Checksum</strong>: {{ file.md5_checksum }}
