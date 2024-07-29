@@ -1,0 +1,6 @@
+Hello {{ username }},
+
+ARCH has created your custom collection, “{{ collection_name }}.” You may find and use it here: {{ collection_url }}
+
+Best,
+The ARCH team

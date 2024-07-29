@@ -1,4 +1,4 @@
-import { FilteredApiResponse, DistinctApiResponse } from "./types";
+import { FilteredApiResponse } from "./types";
 
 import { DataTable } from "./webservices/src/aitDataTable/src/types";
 
@@ -12,11 +12,24 @@ export default class API<RowT> {
     // a 'count' property, which we will use to manually update the DataTable hit
     // count in DataTableAPIAdapter.get().
     dataTable.doTotalHitsQuery = () => new Promise(() => null);
+
+    // Override DataTable.getHitsOrDistinctQueryApiPath(), which having already
+    // noop'd doTotalHitsQuery() will only ever be called for distinct filter values,
+    // to query a dedicated, collection-specific filter option endpoint instead of
+    // the same endpoint as is used to retrieve the collection objects but with the
+    // addition of the distinct={fieldName} query param so that we don't need to
+    // implement a polymorphic response type on the collection object endpoints.
+
+    dataTable.getHitsOrDistinctQueryApiPath = (extraParams = {}) => {
+      const field = extraParams.distinct;
+      const { apiCollectionEndpoint } = dataTable.props;
+      return `${apiCollectionEndpoint}/filter_values?field=${field}`;
+    };
   }
 
   async get(apiPath: string) {
-    // Construct a dummy URL value from the API path.
-    const url = new URL(`http://fake.com${apiPath}`);
+    // Create a URL from the relative API path.
+    const url = new URL(apiPath, window.location.origin);
     const { searchParams } = url;
 
     // Remove unsupported params.
@@ -50,13 +63,19 @@ export default class API<RowT> {
           accept: "application/json",
         },
       })
-    ).json()) as FilteredApiResponse<RowT> | DistinctApiResponse<RowT>;
+    ).json()) as FilteredApiResponse<RowT>;
 
-    // Read the total results count.
-    const { count } = response;
+    // Determine whether we should update the hit count with the
+    // response from this query.
+    const shouldUpdateNumHits =
+      // Not a single record query (e.g. polling of dataset in active state)
+      !searchParams.has("id") &&
+      // Not a field facet values query.
+      !url.pathname.endsWith("/filter_values");
 
-    // If request was not a distinct / facets query, update the dataTable hit counts.
-    if (!searchParams.has("distinct")) {
+    // If request was not a facets query, update the dataTable hit counts.
+    if (shouldUpdateNumHits) {
+      const { count } = response;
       const dataTable = this.dataTable;
       const { selectable } = dataTable.props;
       const { search } = dataTable.state;
@@ -72,7 +91,7 @@ export default class API<RowT> {
     // return the requested object, i.e. the 'results' part of the ARCH API
     // response. So let's give it what it wants.
     return {
-      json: () => Promise.resolve(response.results),
+      json: () => Promise.resolve(response.items),
     };
   }
 }

@@ -1,4 +1,20 @@
+import datetime
+
 from django.conf import settings as _settings
+from django.shortcuts import reverse
+
+from keystone.models import CollectionTypes
+
+
+def extra_builtins(request):
+    """Make additional Python built-ins available in templates."""
+    return {
+        "datetime": datetime,
+        "isinstance": isinstance,
+        "list": list,
+        "str": str,
+        "tuple": tuple,
+    }
 
 
 def settings(request):
@@ -6,6 +22,15 @@ def settings(request):
     return {
         "settings": {
             "KEYSTONE_GIT_COMMIT_HASH": _settings.KEYSTONE_GIT_COMMIT_HASH,
-            "ARCH_LOGIN_URL": _settings.ARCH_LOGIN_URL,
         }
+    }
+
+
+def helpers(request):
+    """Extra template helpers."""
+    return {
+        "abs_url": (
+            lambda path, args: _settings.PUBLIC_BASE_URL + reverse(path, args=args)
+        ),
+        "CollectionTypes": CollectionTypes,
     }

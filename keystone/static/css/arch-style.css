@@ -36,28 +36,85 @@ button:hover {
 }
 /* End partner-site styles accessability improvements */
 
+/* Begin global element styles */
+dl {
+  margin-block-start: 0;
+  margin-block-end: 0;
+}
+
+dl > div {
+  margin-bottom: 1rem;
+}
+
+dl > div:last-child {
+  margin-bottom: 0;
+}
+
+dt {
+  display: inline;
+  font-weight: bold;
+}
+
+dt:after {
+  content: ":";
+  margin-right: 0.5em;
+}
+
+dd {
+  display: inline;
+  margin: 0;
+  line-height: 1.2em;
+  font-style: italic;
+}
+
+dd::after {
+  content: ",";
+  padding-right: 0.2em;
+}
+
+dd:last-child::after {
+  content: none;
+  padding-right: 0;
+}
+/* End global element styles */
+
+/* Begin collection detail view custom collection config */
+#custom-collection-config > h3 {
+  font-size: 1.1rem;
+}
+
+#custom-collection-config > ul {
+  padding-inline-start: 1rem;
+}
+
+#custom-collection-config > dl {
+  display: grid;
+  grid-template-columns: max-content auto;
+}
+
+#custom-collection-config > dl > dt {
+  grid-column-start: 1;
+  font-weight: normal;
+  padding-inline-start: 1rem;
+}
+
+#custom-collection-config > dl > dd {
+  grid-column-start: 2;
+  line-height: inherit;
+  margin-bottom: 0;
+}
+
+#custom-collection-config > dl > dd::after {
+  content: "";
+}
+
+#custom-collection-config > dl > dd > em {
+  font-weight: bold;
+}
+/* End collection detail view custom collection config */
+
 div.job-card-flex {
     display: flex;
-}
-
-div.job-card-sample {
-    padding-right: 1%;
-    font-size: 90%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 50%
-}
-
-div.job-card-full {
-    padding-left: 1%;
-    font-size: 90%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 50%
 }
 
 div.dataset-info {
@@ -72,46 +129,6 @@ div.dataset-download {
     flex-direction: column;
     align-items: center;
     width: 20%
-}
-
-button.job-button {
-    display: none;
-}
-
-button.job-runbutton {
-    font-weight: bold;
-    min-width: 100%;
-    float: left;
-    background-color: #052c65;
-    color: #fff;
-}
-
-button.job-rerunbutton {
-    color: #fff;
-    background-color: #dc3545;
-    border-color: #dc3545;
-    display: block;
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    font-weight: bold;
-}
-
-button.job-statebutton {
-    font-weight: bold;
-    min-width: 100%;
-    background-color: #f0f0f0;
-    color: #222;
-    float: left;
-    cursor: wait;
-}
-
-a.button.job-resultsbutton {
-    font-weight: bold;
-    min-width: 100%;
-    background-color: #1e7b34;
-    color: #fff;
-    float: left;
 }
 
 button.download-button {
@@ -150,8 +167,9 @@ div.graph-description {
     max-height: 100%;
 }
 
-div#csv-preview {
-    height: 30em;
+.csv-preview [data-preview-url] {
+    min-height: 2em;
+    max-height: 30em;
     overflow: auto;
 }
 
@@ -224,6 +242,21 @@ div#csv-preview {
     float: left;
     max-height: 5em;
     width: auto;
+}
+
+/*
+ * Collection Detail Page
+ */
+
+#collection-metadata-wrapper {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+
+#public-collection-link {
+  margin-top: 1rem;
+  text-align: center;
 }
 
 /*
@@ -307,6 +340,13 @@ div.new-job-link {
     text-align: center;
     margin: auto;
     width: 50%;
+}
+
+#unimpersonate {
+    background-color: orange;
+    color: mediumblue;
+    font-weight: bold;
+    border-radius: 8px;
 }
 
 /* Override the default partner-site css center column width */

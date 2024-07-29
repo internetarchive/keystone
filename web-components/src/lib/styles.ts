@@ -12,31 +12,36 @@ import {
   successButtonFgColor,
 } from "./webservices/src/lib/styles";
 
+export const archLogoBackgroundColor = css`#2991cc`;
+export const archLogoForegroundColor = css`#fff`;
+export const headerBackgroundColor = css`#dce0e0`;
+export const footerBackgroundColor = css`#dce0e0`;
+
 /* Bootstrap4 Constants */
-const bsPrimaryTextEmphasis = css`#052c65`;
-const bsSecondaryTextEmphasis = css`#2b2f32`;
-const bsSuccessTextEmphasis = css`#0a3622`;
-const bsInfoTextEmphasis = css`#055160`;
-const bsWarningTextEmphasis = css`#664d03`;
-const bsDangerTextEmphasis = css`#58151c`;
-const bsLightTextEmphasis = css`#495057`;
-const bsDarkTextEmphasis = css`#495057`;
-const bsPrimaryBgSubtle = css`#cfe2ff`;
-const bsSecondaryBgSubtle = css`#e2e3e5`;
-const bsSuccessBgSubtle = css`#d1e7dd`;
-const bsInfoBgSubtle = css`#cff4fc`;
-const bsWarningBgSubtle = css`#fff3cd`;
-const bsDangerBgSubtle = css`#f8d7da`;
-const bsLightBgSubtle = css`#fcfcfd`;
-const bsDarkBgSubtle = css`#ced4da`;
-const bsPrimaryBorderSubtle = css`#9ec5fe`;
-const bsSecondaryBorderSubtle = css`#c4c8cb`;
-const bsSuccessBorderSubtle = css`#a3cfbb`;
-const bsInfoBorderSubtle = css`#9eeaf9`;
-const bsWarningBorderSubtle = css`#ffe69c`;
-const bsDangerBorderSubtle = css`#f1aeb5`;
-const bsLightBorderSubtle = css`#e9ecef`;
-const bsDarkBorderSubtle = css`#adb5bd`;
+export const bsPrimaryTextEmphasis = css`#052c65`;
+export const bsSecondaryTextEmphasis = css`#2b2f32`;
+export const bsSuccessTextEmphasis = css`#0a3622`;
+export const bsInfoTextEmphasis = css`#055160`;
+export const bsWarningTextEmphasis = css`#664d03`;
+export const bsDangerTextEmphasis = css`#58151c`;
+export const bsLightTextEmphasis = css`#495057`;
+export const bsDarkTextEmphasis = css`#495057`;
+export const bsPrimaryBgSubtle = css`#cfe2ff`;
+export const bsSecondaryBgSubtle = css`#e2e3e5`;
+export const bsSuccessBgSubtle = css`#d1e7dd`;
+export const bsInfoBgSubtle = css`#cff4fc`;
+export const bsWarningBgSubtle = css`#fff3cd`;
+export const bsDangerBgSubtle = css`#f8d7da`;
+export const bsLightBgSubtle = css`#fcfcfd`;
+export const bsDarkBgSubtle = css`#ced4da`;
+export const bsPrimaryBorderSubtle = css`#9ec5fe`;
+export const bsSecondaryBorderSubtle = css`#c4c8cb`;
+export const bsSuccessBorderSubtle = css`#a3cfbb`;
+export const bsInfoBorderSubtle = css`#9eeaf9`;
+export const bsWarningBorderSubtle = css`#ffe69c`;
+export const bsDangerBorderSubtle = css`#f1aeb5`;
+export const bsLightBorderSubtle = css`#e9ecef`;
+export const bsDarkBorderSubtle = css`#adb5bd`;
 
 /**
  * Global Web Component Styles
@@ -63,7 +68,9 @@ export const global = css`
     color: ${defaultButtonFgColor};
   }
 
-  button:disabled {
+  button:disabled,
+  input:disabled,
+  select:disabled {
     cursor: default;
   }
 
@@ -160,11 +167,16 @@ export const global = css`
     color: rgba(0, 0, 0, 0.75);
     font-size: 0.875rem;
     padding: 0.5rem;
+    cursor: pointer;
   }
 
   label.required:after {
     content: "*";
     color: red;
+  }
+
+  .hidden {
+    display: none;
   }
 `;
 

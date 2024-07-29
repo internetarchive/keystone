@@ -1,0 +1,190 @@
+
+{%
+  set dataset_displayname = (
+    dataset.job_start.collection.name
+    + ": "
+    + dataset.job_start.job_type.name
+    + " ("
+    + ("Sample, " if dataset.job_start.sample else "")
+    + dataset.job_start.created_at.strftime("%Y-%m-%d %H:%M")
+    + ")"
+  )
+%}
+
+{% set job_params_schema = dataset.job_start.job_type.parameters_schema %}
+
+{% set breadcrumbs = (("Datasets", "datasets-explore"), (dataset_displayname, ("dataset-detail", dataset.id))) %}
+
+{% extends 'keystone/base.html' %}
+
+{% block header_title %}
+  {{ dataset_displayname }}
+{% endblock %}
+
+{% block head_extra %}
+<script src="{{ static('/js/arch-dataset-teams-selector.js') }}" type="module"></script>
+{% if not publishing_disabled and dataset.job_start.job_type.can_publish %}
+<script src="{{ static('/js/arch-dataset-publishing-card.js') }}" type="module"></script>
+{% endif %}
+
+<script src="{{ static('/js/ext/d3.v3.min.js') }}"></script>
+
+<script>
+  function init() {
+    // Initialize previews.
+    Array.from(document.querySelectorAll("div[data-preview-url]"))
+      .forEach(el => {
+        const {previewUrl} = el.dataset;
+        // Show a loading indicator.
+        const loadingEl = document.createElement("arch-loading-indicator");
+        el.appendChild(loadingEl);
+        d3.text(previewUrl, data => {
+          const previewCSV = d3.csv.parseRows(data);
+          // Remove the loading indicator.
+          loadingEl.remove();
+          const previewTbl = d3.select(el)
+                .append("table")
+                .attr("class", "large-12 columns margin-top one csv-preview");
+          previewTbl.append("thead")
+            .append("tr")
+            .selectAll("th")
+            .data(previewCSV[0])
+            .enter().append("th")
+            .text(function(d) {
+              return d;
+            });
+          previewTbl.append("tbody")
+            .selectAll("tr")
+            .data(previewCSV.slice(1))
+            .enter().append("tr")
+
+            .selectAll("td")
+            .data(function(d) { return d; }).enter()
+            .append("td")
+            .text(function(d) { return d; });
+        });
+      });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => init());
+</script>
+{% endblock %}
+
+{% block content %}
+<br>
+<br>
+<div class="row">
+  <div class="large-12 columns">
+
+    {% if job_params_schema %}
+    <h2 id="datasets">Configuration</h2>
+    <p>
+      The configuration used to generate this Dataset.
+    </p>
+    <div class="card">
+      <div class="card-body">
+        <dl>
+          {% for param_key, param_schema in job_params_schema["properties"].items() %}
+          <dt>{{ param_schema["title"] }}</dt>
+          <dd>{{ dataset.job_start.parameters["conf"]["params"][param_key] }}</dd>
+          {% endfor %}
+        </dl>
+      </div>
+    </div>
+    {% endif %}
+
+    <h2 id="datasets">File(s)</h2>
+    <p>
+      {{ dataset.job_start.job_type.description }} For help and information, see: <a href="https://arch-webservices.zendesk.com/hc/en-us/articles/17137082448276" target="_blank">How to download and open ARCH datasets.</a>
+    </p>
+    {% for file in files: %}
+    <div class="card">
+      <div class="card-body">
+        <div class="job-card-flex">
+          <div class="dataset-info">
+            <p class="card-text">
+              <strong>File name</strong>: {{ file.filename }}
+              <br />
+              <strong>File size</strong>: {{ file.size_bytes | filesizeformat }}
+              <br />
+              {% if file.line_count != -1: %}
+              <strong>Result count</strong>:  {{ file.line_count }} lines
+              <br />
+              {% endif %}
+              <strong>Date completed</strong>:  {{ dataset.finished_time.date() }}
+              {% if file.md5_checksum: %}
+              <br />
+              <strong>MD5 Checksum</strong>: {{ file.md5_checksum }}
+              {% endif %}
+            </p>
+          </div>
+
+          <div class="dataset-download">
+            <a href="{{ url('dataset-file-download', args=[dataset.id, file.filename]) }}" target="_blank">
+              <i class="fa fa-cloud-download fa-5x"></i>
+              <p class="card-text center">Download</p>
+            </a>
+            {% if not colab_disabled and file.size_bytes < 1000000000 %}
+            <a href="{{ url('dataset-file-colab', args=[dataset.id, file.filename]) }}" target="_blank">
+              <img style="padding-top:15px;" src="{{ static('/img/colab-badge.svg') }}" alt="Open In Colab">
+            </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% block visualization %}
+    {% endblock %}
+
+    {% if show_single_file_preview %}
+    <h2 id="preview" class="card-title">Preview</h2>
+    <div class="card">
+      <div class="card-body csv-preview">
+        <div data-preview-url="{{ url('dataset-file-preview', args=[dataset.id, files[0].filename]) }}"></div>
+        <br />
+        <a class="right" href="{{ url('dataset-file-preview', args=[dataset.id, files[0].filename]) }}" target="_blank"><arch-hover-tooltip style="color: inherit;" text="Download a csv of only the data listed in the preview">Download Preview Data</arch-hover-tooltip></a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if is_owner and user_teams %}
+    <h2 id="teams">Teams</h2>
+    <p>Share this dataset with your teammates.</p>
+    <div class="card">
+      <div class="card-body">
+        <arch-dataset-teams-selector
+          datasetId="{{ dataset.id }}"
+          userTeams='{{ user_teams | tojson }}'
+          datasetTeams='{{ dataset_teams | tojson }}'
+        >
+        </arch-dataset-teams-selector>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not publishing_disabled and dataset.job_start.job_type.can_publish %}
+    <h2 id="publishing">Publishing</h2>
+    {% if is_owner %}
+    <p>Publish this dataset to <a href="https://archive.org">archive.org</a> for public access.</p>
+    {% else %}
+    <p>Information about this dataset's publication to <a href="https://archive.org">archive.org</a>.</p>
+    {% endif %}
+    <div class="card">
+      <div class="card-body">
+        <arch-dataset-publishing-card
+          datasetId="{{ dataset.id }}"
+          csrfToken="{{ csrf_token }}"
+          {{ "" if is_owner else "readOnly" }}
+        >
+        </arch-dataset-publishing-card>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

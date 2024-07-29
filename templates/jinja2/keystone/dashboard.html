@@ -1,16 +1,20 @@
 {% set breadcrumbs = (("Home", "dashboard"),) %}
-{% extends 'registration/base_not_logged_in.html' %}
+{% extends 'keystone/base.html' %}
 
 {% block header_title %}
 Dashboard
 {% endblock %}
 
 {% block head_extra %}
+  <script src="{{ static('/js/arch-collections-card.js') }}" type="module"></script>
+  <script src="{{ static('/js/arch-recent-datasets-card.js') }}" type="module"></script>
 {% endblock %}
 
 {% block content %}
 <div class="row">
   <div class="card-container">
+    <arch-collections-card></arch-collections-card>
+    <arch-recent-datasets-card></arch-recent-datasets-card>
   </div>
 </div>
 {% endblock %}

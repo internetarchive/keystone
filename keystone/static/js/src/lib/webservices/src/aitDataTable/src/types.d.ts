@@ -56,6 +56,7 @@ export interface DataTable<RowT> extends HTMLElement {
         pluralName: string;
         rowClickEnabled: boolean;
         rowIdColumn: string;
+        rowSelectDisabledCallback: (row: RowT) => boolean;
         searchColumns: Array<string>;
         searchColumnLabels: Array<string>;
         selectAllExtraQueryParams: Record<string, string> | null;
@@ -68,6 +69,7 @@ export interface DataTable<RowT> extends HTMLElement {
         selectAllCheckbox: DataTableSelectAllCheckbox;
     };
     doTotalHitsQuery: () => Promise<null>;
+    getHitsOrDistinctQueryApiPath: (extraParams: Record<string, string>, excludeFilters: boolean) => string;
     postSelectionChangeHandler: () => void;
     setSelectionActionButtonDisabledState: (disabled: boolean) => void;
     throttledDoSearch: (resetPageNum?: boolean) => Promise<null>;

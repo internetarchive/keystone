@@ -6,3 +6,5 @@ keystone.egg-info
 .python-version
 .env
 *.DS_Store
+dev/arch
+arch-shared/

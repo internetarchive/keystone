@@ -1,0 +1,70 @@
+{% set show_viz = dataset.job_start.jobcomplete.jobfile_set.filter(line_count__gt=0).exists() %}
+
+{% extends 'keystone/aut-dataset.html' %}
+
+
+{% block head_extra %}
+{{ super() }}
+
+<script src="{{ static('/js/ext/Chart.min.js') }}"></script>
+
+<script>
+  async function initSampleViz() {
+    // Show a loading indicator.
+    const chartTargetEl = document.getElementById("chartjs-1");
+    const loadingEl = document.createElement("arch-loading-indicator");
+    chartTargetEl.parentElement.insertBefore(loadingEl, chartTargetEl);
+    const res = await fetch("/api/datasets/{{ dataset.id }}/sample_viz_data");
+    if (!res.ok) {
+      return;
+    }
+    const { nodes: data } = await res.json()
+    // Remove the loading indicator.
+    loadingEl.remove();
+    if (data.length === 0) {
+      return;
+    }
+
+    new Chart(chartTargetEl, {
+      type: "doughnut",
+      data: {
+        labels: data.map(x => `"${x[0]}"`),
+        datasets: [{
+          label: "",
+          data: data.map(x => x[1]),
+          fill: false,
+          backgroundColor: ["#006fff", "#53b4e8", "#68ff00", "#ffa638", "#ff005c"]
+        }]
+      }
+    });
+  }
+
+  {% if show_viz %}
+  document.addEventListener("DOMContentLoaded", () => initSampleViz());
+  {% endif %}
+</script>
+
+{% endblock %}
+
+
+{% block visualization %}
+
+{% if show_viz %}
+<div id="viz-wrapper">
+{% else %}
+<div id="viz-wrapper" class="hidden">
+{% endif %}
+  <div class="charts">
+    <h2>File Format Distribution</h2>
+    <p>
+      <div class="chartjs-wrapper">
+        <canvas id="chartjs-1" class="chartjs" width="undefined" height="undefined"></canvas>
+      </div>
+    </p>
+    <div class="graph-description">
+      <p>This graph shows the distribution of the various file formats in the web archive collection.</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,3 +1,4 @@
+from django.db import OperationalError
 from model_bakery import baker
 from pytest import mark
 import pytest  # noqa
@@ -8,28 +9,34 @@ from .test_helpers import read_json_file
 
 class TestCollection:
     @mark.django_db
-    def test_get_for_user(self):
-        # Given an account with one user
+    def test_user_queryset(self):
+        # Given an account and a team with one user
         account = baker.make(Account)
         user = baker.make(User, account=account)
+        team = baker.make(Team, account=account)
+        team.members.add(user)
 
-        # ...and 4 collections
+        # ...and 5 collections
         collection1 = baker.make(Collection)
         collection2 = baker.make(Collection)
         collection3 = baker.make(Collection)
+        collection4 = baker.make(Collection)
         unowned_collection = baker.make(Collection)
 
-        # Make account-only, user-only, account+user associations (and one left out)
+        # Make account-only, user-only, and team-only associations
         account.collections.add(collection1, collection2)
         user.collections.add(collection2, collection3)
+        team.collections.add(collection4)
 
         # When we fetch all collections for the user we get all
-        # account-only, user-only, and account+user associated collections
+        # account-only, user-only, and team-only associated collections
         # (without any duplicated collections)
-        user_collections = Collection.get_for_user(user)
-        expected = sorted([collection1, collection2, collection3], key=lambda x: x.id)
-        actual = sorted(user_collections, key=lambda x: x.id)
-        assert expected == actual
+        assert set(Collection.user_queryset(user).all()) == {
+            collection1,
+            collection2,
+            collection3,
+            collection4,
+        }
 
 
 class TestArchQuota:
@@ -63,6 +70,19 @@ class TestUser:
     user_data = read_json_file(user_data_json_file)
 
     @mark.django_db
+    def test_user_email_normalized_on_save(self, make_user):
+        """User.email is normalized on save to prevent dupes."""
+        user = make_user()
+        orig_email = "userName@DOMAIN.COM"
+        norm_email = "userName@domain.com"
+        user.email = orig_email
+        user.save()
+        # Expect the domain to have been lowercased.
+        assert user.email == norm_email
+        user.refresh_from_db()
+        assert user.email == norm_email
+
+    @mark.django_db
     def test_create_users_from_data_dict_list(self):
         # Creates multiple User records from input data and returns None if transaction is successful
         account = baker.make(Account, id=1)
@@ -85,3 +105,12 @@ class TestUser:
         assert error_message != None
         assert users.count() == 1
         assert User.objects.first().username == "testuser"
+
+    @mark.django_db
+    def test_username_is_immutable(self, make_user):
+        # Attempting to update username raises an OperationalError
+        user = make_user()
+        user.username = "new username"
+        with pytest.raises(OperationalError) as exc_info:
+            user.save()
+        assert exc_info.value.args[0].startswith("username is immutable")

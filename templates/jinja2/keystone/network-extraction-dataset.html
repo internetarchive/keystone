@@ -1,0 +1,134 @@
+{% set file = dataset.job_start.jobcomplete.jobfile_set.first() %}
+
+{% extends 'keystone/aut-dataset.html' %}
+
+
+{% block head_extra %}
+{{ super() }}
+
+<script src="{{ static('/js/ext/jquery.min.js') }}"></script>
+<script src="{{ static('/js/ext/sigma.min.js') }}"></script>
+<script src="{{ static('/js/ext/sigma-worker.js') }}"></script>
+<script src="{{ static('/js/ext/sigma-supervisor.js') }}"></script>
+<script src="{{ static('/js/ext/arch-sigma-graphs.js') }}"></script>
+
+<script>
+  async function initSampleViz() {
+    const containerEl = document.getElementById('graph');
+    // Show a loading indicator.
+    const loadingEl = document.createElement("arch-loading-indicator");
+    containerEl.appendChild(loadingEl);
+    const res = await fetch("/api/datasets/{{ dataset.id }}/sample_viz_data");
+    if (!res.ok) {
+      return;
+    }
+    const data = await res.json()
+    if (data.nodes.length === 0 || data.edges.length === 0) {
+      return;
+    }
+
+    var graphData = {
+      nodes: data.nodes.map(([label, id]) => (
+        {
+          id,
+          label,
+          x: Math.random(),
+          y: Math.random(),
+          size: 10,
+        }
+      )),
+      edges: data.edges.map(([source, target], i) => ({id: i, source, target}))
+    };
+    // Remove the loading indicator.
+    loadingEl.remove();
+    var s = new sigma({
+      graph: graphData,
+      renderer: {
+        container: containerEl,
+        type: sigma.renderers.canvas,
+      },
+      settings: {
+        edgeColor: 'default',
+        defaultEdgeColor: '#d8dbdc',
+        defaultNodeColor: '#a05195',
+        minEdgeSize: 2.5
+      }
+    });
+    s.startForceAtlas2({worker: true, barnesHutOptimize: false});
+    s.stopForceAtlas2();
+    s.killForceAtlas2();
+
+    // Buttons and camera controls
+    $('.zoom-in').on('click', function () {
+      zoomIn(s);
+    });
+
+    $('.zoom-out').on('click', function () {
+      zoomOut(s);
+    });
+
+    $('.default').on('click', function () {
+      refresh(s);
+    });
+
+    $('#image-link').on('click', function () {
+      var button = document.getElementById('image-link');
+      var canvas = $('.sigma-scene');
+      var ctx = canvas[0].getContext("2d");
+      ctx.fillStyle = "white";
+      ctx.globalCompositeOperation='destination-over';
+      ctx.fillRect(0, 0, 928, 700);
+      var camera = s.camera;
+      var fn = button.getAttribute('download').replace('-image.png', '');
+      var img = canvas[0].toDataURL('image/png');
+      button.setAttribute('download', fn + 'xyr-' + Math.abs(Math.round(camera.x))
+                          + '-' + Math.abs(Math.round(camera.y)) + '-' + Math.abs(Math.round(camera.ratio))
+                          + '-image.png');
+      button.href = img;
+    });
+  }
+
+  {% if file and file.line_count > 0 %}
+  document.addEventListener("DOMContentLoaded", () => initSampleViz());
+  {% endif %}
+</script>
+
+{% endblock %}
+
+
+{% block visualization %}
+
+{% if file and file.line_count > 0 %}
+<div id="viz-wrapper">
+{% else %}
+<div id="viz-wrapper" class="hidden">
+{% endif %}
+  <div class="charts">
+    <h2>Top Hosts Sample</h2>
+    <div class="card card-body">
+      <div id="card-body graph-wrapper">
+        <button type="button" id="zoom-in" class="zoom-in" aria-label="Zoom in">
+          <span class="fa fa-search-plus"></span>
+        </button>
+        <button type="button" id="zoom-out" class="zoom-out" aria-label="Zoom out">
+          <span class="fa fa-search-minus"></span>
+        </button>
+        <button type="button" id="default" class="default" aria-label="Refresh graph">
+          <span class="fa fa-refresh"></span>
+        </button>
+        <a href="#" id="image-link" download="graph-image.png">
+          <button type="button" id="graph-image" class="graph-image" aria-label="Save image of graph">
+            <span class="fa fa-image"></span>
+          </button>
+        </a>
+        <div id="graph"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="graph-description">
+    <p>This graph shows up to the top 100 nodes with highest degree (number of inlinks + outlinks) along with their edges.</p>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,4 +1,23 @@
+import functools
 import csv
+from uuid import UUID
+
+from django.core.exceptions import FieldDoesNotExist
+from django.db import models
+import sentry_sdk
+
+
+def identity(x):
+    """An identity function."""
+    return x
+
+
+def is_uuid7(s):
+    """Return a bool indicate whether a string is a valid UUID7."""
+    try:
+        return UUID(s).version == 7
+    except ValueError:
+        return False
 
 
 def parse_csv(csv_file):
@@ -35,3 +54,51 @@ def parse_solr_facet_data(facets):
         parsed_facets[field] = facet_field_list
 
     return parsed_facets
+
+
+def dot_to_dunder(s):
+    """Replace all occurences of '.' with '__'"""
+    return s.replace(".", "__")
+
+
+# Adapted from: https://stackoverflow.com/a/75751667
+def find_field_from_lookup(model_class: models.Model, lookup: str) -> models.Field:
+    """Find field object from a lookup, which can span relationships.
+
+    Example: `"book__author__name"` would return the `name` field of the `Author` model.
+
+    Raises `FieldDoesNotExist` when the lookup is not valid.
+    """
+    field_names = list(reversed(lookup.split("__")))
+    if not field_names or not model_class:
+        raise FieldDoesNotExist(lookup)
+    while model_class and field_names:
+        field_name = field_names.pop()
+        field = model_class._meta.get_field(field_name)
+        # If field is a JSONField, which supports internal indexing,
+        # return it.
+        if isinstance(field, models.JSONField):
+            return field
+        model_class = field.related_model
+        if field_names and not model_class:
+            raise FieldDoesNotExist(lookup)
+    return field
+
+
+def report_exceptions(*exceptions):
+    """Decorator to report otherwise handled exceptions to Sentry"""
+    if not exceptions:
+        exceptions = Exception
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except exceptions as e:
+                sentry_sdk.capture_exception(e)
+                raise
+
+        return wrapper
+
+    return decorator

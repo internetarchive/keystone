@@ -1,4 +1,4 @@
-import{i as e,_ as t,e as o,s as l,y as c,a as i}from"./chunk-query-assigned-elements.js";import{t as n,h as r}from"./chunk-helpers.js";import{E as a}from"./chunk-index.js";let s=class extends l{constructor(){super(...arguments),this.collectionsInCart={}}get totalCollectionSizeSelected(){return Object.values(this.collectionsInCart).reduce(((e,t)=>e+Number(t.collectionSize)),0)}handleRemoveCollectionFromCart(e){this.emitEvent("collection-removed-from-cart",{collectionName:e})}emitEvent(e,t={}){this.dispatchEvent(a.createEvent(e,t?{detail:t}:{}))}render(){return c`
+import{i as e,_ as t,e as o,s as l,y as c,a as i}from"./chunk-lit-element.js";import{t as n}from"./chunk-helpers.js";import{E as r}from"./chunk-index.js";import{a}from"./chunk-helpers2.js";let s=class extends l{constructor(){super(...arguments),this.collectionsInCart={}}get totalCollectionSizeSelected(){return Object.values(this.collectionsInCart).reduce(((e,t)=>e+Number(t.collectionSize)),0)}handleRemoveCollectionFromCart(e){this.emitEvent("collection-removed-from-cart",{collectionName:e})}emitEvent(e,t={}){this.dispatchEvent(r.createEvent(e,t?{detail:t}:{}))}render(){return c`
       <div class="cart-container">
         <div class="collections-cart">
           <h3>Collections Selected</h3>
@@ -12,7 +12,7 @@ import{i as e,_ as t,e as o,s as l,y as c,a as i}from"./chunk-query-assigned-ele
                     >${e}</a
                   >, Organization: ${t.organizationName}, Archived Since:
                   ${n(t.createdDt)},
-                  Collection Size: ${r(Number(t.collectionSize))}
+                  Collection Size: ${a(Number(t.collectionSize))}
                   <button
                     @click=${()=>this.handleRemoveCollectionFromCart(e)}
                   >
@@ -24,7 +24,7 @@ import{i as e,_ as t,e as o,s as l,y as c,a as i}from"./chunk-query-assigned-ele
           <h4>
             Total Collection Size Selected:
             <span class="totalSizeSelected"
-              >${r(this.totalCollectionSizeSelected)}</span
+              >${a(this.totalCollectionSizeSelected)}</span
             >
           </h4>
         </div>

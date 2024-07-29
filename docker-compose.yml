@@ -1,18 +1,51 @@
-version: "3.5"
-
 services:
-  postgres:
+  keystone:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: /home/keystone/venv/bin/gunicorn config.wsgi:application --workers=2 --bind 0.0.0.0:8000
+    volumes:
+      - keystone_static_volume:/opt/keystone/staticfiles
+      - keystone_media_volume:/opt/keystone/mediafiles
+      - ./arch-shared:/opt/arch/shared:ro
+      - .:/opt/keystone
+    expose:
+      - 8000
+    depends_on:
+      - db
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+      - KEYSTONE_VENV_PATH=/home/keystone/venv
+    env_file:
+      - .env
+  db:
     image: postgres:14
     environment:
       - POSTGRES_USER=keystone
       - POSTGRES_PASSWORD=keystone
       - POSTGRES_DB=keystone
-    ports:
-      - "5433:5432"
-    expose:
-      - "5432"
     volumes:
-      - keystone_postgres_volume:/var/lib/postgresql/data
+      - keystone_postgres_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+  nginx:
+    build: dev/nginx
+    volumes:
+      - keystone_static_volume:/opt/keystone/staticfiles
+      - keystone_media_volume:/opt/keystone/mediafiles
+    ports:
+      - 12342:80
+    depends_on:
+      - keystone
+  arch:
+    build: dev/arch
+    volumes:
+      - ./dev/arch/config/docker.json:/opt/arch/config/config.json
+      - ./arch-shared:/opt/arch/shared
+    expose:
+      - 12341
 
 volumes:
-  keystone_postgres_volume: {}
+  keystone_postgres_data:
+  keystone_static_volume:
+  keystone_media_volume:

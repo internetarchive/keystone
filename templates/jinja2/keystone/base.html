@@ -26,7 +26,7 @@
 
     <link rel="manifest" href="{{ static('manifest.json') }}" crossorigin="use-credentials">
 
-    <link rel="stylesheet" href="{{ static('/css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="{{ static('/css/arch-style.css') }}">
     <link rel="stylesheet" href="{{ static('/css/bootstrap-cards.css') }}">
     <link rel="stylesheet" href="{{ static('/css/bootstrap-alerts.css') }}">
@@ -38,11 +38,27 @@
     <meta class="foundation-mq-large">
 
     <!-- Safari Custom Elements Polyfill -->
-    <script src="{{ static('/js/ungap-custom-elements-1-1-1-es.js') }}"></script>
+    <script src="{{ static('/js/ext/ungap-custom-elements-1-1-1-es.js') }}"></script>
+
+    <!-- Global Components -->
+    <script src="{{ static('/js/arch-global-modal.js') }}" type="module"></script>
+    <script src="{{ static('/js/arch-edit-user-modal.js') }}" type="module"></script>
+    <script src="{{ static('/js/arch-loading-indicator.js') }}" type="module"></script>
+    <script src="{{ static('/js/arch-hover-tooltip.js') }}" type="module"></script>
 
     <!-- Zendesk help widget -->
     <script>/*<![CDATA[*/window.zEmbed||function(e,t){var n,o,d,i,s,a=[],r=document.createElement("iframe");window.zEmbed=function(){a.push(arguments)},window.zE=window.zE||window.zEmbed,r.src="javascript:false",r.title="",r.role="presentation",(r.frameElement||r).style.cssText="display: none",d=document.getElementsByTagName("script"),d=d[d.length-1],d.parentNode.insertBefore(r,d),i=r.contentWindow,s=i.document;try{o=s}catch(c){n=document.domain,r.src='javascript:var d=document.open();d.domain="'+n+'";void(0);',o=s}o.open()._l=function(){var o=this.createElement("script");n&&(this.domain=n),o.id="js-iframe-async",o.src=e,this.t=+new Date,this.zendeskHost=t,this.zEQueue=a,this.body.appendChild(o)},o.write('<body onload="document._l();">'),o.close()}("https://assets.zendesk.com/embeddable_framework/main.js","arch-webservices.zendesk.com");
      /*]]>*/</script>
+
+    <!-- Small script to update topbar logged-in name on profile update -->
+    <script>
+     document.addEventListener("DOMContentLoaded", function () {
+       const userProfileModal = document.getElementById("user-profile-modal");
+       userProfileModal.onUpdate = function (user) {
+         document.getElementById("welcome-name").textContent = user.first_name;
+       };
+     });
+    </script>
 
     <!-- Head Extra Block -->
     {% block head_extra %}{% endblock %}
@@ -63,24 +79,43 @@
             {% if request.user.is_authenticated %}
             <li><a href="{{ url('dashboard') }}">Dashboard</a></li>
             <li><a href="{{ url('collections') }}">Collections</a></li>
-            <li><a href="{{ url('datasets') }}">Datasets</a></li>
+            <li><a href="{{ url('datasets-explore') }}">Datasets</a></li>
+            {% if request.user.role == "ADMIN" %}<li><a href="{{ url('account') }}">Account</a></li>{% endif %}
             {% if request.user.is_staff %}<li><a href="{{ url('admin:index') }}">Admin</a></li>{% endif %}
             {% endif %}
           </ul>
         </section>
         <section class="top-bar-section" style="left: 0%;">
           <ul id="secondary-menu" class="right show-for-large-up">
+            {% if "impersonate_username" in request.session %}
+            <li>
+              <a href="{{ request.path }}?__unimpersonate" id="unimpersonate">Stop Impersonating</a>
+            </li>
+            {% endif %}
+
             <li><a target="_blank" href="https://arch-webservices.zendesk.com/hc/en-us">Help Center</a></li>
+
             {% if request.user.is_authenticated %}
             <li class="has-dropdown not-click" has-dropdown="">
-              <a name="_welcome">Welcome, <span>{{ request.user.first_name }}</span></a>
+              <a name="_welcome">Welcome, <span id="welcome-name">{{ request.user.first_name }}</span></a>
               <ul class="dropdown"top-bar-dropdown=""><li class="title back js-generated"><h5><a href="">Back</a></h5></li>
+                <li><a href="{{ url("password_change") }}" target="_self">Change Password</a></li>
+                <li>
+                  <arch-edit-user-modal
+                    userId="{{ request.user.id }}"
+                    profileMode
+                    id="user-profile-modal"
+                  >
+                    <a slot="trigger" href="#">Profile</a>
+                  </arch-edit-user-modal>
+                </li>
                 <li><a href="/logout" target="_self">Log Out</a></li>
               </ul>
             </li>
             {% else %}
             <li><a href="/login">Log In</a></li>
             {% endif %}
+
           </ul>
         </section>
       </nav>
@@ -91,9 +126,15 @@
         <div class="row">
           <div class="small-12 columns">
             <ul class="breadcrumbs" ncy-breadcrumb="">
-              {% for label, view_name in breadcrumbs %}
+              {% for label, view_spec in breadcrumbs %}
               <li>
-                <a href="{{ url(view_name) }}">{{ label }}</a>
+                {% if isinstance(view_spec, str) %}
+                {# Handle a simple view name spec #}
+                <a href="{{ url(view_spec) }}">{{ label }}</a>
+                {% elif isinstance(view_spec, tuple) %}
+                {# Handle a view spec tuple in the form: (viewNamview_name, *args) #}
+                <a href="{{ url(view_spec[0], args=view_spec[1:]) }}">{{ label }}</a>
+                {% endif %}
               </li>
               {% endfor %}
             </ul>
@@ -110,6 +151,9 @@
           </div>
         </div>
       </header>
+
+      <!-- SubNav Block -->
+      {% block subnav %}{% endblock %}
 
       <!-- Content Block -->
       {% block content %}{% endblock %}
@@ -130,5 +174,6 @@
       <iframe data-product="web_widget" title="No content" tabindex="-1" aria-hidden="true" style="width: 0px; height: 0px; border: 0px none; position: absolute; top: -9999px;" src="about:blank"></iframe><div><iframe title="Opens a widget where you can find more information" tabindex="0" style="width: 106px; height: 50px; padding: 0px; margin: 10px 20px; position: fixed; bottom: 0px; overflow: visible; opacity: 1; border: 0px none; z-index: 999998; transition-duration: 250ms; transition-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1); transition-property: opacity, top, bottom; right: 0px;"></iframe><iframe title="Find more information here" id="webWidget" tabindex="-1" style="width: 374px; max-height: calc(-32px + 100vh); height: 572px; position: fixed; opacity: 0; border: 0px none; transition-duration: 250ms; transition-timing-function: cubic-bezier(0.645, 0.045, 0.355, 1); transition-property: opacity, top, bottom; top: -9999px; visibility: hidden; z-index: 999999;"></iframe></div>
     </div>
 
+    <arch-global-modal></arch-global-modal>
   </body>
 </html>

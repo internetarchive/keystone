@@ -1,11 +1,134 @@
+import json
 from typing import Self
-import django.contrib.auth.admin
 from django.contrib import admin
+import django.contrib.auth.admin
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib import messages
+from django.forms import ModelForm, ModelMultipleChoiceField
 from django.template.defaultfilters import filesizeformat
+from django.utils.html import format_html
 
 from . import models
 from .hashers import PBKDF2WrappedSha1PasswordHasher
+
+
+###############################################################################
+# Custom Forms
+###############################################################################
+
+
+class KeystoneModelAdminForm(ModelForm):
+    """ModelForm subclass that handles saving of M2M fields that are represented
+    as KeystoneFilteredSelectMultiple form inputs."""
+
+    @property
+    def filtered_select_multiple_field_names(self):
+        """Return the names of the fields that implement the
+        KeystoneFilteredSelectMultiple widget."""
+        return {
+            name
+            for name, field in self.fields.items()
+            if isinstance(field.widget, KeystoneFilteredSelectMultiple)
+        }
+
+    def __init__(self, *args, **kwargs):
+        """Set the initial KeystoneFilteredSelectMultiple input values."""
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            for field_name in self.filtered_select_multiple_field_names:
+                self.fields[field_name].initial = getattr(
+                    self.instance, field_name
+                ).all()
+
+    def save(self, commit=True):
+        """Save the KeystoneFilteredSelectMultiple M2M field values."""
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+        if instance.pk:
+            for field_name in self.filtered_select_multiple_field_names:
+                getattr(instance, field_name).set(self.cleaned_data[field_name])
+            self.save_m2m()
+        return instance
+
+
+class KeystoneFilteredSelectMultiple(FilteredSelectMultiple):
+    """Subclass of FilteredSelectMultiple that get_label method that subclasses
+    can override to customize the option label text."""
+
+    @staticmethod
+    def get_label(instance):
+        """Return the <option> label string for the specified instance."""
+        return str(instance)
+
+    def create_option(self, *args, **kwargs):
+        option_d = super().create_option(*args, **kwargs)
+        option_d["label"] = self.get_label(option_d["value"].instance)
+        return option_d
+
+
+class FilteredSelectMultipleCollections(KeystoneFilteredSelectMultiple):
+    """Collections-specific subclass of KeystoneFilteredSelectMultiple."""
+
+    @staticmethod
+    def get_label(instance):
+        """Prefix the label with additional field values to enable ad hoc filtering"""
+        prefix_elems = [instance.id, instance.collection_type[0]]
+        if instance.collection_type == models.CollectionTypes.AIT:
+            prefix_elems.append(f"{instance.metadata['ait_id']:05}")
+        return f"[{','.join(str(x) for x in prefix_elems)}] {instance.name}"
+
+
+# pylint: disable-next=too-many-ancestors
+class KeystoneUserAdminForm(
+    KeystoneModelAdminForm, django.contrib.auth.forms.UserChangeForm
+):
+    """User-specific subclass of KeystoneModelAdminForm."""
+
+    collections = ModelMultipleChoiceField(
+        queryset=models.Collection.objects.all(),
+        required=False,
+        widget=FilteredSelectMultipleCollections(
+            verbose_name="Collections", is_stacked=False
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields[
+            "collections"
+        ].help_text = """
+        <p>
+          Collection name options includes the prefixes
+          <strong>[{ksCollectionId},{collectionTypeInitial},{aitId}]</strong> where:
+          <br>&nbsp;&nbsp;- collectionTypeInitial is one of: A = AIT, C = Custom, S = Special
+          <br>&nbsp;&nbsp;- aitId is zero-padded to 5 digits
+        </p>
+        """
+
+    class Meta:
+        model = models.User
+        # pylint: disable-next=modelform-uses-exclude
+        exclude = ()
+
+
+###############################################################################
+# Mixins
+###############################################################################
+
+
+class FilterSelectMultipleM2MMixin:
+    """Mixin to provide FilteredSelectMultiple inputs for direct M2M relations."""
+
+    filter_select_multiple_m2ms = ()
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        """Adapted from https://stackoverflow.com/a/33754748"""
+        if db_field.name not in self.filter_select_multiple_m2ms:
+            return super().formfield_for_manytomany(db_field, request, **kwargs)
+        vertical = False
+        kwargs["widget"] = FilteredSelectMultiple(db_field.verbose_name, vertical)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
 
 class WrapPasswordMixin:
@@ -43,6 +166,26 @@ class WrapPasswordMixin:
     )
 
 
+###############################################################################
+# Custom Model Admin Classes
+###############################################################################
+
+
+class KeystoneModelAdmin(FilterSelectMultipleM2MMixin, admin.ModelAdmin):
+    """Subclass ModelAdmin to provide FilteredSelectMultiple inputs for M2M relations."""
+
+
+class KeystoneUserAdmin(
+    FilterSelectMultipleM2MMixin, WrapPasswordMixin, django.contrib.auth.admin.UserAdmin
+):
+    """Subclass auth.admin.UserAdmin to provide FilteredSelectMultiple inputs for M2M relations."""
+
+
+###############################################################################
+# Inlines
+###############################################################################
+
+
 class CollectionAccountInline(admin.TabularInline):
     """Add inline Collection table to AccountAdmin"""
 
@@ -55,10 +198,37 @@ class CollectionTeamInline(admin.TabularInline):
     model = models.Collection.teams.through
 
 
-class CollectionUserInline(admin.TabularInline):
-    """Add inline Collection table to UserAdmin"""
+class UserTeamsInline(admin.TabularInline):
+    """Add inline User table to TeamAdmin"""
 
-    model = models.Collection.users.through
+    model = models.User.teams.through
+
+
+class JobCategoryJobTypesInline(admin.TabularInline):
+    """Add inline JobType table to JobCategory"""
+
+    model = models.JobType
+
+    fields = (
+        "id",
+        "name",
+    )
+
+    readonly_fields = (
+        "id",
+        "name",
+    )
+
+    show_change_link = True
+
+    def has_add_permission(self, *args, **kwargs):
+        return False
+
+    def has_change_permission(self, *args, **kwargs):
+        return False
+
+    def has_delete_permission(self, *args, **kwargs):
+        return False
 
 
 @admin.register(models.Account)
@@ -81,7 +251,8 @@ class TeamAdmin(admin.ModelAdmin):
         "name",
         "account_name",
     )
-    inlines = (CollectionTeamInline,)
+
+    inlines = (CollectionTeamInline, UserTeamsInline)
 
     @admin.display(description="Account", ordering="account__name")
     def account_name(self, team):
@@ -90,8 +261,15 @@ class TeamAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.User)
-class UserAdmin(django.contrib.auth.admin.UserAdmin, WrapPasswordMixin):
+class UserAdmin(KeystoneUserAdmin):
     """Django admin config for User"""
+
+    form = KeystoneUserAdminForm
+
+    filter_select_multiple_m2ms = (
+        "collections",
+        "teams",
+    )
 
     list_display = (
         "username",
@@ -100,7 +278,7 @@ class UserAdmin(django.contrib.auth.admin.UserAdmin, WrapPasswordMixin):
         "is_superuser",
         "is_active",
     )
-    inlines = (CollectionUserInline,)
+
     actions = ("wrap_sha1_passwords_of_selected_users",)
 
     # Define the fields to display in the user creation form.
@@ -127,7 +305,6 @@ class UserAdmin(django.contrib.auth.admin.UserAdmin, WrapPasswordMixin):
             None,
             {
                 "fields": (
-                    "username",
                     "password",
                     "account",  # added
                 )
@@ -151,8 +328,8 @@ class UserAdmin(django.contrib.auth.admin.UserAdmin, WrapPasswordMixin):
                     "is_staff",
                     "is_superuser",
                     "role",  # added
+                    "collections",  # added
                     "teams",  # added
-                    "groups",
                     "user_permissions",
                 )
             },
@@ -170,8 +347,10 @@ class UserAdmin(django.contrib.auth.admin.UserAdmin, WrapPasswordMixin):
 
 
 @admin.register(models.Collection)
-class CollectionAdmin(admin.ModelAdmin):
+class CollectionAdmin(KeystoneModelAdmin):
     """Django admin config for Collection"""
+
+    filter_select_multiple_m2ms = ("users", "teams")
 
     list_display = (
         "id",
@@ -186,6 +365,30 @@ class CollectionAdmin(admin.ModelAdmin):
     search_help_text = "Search by Collection ID or Collection Name"
 
 
+@admin.register(models.Dataset)
+class DatasetAdmin(KeystoneModelAdmin):
+    """Django admin config for Dataset"""
+
+    filter_select_multiple_m2ms = ("teams",)
+
+    list_display = (
+        "job_start",
+        "user",
+        "job_type",
+        "state",
+        "start_time",
+        "finished_time",
+    )
+
+    def user(self, dataset):
+        """Return the associated User.username"""
+        return dataset.job_start.user.username
+
+    def job_type(self, dataset):
+        """Return the associated JobType.name"""
+        return dataset.job_start.job_type.name
+
+
 @admin.register(models.ArchQuota)
 class ArchQuotaAdmin(admin.ModelAdmin):
     """Django admin config for ArchQuota"""
@@ -198,6 +401,18 @@ class ArchQuotaAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(models.JobCategory)
+class JobCatgegoryAdmin(admin.ModelAdmin):
+    """Django admin config for JobCategory"""
+
+    list_display = (
+        "id",
+        "name",
+    )
+
+    inlines = (JobCategoryJobTypesInline,)
+
+
 @admin.register(models.JobType)
 class JobTypeAdmin(admin.ModelAdmin):
     """Django admin config for JobType"""
@@ -205,6 +420,7 @@ class JobTypeAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "name",
+        "category",
     )
 
 
@@ -222,6 +438,18 @@ class JobStartAdmin(admin.ModelAdmin):
         "created_at",
     )
 
+    fields = [
+        f.name
+        for f in models.JobStart._meta.fields
+        if f.name not in ("id", "parameters")
+    ] + ["parameters_display"]
+
+    readonly_fields = [
+        f.name
+        for f in models.JobStart._meta.fields
+        if f.name not in ("id", "parameters")
+    ] + ["parameters_display"]
+
     @admin.display(description="Input Size", ordering="-input_bytes")
     def input_size(self, job_start, human=True):
         """Get human-friendly format for the size of a Job's input.
@@ -230,6 +458,14 @@ class JobStartAdmin(admin.ModelAdmin):
         if human:
             return filesizeformat(job_start.input_bytes)
         return job_start.input_bytes
+
+    @admin.display(description="Parameters")
+    def parameters_display(self, job_start):
+        """Pretty-format the parameters JSON object."""
+        return format_html(
+            '<pre style="color: #000; font-size: 0.8rem; line-height: 1.1rem;">{}</pre>',
+            json.dumps(job_start.parameters, indent=2),
+        )
 
 
 @admin.register(models.JobComplete)
@@ -241,6 +477,21 @@ class JobCompleteAdmin(admin.ModelAdmin):
         "job_start",
         "output_bytes",
         "created_at",
+    )
+
+
+@admin.register(models.JobFile)
+class JobFileAdmin(admin.ModelAdmin):
+    """Django admin config for JobFile"""
+
+    list_display = (
+        "id",
+        "job_complete",
+        "filename",
+        "file_type",
+        "mime_type",
+        "size_bytes",
+        "creation_time",
     )
 
 

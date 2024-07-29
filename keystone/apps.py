@@ -1,4 +1,9 @@
+from logging import getLogger
+
 from django.apps import AppConfig
+
+
+log = getLogger()
 
 
 class KeystoneConfig(AppConfig):

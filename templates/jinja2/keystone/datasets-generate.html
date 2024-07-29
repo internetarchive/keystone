@@ -1,0 +1,41 @@
+{% set breadcrumbs = (("Datasets", "datasets-explore"), ("Generate", "datasets-generate")) %}
+{% extends 'keystone/base.html' %}
+
+{% block header_title %}
+  Datasets
+{% endblock %}
+
+{% block head_extra %}
+  <script src="{{ static('/js/arch-generate-dataset-form.js') }}" type="module"></script>
+{% endblock %}
+
+{% block subnav %}
+<subnav data="state.menus.research_services" class="ng-isolate-scope">
+  <div class="row subnav">
+    <div class="small-12 columns">
+      <div class="row">
+        <div class="subnav-box columns">
+          <div class="left subnav-link ng-scope research_services">
+            <span class="ng-scope"><a class="ng-binding ng-scope" href="{{ url('datasets-explore') }}">Explore</a></span>
+          </div>
+          <div class="left subnav-link ng-scope research_services active">
+            <span class="ng-scope"><a class="ng-binding ng-scope" href="{{ url('datasets-generate') }}">Generate</a></span>
+          </div>
+          <hr />
+        </div>
+      </div>
+    </div>
+  </div>
+</subnav>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="large-12 columns" id="data-table-container">
+    <arch-generate-dataset-form
+      csrfToken="{{ csrf_token }}"
+    >
+    </arch-generate-dataset-form>
+  </div>
+</div>
+{% endblock %}

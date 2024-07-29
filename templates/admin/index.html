@@ -1,0 +1,34 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+<div id="content-main">
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+
+  <!-- Add ARCH job logs section -->
+  <div class="module">
+    <table style="width: 100%;">
+      <caption>
+        View ARCH Job Logs
+      </caption>
+      <tbody>
+        <tr>
+          <td>
+            <a href="{% url 'get_arch_job_logs' 'jobs' %}">All Jobs</a>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="{% url 'get_arch_job_logs' 'running' %}">Running Jobs</a>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="{% url 'get_arch_job_logs' 'failed' %}">Failed Jobs</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}
