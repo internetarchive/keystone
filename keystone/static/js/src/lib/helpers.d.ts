@@ -10,3 +10,5 @@ export declare const Paths: {
     buildSubCollection: (sourceCollectionIds?: Array<Collection["id"]>) => string;
 };
 export declare function isActiveProcessingState(state: ProcessingState): boolean;
+export declare function timestampStringToYearMonthString(timestamp: string): string;
+export declare function readableFacetName(facetName: string, facetField: string): string;

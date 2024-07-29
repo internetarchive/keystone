@@ -1,12 +1,18 @@
-import{i as e,_ as t,e as o,s as l,y as c,a as n}from"./chunk-lit-element.js";import{a as r}from"./chunk-helpers2.js";let i=class extends l{constructor(){super(...arguments),this.collectionsInCart={}}get totalCollectionSizeSelected(){return Object.values(this.collectionsInCart).reduce(((e,t)=>e+Number(t.collectionSize)),0)}handleRemoveCollectionFromCart(e){this.dispatchEvent(new CustomEvent("collection-removed-from-cart",{bubbles:!0,composed:!0,detail:{collectionName:e}}))}render(){return c`
+import{i as e,_ as t,e as o,s as l,y as c,a as i}from"./chunk-lit-element.js";import{t as n}from"./chunk-helpers.js";import{E as r}from"./chunk-index.js";import{a}from"./chunk-helpers2.js";let s=class extends l{constructor(){super(...arguments),this.collectionsInCart={}}get totalCollectionSizeSelected(){return Object.values(this.collectionsInCart).reduce(((e,t)=>e+Number(t.collectionSize)),0)}handleRemoveCollectionFromCart(e){this.emitEvent("collection-removed-from-cart",{collectionName:e})}emitEvent(e,t={}){this.dispatchEvent(r.createEvent(e,t?{detail:t}:{}))}render(){return c`
       <div class="cart-container">
-        <div class="collections-cart ">
-          <h3>Collections Selected:</h3>
+        <div class="collections-cart">
+          <h3>Collections Selected</h3>
           <ul>
             ${Object.entries(this.collectionsInCart).map((([e,t])=>c`
                 <li>
-                  ${e}, Collection ID: ${t.collectionId},
-                  Collection Size: ${r(Number(t.collectionSize))}
+                  <a
+                    class="collectionName"
+                    href="https://archive-it.org/collections/${t.collectionId}"
+                    target="_blank"
+                    >${e}</a
+                  >, Organization: ${t.organizationName}, Archived Since:
+                  ${n(t.createdDt)},
+                  Collection Size: ${a(Number(t.collectionSize))}
                   <button
                     @click=${()=>this.handleRemoveCollectionFromCart(e)}
                   >
@@ -15,15 +21,15 @@ import{i as e,_ as t,e as o,s as l,y as c,a as n}from"./chunk-lit-element.js";im
                 </li>
               `))}
           </ul>
-          <h3>
+          <h4>
             Total Collection Size Selected:
             <span class="totalSizeSelected"
-              >${r(this.totalCollectionSizeSelected)}</span
+              >${a(this.totalCollectionSizeSelected)}</span
             >
-          </h3>
+          </h4>
         </div>
       </div>
-    `}};i.styles=e`
+    `}};s.styles=e`
     .cart-container {
       padding: 20px 50px;
     }
@@ -43,5 +49,15 @@ import{i as e,_ as t,e as o,s as l,y as c,a as n}from"./chunk-lit-element.js";im
       color: red;
       text-decoration: underline;
     }
-  `,t([o({type:Object})],i.prototype,"collectionsInCart",void 0),i=t([n("collection-surveyor-cart")],i);export{i as CollectionSurveyorCart};
+    li {
+      margin: 0.6em 0;
+      line-height: 1.25;
+    }
+    .collectionName {
+      font-weight: bold;
+    }
+    a {
+      color: #c9540a;
+    }
+  `,t([o({type:Object})],s.prototype,"collectionsInCart",void 0),s=t([i("collection-surveyor-cart")],s);export{s as CollectionSurveyorCart};
 //# sourceMappingURL=collection-surveyor-cart.js.map
