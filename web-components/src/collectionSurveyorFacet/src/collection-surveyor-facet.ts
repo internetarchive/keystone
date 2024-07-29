@@ -2,12 +2,16 @@ import { html, css, LitElement } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
 import { FacetResultMap } from "../../lib/types";
+import { EventHelpers } from "@internetarchive/ads-library";
+import { readableFacetName } from "../../lib/helpers";
 
 @customElement("collection-surveyor-facet")
 export class CollectionSurveyorFacet extends LitElement {
   @property({ type: String }) facetField = "";
 
   @property({ type: Array }) facetFieldResults: FacetResultMap[] = [];
+
+  @property({ type: Array }) selectedfacetFieldResults: string[] = [];
 
   readableFacetFieldName(text: string) {
     // convert field name into a more readable form - eg. 'f_organizationName' --> 'Organization Name'
@@ -20,6 +24,28 @@ export class CollectionSurveyorFacet extends LitElement {
       .join(" "); // capitalize each word and join with spaces
   }
 
+  handleSelectFacet(facetName: string) {
+    if (!this.selectedfacetFieldResults.includes(facetName)) {
+      this.emitEvent("facet-selected", {
+        facetFieldName: this.facetField,
+        facetName: facetName,
+      });
+    }
+  }
+
+  handleDeselectFacet(facetName: string) {
+    this.emitEvent("facet-deselected", {
+      facetFieldName: this.facetField,
+      facetName: facetName,
+    });
+  }
+
+  private emitEvent(eventName: string, detail = {}) {
+    this.dispatchEvent(
+      EventHelpers.createEvent(eventName, detail ? { detail } : {})
+    );
+  }
+
   render() {
     return html`
       <div class="facet">
@@ -29,7 +55,47 @@ export class CollectionSurveyorFacet extends LitElement {
           <ul>
             ${this.facetFieldResults.map(
               (facetFieldResult) => html`
-                <li>${facetFieldResult.name} (${facetFieldResult.count})</li>
+                ${facetFieldResult.count > 0
+                  ? html`
+                      <li
+                        class=${this.selectedfacetFieldResults.includes(
+                          facetFieldResult.name
+                        )
+                          ? "selected"
+                          : "notSelected"}
+                      >
+                        <span
+                          class="facet-data"
+                          @click=${() => {
+                            this.handleSelectFacet(facetFieldResult.name);
+                          }}
+                          @keydown=${() => {
+                            /* Placeholder event listener for acessibility */
+                          }}
+                        >
+                          ${readableFacetName(
+                            facetFieldResult.name,
+                            this.facetField
+                          )}
+                          (${facetFieldResult.count})
+                        </span>
+                        ${this.selectedfacetFieldResults.includes(
+                          facetFieldResult.name
+                        )
+                          ? html`
+                              <button
+                                @click=${() =>
+                                  this.handleDeselectFacet(
+                                    facetFieldResult.name
+                                  )}
+                              >
+                                remove
+                              </button>
+                            `
+                          : ""}
+                      </li>
+                    `
+                  : html``}
               `
             )}
           </ul>
@@ -60,6 +126,18 @@ export class CollectionSurveyorFacet extends LitElement {
 
     li {
       margin: 0.2em 0 0.2em 0;
+    }
+
+    .notSelected .facet-data:hover {
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: red;
     }
   `;
 }

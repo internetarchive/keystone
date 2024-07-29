@@ -3,6 +3,7 @@ export declare class CollectionSurveyorPagination extends LitElement {
     currentPage: number;
     itemsPerPage: number;
     totalResults: number;
+    backgroundCollectionsLoaded: boolean;
     get totalPages(): number;
     jumpToPage(pageNumber: number): void;
     nextPage(): void;

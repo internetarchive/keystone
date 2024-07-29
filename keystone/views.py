@@ -117,8 +117,25 @@ def bulk_add_users(request):
 
 @require_staff_or_superuser
 def collection_surveyor(request):
-    """Explore AIT Collections"""
-    # Example usage
+    """render collection surveyor"""
+    return render(request, "keystone/collection_surveyor.html")
+
+
+@require_staff_or_superuser
+def collection_surveyor_search(request):
+    """search ait collections using search term or facet"""
+    filter_query = ["type:Collection", "publiclyVisible:true"]
+
+    search_query = request.GET.get("q", "")
+    search_query = "*:*" if search_query == "" else search_query
+
+    row_count = request.GET.get("r")
+
+    try:
+        row_count = int(row_count)
+    except ValueError:
+        return HttpResponseBadRequest(f"invalid value for r: {row_count}")
+
     solr_url = "http://wbgrp-svc515.us.archive.org:8983/solr"
     core_name = "ait"  # Replace with your Solr core or collection name
 
@@ -127,22 +144,20 @@ def collection_surveyor(request):
 
     # Perform a search query with facets
     result = solr_client.search(
-        query="*:*",
-        rows=1000,
-        fq=["type:Collection", "publiclyVisible:true"],
-        facet_fields=["f_organizationName", "f_organizationType", "f_collectionName"],
+        query=search_query,
+        rows=row_count,
+        fq=filter_query,
+        facet_fields=["f_organizationName", "f_organizationType"],
     )
 
     # parse data for each facet field into list of dictionaries
     parsed_facets = parse_solr_facet_data(result["facet_counts"]["facet_fields"])
 
-    return render(
-        request,
-        "keystone/collection_surveyor.html",
+    return JsonResponse(
         {
             "collections": result["response"]["docs"],
             "facets": parsed_facets,
-        },
+        }
     )
 
 

@@ -34,6 +34,9 @@ export default {
     "./src/collectionSurveyorFacet/src/collection-surveyor-facet.ts",
     "./src/collectionSurveyorPagination/src/collection-surveyor-pagination.ts",
     "./src/collectionSurveyorSearchResults/src/collection-surveyor-search-results.ts",
+    "./src/collectionSurveyorCart/src/collection-surveyor-cart.ts",
+    "./src/collectionSurveyorSearchBar/src/collection-surveyor-search-bar.ts",
+    "./src/collectionSurveyorActiveFilters/src/collection-surveyor-active-filters.ts",
   ],
   output: {
     dir: "../keystone/static/js",

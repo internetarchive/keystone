@@ -154,6 +154,11 @@ urlpatterns = [
         name="collection_surveyor",
     ),
     path(
+        "collection_surveyor/search/",
+        views.collection_surveyor_search,
+        name="collection_surveyor_search",
+    ),
+    path(
         "admin/arch_logs/<log_type>",
         views.get_arch_job_logs,
         name="get_arch_job_logs",
