@@ -11,6 +11,7 @@ from pytest import (
     raises,
 )
 
+from config.settings import GLOBAL_USER_USERNAME
 from keystone.api import CreateUserSchema
 from keystone.models import (
     Dataset,
@@ -416,9 +417,15 @@ def test_no_user_can_edit_other_account_team(role, make_user, make_team):
 
 
 @mark.django_db
-def test_dataset_owner_and_team_access(make_team, make_user, make_user_dataset):
-    """A dataset can only be accessed by its owner and the members of any team for
-    which the dataset has been authorized."""
+def test_dataset_owner_team_global_access(
+    make_team, make_user, make_user_dataset, make_collection, global_datasets_user
+):
+    """A dataset can only be accessed:
+    - by its owner
+    - by the members of any team for which the dataset has been authorized
+    - if it's owned by the global datasets user and the requesting user is
+      authorized to access the associated collection
+    """
     # Create a user and add them to a team.
     user = make_user()
     team = make_team(account=user.account)
@@ -429,7 +436,16 @@ def test_dataset_owner_and_team_access(make_team, make_user, make_user_dataset):
     other_account_user = make_user()
 
     # Create a couple of user datasets.
-    user_dataset_ids = (make_user_dataset(user).id, make_user_dataset(user).id)
+    user_dataset_ids = [make_user_dataset(user).id, make_user_dataset(user).id]
+
+    # Create a collection to which both 'user' and the global_datasets_user have access
+    # and create an associated global-user-owned dataset.
+    global_collection = make_collection()
+    global_collection.users.set((global_datasets_user, user))
+    global_dataset = make_user_dataset(
+        global_datasets_user, collection=global_collection
+    )
+    user_dataset_ids.append(global_dataset.id)
 
     def check_access(_user, list_result_ids, get_test_id, get_test_ok):
         """Check a user's ability to list and retrieve datasets."""

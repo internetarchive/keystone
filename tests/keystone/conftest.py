@@ -3,7 +3,11 @@ from model_bakery import baker
 from pytest import fixture
 
 from keystone import models
-from config.settings import KnownArchJobUuids
+from config.settings import (
+    GLOBAL_USER_USERNAME,
+    GLOBAL_USER_ACCOUNT_NAME,
+    KnownArchJobUuids,
+)
 
 
 ###############################################################################
@@ -79,11 +83,13 @@ def make_user():
 
 @fixture
 def make_user_dataset(make_collection, make_dataset, make_jobstart):
-    def f(user):
+    def f(user, collection=None):
         # Creating a JobStart for a JobType with can_run = True will result in
         # the automatic creation of a Dataset.
+        if collection is None:
+            collection = make_collection(accounts=(user.account,))
         job_start = make_jobstart(
-            collection=make_collection(accounts=(user.account,)),
+            collection=collection,
             job_type=models.JobType.objects.get(id=KnownArchJobUuids.DOMAIN_FREQUENCY),
             user=user,
         )
@@ -93,3 +99,16 @@ def make_user_dataset(make_collection, make_dataset, make_jobstart):
         return dataset
 
     return f
+
+
+@fixture
+def global_datasets_user(make_account, make_user):
+    """Get or create the global datasets user."""
+    try:
+        account = models.Account.objects.get(name=GLOBAL_USER_ACCOUNT_NAME)
+    except models.Account.DoesNotExist:
+        account = make_account(name=GLOBAL_USER_ACCOUNT_NAME)
+    try:
+        return models.User.objects.get(username=GLOBAL_USER_USERNAME)
+    except models.User.DoesNotExist:
+        return make_user(username=GLOBAL_USER_USERNAME, account=account)
