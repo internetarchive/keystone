@@ -274,13 +274,13 @@ class ArchAPI:
         )
 
     @classmethod
-    def proxy_wasapi_request(cls, user, job_run_uuid, base_download_url):
+    def list_wasapi_files(cls, user, job_run_uuid, base_download_url, page):
         """Return a WASAPI dataset file listing response."""
-        return cls.get(
+        return cls.get_json(
             user,
             f"/job/{job_run_uuid}/result",
-            proxy=True,
             base_download_url=base_download_url,
+            page=page,
         )
 
     @classmethod
