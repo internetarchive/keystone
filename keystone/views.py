@@ -9,7 +9,7 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseForbidden,
     HttpResponseNotFound,
-    JsonResponse
+    JsonResponse,
 )
 from django.shortcuts import (
     get_object_or_404,
