@@ -1,3 +1,0 @@
-[submodule "web-components/src/lib/webservices"]
-	path = web-components/src/lib/webservices
-	url = git@git.archive.org:archive-it/webservices-js-lib
