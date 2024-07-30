@@ -783,6 +783,7 @@ class DatasetSampleVizData(Schema):
 
 class WasapiResponseFile(Schema):
     """The Wasapi files listing response file schema."""
+
     checksums: dict[str, str]
     collection: str
     filename: str
@@ -1269,8 +1270,9 @@ def create_user(request, payload: CreateUserSchema, send_welcome: bool):
 def update_user(request, payload: UpdateUserSchema, user_id: int):
     """Update an existing User."""
     req_user = request.user
+    req_user_is_admin = req_user.role == UserRoles.ADMIN
     # Deny request if not admin or target is not self.
-    if req_user.role != UserRoles.ADMIN and user_id != req_user.id:
+    if not req_user_is_admin and user_id != req_user.id:
         raise PermissionDenied
     existing_user = User.objects.get(id=user_id)
     # Deny if the requesting and target user accounts are not the same.
@@ -1280,13 +1282,18 @@ def update_user(request, payload: UpdateUserSchema, user_id: int):
     for k, v in payload.dict(exclude_none=True).items():
         if getattr(existing_user, k) != v:
             # A user is not allowed to modify their own role.
-            if k == "role" and existing_user == request.user:
+            if k == "role" and existing_user == req_user:
                 raise PermissionDenied("self role modification not allowed")
             # Handle "teams".
             if k == "teams":
                 team_ids = {x["id"] for x in v}
                 if team_ids != set(existing_user.teams.values_list("id", flat=True)):
-                    existing_user.teams.set(Team.objects.filter(id__in=team_ids))
+                    if req_user_is_admin:
+                        existing_user.teams.set(Team.objects.filter(id__in=team_ids))
+                    else:
+                        raise PermissionDenied(
+                            "only account admins can update user teams"
+                        )
             else:
                 setattr(existing_user, k, v)
                 updated = True

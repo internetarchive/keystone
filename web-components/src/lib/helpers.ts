@@ -23,6 +23,8 @@ export const Paths = {
       : `/collections/custom-collection-builder?${sourceCollectionIds
           .map((x) => `${UrlCollectionsParamName}=${x}`)
           .join("&")}`,
+
+  teams: "/account/teams",
 };
 
 export function isActiveProcessingState(state: ProcessingState): boolean {

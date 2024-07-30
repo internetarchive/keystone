@@ -5,12 +5,14 @@ import { DefaultSelectElementPromptText } from "../../lib/constants";
 
 @customElement("arch-select-adder")
 export class ArchSelectAdder<T> extends LitElement {
+  @property() emptyOptionsPlaceholder: TemplateResult = html``;
   @property({ type: String }) deselectButtonText = "remove";
   @property({ type: Number }) headingLevel = 3;
   @property() labelGetter!: (obj: T) => string;
   @property({ type: Array }) options!: Array<T>;
   @property() optionsSortCompareFn: undefined | ((a: T, b: T) => number) =
     undefined;
+  @property() readOnlyMessage: undefined | TemplateResult = undefined;
   @property({ type: Array }) selectedOptions!: Array<T>;
   @property({ type: Array }) selectedOptionsTitle = "Selected Options";
   @property({ type: String }) selectCtaText = "Select value to add";
@@ -70,12 +72,19 @@ export class ArchSelectAdder<T> extends LitElement {
     const {
       deselectButtonText,
       disabled,
+      emptyOptionsPlaceholder,
       labelGetter,
+      options,
       selectCtaText,
+      readOnlyMessage,
       selectedOptions,
       selectedOptionsTitle,
       valueGetter,
     } = this;
+
+    if (options.length === 0) {
+      return emptyOptionsPlaceholder;
+    }
 
     this.updateAvailableOptions();
 
@@ -88,18 +97,28 @@ export class ArchSelectAdder<T> extends LitElement {
               ${selectedOptions.map(
                 (x) =>
                   html`<li>
-                    ${labelGetter(x)}<button
-                      ?disabled=${disabled}
-                      @click=${(e: Event) =>
-                        this.deselectOption(e.target as HTMLButtonElement, x)}
-                    >
-                      ${deselectButtonText}
-                    </button>
+                    ${labelGetter(x)}
+                    ${readOnlyMessage
+                      ? html``
+                      : html`
+                          <button
+                            ?disabled=${disabled}
+                            @click=${(e: Event) =>
+                              this.deselectOption(
+                                e.target as HTMLButtonElement,
+                                x
+                              )}
+                          >
+                            ${deselectButtonText}
+                          </button>
+                        `}
                   </li>`
               )}
             </ul>
           `}
-      ${this.availableOptions.length === 0
+      ${readOnlyMessage
+        ? readOnlyMessage
+        : this.availableOptions.length === 0
         ? html``
         : html`
             <label>

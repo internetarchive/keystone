@@ -56,6 +56,7 @@ export class ArchEditUserModal extends ArchModal {
       return;
     }
     const userIsSelf = user.id === userId;
+    const userIsAdmin = user.role === UserRoles.ADMIN;
     this.content = html`
       <form validate>
         <input type="hidden" name="id" value=${user.id} />
@@ -107,14 +108,20 @@ export class ArchEditUserModal extends ArchModal {
                 )}
               </select>
             `}
-
-        <label for="user-teams-selector">Teams</label>
-        <arch-user-teams-selector
-          .accountTeams=${accountTeams}
-          .userTeams=${user.teams}
-          id="user-teams-selector"
-        >
-        </arch-user-teams-selector>
+        ${accountTeams.length === 0 && profileMode && !userIsAdmin
+          ? html``
+          : html`
+              <label for="user-teams-selector">Teams</label>
+              <arch-user-teams-selector
+                .accountTeams=${accountTeams}
+                .userTeams=${user.teams}
+                .readOnly=${!profileMode
+                  ? false
+                  : user.role !== UserRoles.ADMIN}
+                id="user-teams-selector"
+              >
+              </arch-user-teams-selector>
+            `}
       </form>
       <div class="error alert-danger">
         Something went wrong. Please try again.
