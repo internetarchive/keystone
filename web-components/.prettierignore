@@ -1,4 +1,4 @@
 node_modules
 dist
 **/*.d.ts
-src/lib/webservices
+src/lib/webservices/src/legacy/
