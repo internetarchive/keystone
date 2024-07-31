@@ -284,6 +284,17 @@ def test_admin_can_not_update_own_role(make_account, make_user):
 
 
 @mark.django_db
+def test_admin_can_update_own_teams(make_account, make_user, make_team):
+    """Users with role=ADMIN can update their own teams."""
+    admin_user = make_user(account=make_account(), role=UserRoles.ADMIN)
+    team = make_team(account=admin_user.account)
+    res = Client(admin_user).update_user(admin_user, {"teams": [model_to_dict(team)]})
+    assert res.status_code == HTTPStatus.OK
+    admin_user.refresh_from_db()
+    assert tuple(admin_user.teams.all()) == (team,)
+
+
+@mark.django_db
 @mark.parametrize("role", (UserRoles.ADMIN, UserRoles.USER))
 def test_no_user_can_update_other_account_user(role, make_account, make_user):
     """No user is allowed to update another account's user."""
@@ -295,7 +306,7 @@ def test_no_user_can_update_other_account_user(role, make_account, make_user):
 
 @mark.django_db
 def test_non_admin_can_update_self(make_account, make_user):
-    """Users with role=USER are allowed to update themselves."""
+    """Users with role=USER are allowed to update themselves less role and teams."""
     user = make_user(account=make_account(), role=UserRoles.USER)
     new_email = "new@email.com"
     assert new_email != user.email
@@ -303,6 +314,23 @@ def test_non_admin_can_update_self(make_account, make_user):
     assert res.status_code == HTTPStatus.OK
     user.refresh_from_db()
     assert user.email == new_email
+
+
+@mark.django_db
+def test_non_admin_can_not_update_own_role(make_user, make_team):
+    """Users with role=USER are not allowed to update their own role."""
+    user = make_user(role=UserRoles.USER)
+    res = Client(user).update_user(user, {"role": UserRoles.ADMIN})
+    assert res.status_code == HTTPStatus.FORBIDDEN
+
+
+@mark.django_db
+def test_non_admin_can_not_update_own_teams(make_user, make_team):
+    """Users with role=USER are not allowed to update their own teams."""
+    user = make_user(role=UserRoles.USER)
+    team = make_team(account=user.account)
+    res = Client(user).update_user(user, {"teams": [model_to_dict(team)]})
+    assert res.status_code == HTTPStatus.FORBIDDEN
 
 
 @mark.django_db

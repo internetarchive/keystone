@@ -8,6 +8,7 @@ export declare const Paths: {
     datasets: string;
     generateCollectionDataset: (collectionId: Collection["id"]) => string;
     buildSubCollection: (sourceCollectionIds?: Array<Collection["id"]>) => string;
+    teams: string;
 };
 export declare function isActiveProcessingState(state: ProcessingState): boolean;
 export declare function timestampStringToYearMonthString(timestamp: string): string;

@@ -1,10 +1,12 @@
 import { LitElement, TemplateResult } from "lit";
 export declare class ArchSelectAdder<T> extends LitElement {
+    emptyOptionsPlaceholder: TemplateResult;
     deselectButtonText: string;
     headingLevel: number;
     labelGetter: (obj: T) => string;
     options: Array<T>;
     optionsSortCompareFn: undefined | ((a: T, b: T) => number);
+    readOnlyMessage: undefined | TemplateResult;
     selectedOptions: Array<T>;
     selectedOptionsTitle: string;
     selectCtaText: string;
@@ -19,7 +21,7 @@ export declare class ArchSelectAdder<T> extends LitElement {
     };
     private sortByLabel;
     private heading;
-    render(): TemplateResult<1>;
+    render(): TemplateResult<1 | 2>;
     updateAvailableOptions(): void;
     private selectOption;
     private get revertFn();
