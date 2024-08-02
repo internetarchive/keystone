@@ -785,7 +785,7 @@ class WasapiResponseFile(Schema):
     """The Wasapi files listing response file schema."""
 
     checksums: dict[str, str]
-    collection: str
+    collection: Optional[str]
     filename: str
     filetype: str
     locations: List[str]
@@ -942,7 +942,7 @@ def register_job_complete(request, payload: JobCompleteIn):
                 filename=f.filename,
                 size_bytes=f.sizeBytes,
                 mime_type=f.mimeType,
-                line_count=f.lineCount,
+                line_count=max(f.lineCount, 0),
                 file_type=f.fileType,
                 creation_time=f.creationTime,
                 md5_checksum=f.md5Checksum,
