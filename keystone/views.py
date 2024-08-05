@@ -328,6 +328,9 @@ def dataset_file_download(request, dataset_id, filename):
         # Do an anonymous, access_key-based download request.
         user = AnonymousUser()
         dataset = get_object_or_404(Dataset, id=dataset_id)
+    elif request.user.is_anonymous:
+        # Deny anonymous requests that don't specify an access key.
+        return HttpResponseForbidden()
     else:
         # Do a non-access_key-based / potentially-logged-in-user download request.
         # Lookup the Dataset using request.user.
