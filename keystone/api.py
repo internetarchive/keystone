@@ -1487,24 +1487,24 @@ def get_sample_viz_data(request, dataset_id: int):
 def get_file_listing(request, dataset_id: PositiveInt, page: PositiveInt = 1):
     """Proxy as WASAPI datase file listing response from ARCH."""
     dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
-    # Use the reverse for dataset-file-download to create a base download URL, to
-    # which ARCH will append "/{filename}?access=..."
-    base_download_url = ctx_helpers(request)["abs_url"](
-        "dataset-file-download", args=[dataset.id, "dummy"]
-    ).rsplit("/", 1)[0]
     # Request on behalf of the Dataset owner in the event of teammate access.
     res = ArchAPI.list_wasapi_files(
         dataset.job_start.user,
         dataset.job_start.id,
-        base_download_url,
         page,
     )
     # Rewrite next/previous URLs to Keystone-specific values.
-    base_abs_url = ctx_helpers(request)["abs_url"](
+    base_pagination_url = ctx_helpers(request)["abs_url"](
         "wasapi:file_listing", args=[dataset_id]
     )
     if res.get("next"):
-        res["next"] = f"{base_abs_url}?page={page + 1}"
+        res["next"] = f"{base_pagination_url}?page={page + 1}"
     if res.get("previous"):
-        res["previous"] = f"{base_abs_url}?page={page - 1}"
+        res["previous"] = f"{base_pagination_url}?page={page - 1}"
+    # Rewrite the file location URLs to Keystone-specific values.
+    base_download_url = ctx_helpers(request)["abs_url"](
+        "dataset-file-download", args=[dataset.id, "dummy"]
+    ).rsplit("/", 1)[0]
+    for i, file_dict in enumerate(res["files"]):
+        res["files"][i]["locations"] = [f"{base_download_url}/{file_dict['filename']}"]
     return res
