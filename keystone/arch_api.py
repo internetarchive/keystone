@@ -274,12 +274,11 @@ class ArchAPI:
         )
 
     @classmethod
-    def list_wasapi_files(cls, user, job_run_uuid, base_download_url, page):
+    def list_wasapi_files(cls, user, job_run_uuid, page):
         """Return a WASAPI dataset file listing response."""
         return cls.get_json(
             user,
             f"/job/{job_run_uuid}/result",
-            base_download_url=base_download_url,
             page=page,
         )
 
