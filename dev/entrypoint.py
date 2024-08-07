@@ -6,10 +6,12 @@ import requests
 
 from django.core.management import call_command
 
+from config.settings import KnownArchJobUuids
 from keystone.models import (
     Account,
     Collection,
     CollectionTypes,
+    JobType,
     User,
     UserRoles,
 )
@@ -21,6 +23,7 @@ DEFAULT_USERS = (
         "username": "system",
         "password": "password",
         "email": "system@keystone.local",
+        "first_name": "System User",
         "is_superuser": True,
         "is_staff": True,
         "role": UserRoles.ADMIN,
@@ -29,6 +32,7 @@ DEFAULT_USERS = (
         "username": "admin",
         "password": "password",
         "email": "admin@keystone.local",
+        "first_name": "Admin User",
         "is_superuser": False,
         "is_staff": False,
         "role": UserRoles.ADMIN,
@@ -37,6 +41,7 @@ DEFAULT_USERS = (
         "username": "test",
         "password": "password",
         "email": "test@keystone.local",
+        "first_name": "Test User",
         "is_superuser": False,
         "is_staff": False,
         "role": UserRoles.USER,
@@ -121,6 +126,30 @@ def import_arch_job_types():
     call_command("import_arch_job_types")
 
 
+def set_named_entities_job_params():
+    """Until ARCH has been modified to return the job param spec in the /api/available-jobs
+    we need to manually define this here.
+    """
+    named_entities_job = JobType.objects.get(
+        id=KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION
+    )
+    named_entities_job.parameters_schema = {
+        "type": "object",
+        "required": ["language"],
+        "properties": {
+            "lang": {
+                "enum": ["English", "Chinese"],
+                "type": "string",
+                "title": "Language",
+                "default": "English",
+                "nullable": False,
+                "description": "The native language of the corpus",
+            }
+        },
+    }
+    named_entities_job.save()
+
+
 def import_and_update_local_collections(users):
     """Ensure that all local collections in /opt/arch/shared/in/collections
     are represented in the database and that size_bytes is up-to-date."""
@@ -158,4 +187,5 @@ users = ensure_users(account)
 ensure_collections(users)
 wait_for_arch()
 import_arch_job_types()
+set_named_entities_job_params()
 import_and_update_local_collections(users)

@@ -6,10 +6,10 @@ ARG UID
 ARG DEBIAN_FRONTEND=noninteractive
 ARG KEYSTONE_USER_HOME=/home/keystone
 ARG KEYSTONE_INSTALL_DIR=/opt/keystone
-ARG KEYSTONE_VENV_DIR=/home/keystone/venv
-
 ARG DJANGO_SETTINGS_MODULE=config.settings
+
 ENV DJANGO_SETTINGS_MODULE $DJANGO_SETTINGS_MODULE
+ENV KEYSTONE_VENV_PATH=/home/keystone/venv
 
 # Install required packages
 RUN apt-get update \
@@ -26,6 +26,9 @@ RUN useradd --create-home --home-dir=$KEYSTONE_USER_HOME --uid $UID keystone
 
 # Create the log file.
 RUN touch /var/log/keystone.log && chown keystone:keystone /var/log/keystone.log
+
+# Ensure that the static files volume is writable.
+RUN mkdir -p /var/www/keystone/static && chown keystone:keystone /var/www/keystone/static
 
 # Copy in the Keystone source
 USER keystone

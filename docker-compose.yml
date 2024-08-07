@@ -5,14 +5,14 @@ services:
       dockerfile: Dockerfile
     command: /home/keystone/venv/bin/gunicorn config.wsgi:application --workers=2 --bind 0.0.0.0:8000
     volumes:
-      - keystone_static_volume:/opt/keystone/staticfiles
-      - keystone_media_volume:/opt/keystone/mediafiles
+      - keystone_static_volume:/var/www/keystone/static:rw
       - ./arch-shared:/opt/arch/shared:ro
       - .:/opt/keystone
     expose:
       - 8000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings
       - KEYSTONE_VENV_PATH=/home/keystone/venv
@@ -26,13 +26,18 @@ services:
       - POSTGRES_DB=keystone
     volumes:
       - keystone_postgres_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -Ukeystone -d keystone"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
     expose:
       - 5432
   nginx:
     build: dev/nginx
     volumes:
-      - keystone_static_volume:/opt/keystone/staticfiles
-      - keystone_media_volume:/opt/keystone/mediafiles
+      - keystone_static_volume:/var/www/keystone/static
     ports:
       - 12342:80
     depends_on:
@@ -48,4 +53,3 @@ services:
 volumes:
   keystone_postgres_data:
   keystone_static_volume:
-  keystone_media_volume:

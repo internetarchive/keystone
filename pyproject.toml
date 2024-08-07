@@ -10,8 +10,8 @@ packages = [
 
 [project]
 name = "keystone"
-version = "0.1"
-description = "Sidecar API for ARCH"
+version = "2.0"
+description = "ARCH Web Client"
 dependencies = [
     "django",
     "django-ninja",
