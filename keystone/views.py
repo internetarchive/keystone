@@ -309,15 +309,21 @@ def dataset_detail(request, dataset_id):
     )
 
 
+def get_download_filename_prefix(dataset):
+    """Prefix a download filename prefix for a given Dataset."""
+    return f"ARCH-{dataset.job_start.collection.id}_{dataset.id}"
+
+
 @login_required
 def dataset_file_preview(request, dataset_id, filename):
     """Download a Dataset file preview."""
     dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
     # Request on behalf of the Dataset owner in the event of teammate access.
     return ArchAPI.proxy_file_preview_download(
-        dataset.job_start.user,
-        dataset.job_start.id,
-        filename,
+        user=dataset.job_start.user,
+        job_run_uuid=dataset.job_start.id,
+        filename=filename,
+        download_filename=f"{get_download_filename_prefix(dataset)}_preview_{filename}",
     )
 
 
@@ -339,7 +345,11 @@ def dataset_file_download(request, dataset_id, filename):
         user = dataset.job_start.user
 
     return ArchAPI.proxy_file_download(
-        user, dataset.job_start.id, filename, access_token
+        user=user,
+        job_run_uuid=dataset.job_start.id,
+        filename=filename,
+        download_filename=f"{get_download_filename_prefix(dataset)}_{filename}",
+        access_token=access_token,
     )
 
 
