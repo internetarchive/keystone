@@ -96,7 +96,7 @@ arch-shared:
 	mkdir arch-shared/out/datasets;
 
 dev/arch:
-	git clone --branch=derekenos/become-api-driven-job-server-dockerfile-update git@github.com:helgeho/arch dev/arch
+	git clone --branch=main git@github.com:internetarchive/arch dev/arch
 
 .PHONY: build-images
 build-images: .env dev/arch arch-shared

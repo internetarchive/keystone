@@ -272,7 +272,7 @@ USE_TZ = True
 
 # embed commit hash in asset root to invalidate cache between releases
 STATIC_URL = f"/static/{KEYSTONE_GIT_COMMIT_HASH}/"
-STATIC_ROOT = "/opt/keystone/staticfiles"
+STATIC_ROOT = env.get("KEYSTONE_STATIC_ROOT", "/opt/keystone/staticfiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
