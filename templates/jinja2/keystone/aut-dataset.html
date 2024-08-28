@@ -124,10 +124,16 @@
               <i class="fa fa-cloud-download fa-5x"></i>
               <p class="card-text center">Download</p>
             </a>
-            {% if not colab_disabled and file.size_bytes < 1000000000 %}
+            {% if not colab_disabled %}
+              {% if file.size_bytes < settings.COLAB_MAX_FILE_SIZE_BYTES %}
             <a href="{{ url('dataset-file-colab', args=[dataset.id, file.filename]) }}" target="_blank">
               <img style="padding-top:15px;" src="{{ static('/img/colab-badge.svg') }}" alt="Open In Colab">
             </a>
+              {% else %}
+            <img style="padding-top:15px; cursor: not-allowed;"
+                 src="{{ static('/img/colab-badge-disabled.svg') }}"
+                 alt="disabled Google Colab badge" title="Not available currently for datasets over 1GB">
+              {% endif %}
             {% endif %}
           </div>
 
