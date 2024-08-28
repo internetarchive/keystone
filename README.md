@@ -2,7 +2,7 @@
 
 ## About
 
-Keystone is a web client for the [ARCH (Archives Research Compute Hub)](https://github.com/helgeho/arch) job server.
+Keystone is a web client for the [ARCH (Archives Research Compute Hub)](https://github.com/internetarchive/arch) job server.
 
 ### Run Keystone & ARCH using Docker
 
