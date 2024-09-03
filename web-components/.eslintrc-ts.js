@@ -27,5 +27,5 @@ module.exports = {
       },
     },
   ],
-  ignorePatterns: ["src/tests/**/*.ts", "src/**/*.test.ts"],
+  ignorePatterns: ["src/tests/**/*.ts", "src/**/*.test.ts", "src/**/*.js"],
 };

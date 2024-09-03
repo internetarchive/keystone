@@ -309,11 +309,6 @@ def dataset_detail(request, dataset_id):
     )
 
 
-def get_download_filename_prefix(dataset):
-    """Prefix a download filename prefix for a given Dataset."""
-    return f"ARCH-{dataset.job_start.collection.id}_{dataset.id}"
-
-
 @login_required
 def dataset_file_preview(request, dataset_id, filename):
     """Download a Dataset file preview."""
@@ -323,7 +318,7 @@ def dataset_file_preview(request, dataset_id, filename):
         user=dataset.job_start.user,
         job_run_uuid=dataset.job_start.id,
         filename=filename,
-        download_filename=f"{get_download_filename_prefix(dataset)}_preview_{filename}",
+        download_filename=dataset.get_download_filename(filename, preview=True),
     )
 
 
@@ -348,7 +343,7 @@ def dataset_file_download(request, dataset_id, filename):
         user=user,
         job_run_uuid=dataset.job_start.id,
         filename=filename,
-        download_filename=f"{get_download_filename_prefix(dataset)}_{filename}",
+        download_filename=dataset.get_download_filename(filename),
         access_token=access_token,
     )
 

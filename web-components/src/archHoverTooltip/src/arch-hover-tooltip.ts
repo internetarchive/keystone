@@ -25,32 +25,6 @@ export class ArchHoverTooltip extends LitElement {
       </sp-theme>
     `;
   }
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.trySetupClickListener();
-  }
-
-  trySetupClickListener() {
-    /* The Spectrum overlay-trigger element swallows click events,
-       so let's hijack these events from its trigger element and
-       propagate them to our parent.
-    */
-    const el = this.shadowRoot
-      ?.querySelector("overlay-trigger")
-      ?.shadowRoot?.querySelector("#trigger");
-    if (el) {
-      el.addEventListener(
-        "click",
-        () => {
-          this.parentElement?.click();
-        },
-        true
-      );
-    } else {
-      setTimeout(this.trySetupClickListener.bind(this), 100);
-    }
-  }
 }
 
 // Injects the tag into the global name space

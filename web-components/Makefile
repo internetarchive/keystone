@@ -1,7 +1,6 @@
 .PHONY: lint
 lint: node_modules
-	# Project has no *.js files, so skip lint which will complain
-	# yarn run lint
+	yarn run lint
 	yarn run ts-lint
 
 .PHONY: format

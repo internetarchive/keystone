@@ -1378,12 +1378,13 @@ export default class DataTable extends AngularMixin(HTMLElement) {
   theadClickHandler(e) {
     /* Handle clicks within the <thead> element.
      */
-    e.stopPropagation();
     const { target } = e;
 
-    // Handle column sort.
-    if (target.tagName === "BUTTON" && target.classList.contains("sort")) {
-      this.handleHeaderSortClick(target);
+    // Handle sort button click.
+    const clickedSortButton = target.closest("button.sort");
+    if (clickedSortButton) {
+      e.stopPropagation();
+      this.handleHeaderSortClick(clickedSortButton);
     }
   }
 
