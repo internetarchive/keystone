@@ -30,7 +30,7 @@ def helpers(request):
     """Extra template helpers."""
     return {
         "abs_url": (
-            lambda path, args: _settings.PUBLIC_BASE_URL + reverse(path, args=args)
+            lambda path, args=None: _settings.PUBLIC_BASE_URL + reverse(path, args=args)
         ),
         "CollectionTypes": CollectionTypes,
     }

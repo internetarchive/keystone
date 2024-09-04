@@ -915,9 +915,10 @@ def register_job_complete(request, payload: JobCompleteIn):
     cancelled by the user, or some other final state.
     """
     job_start = get_object_or_404(JobStart, id=payload.job_start_id)
+    attempt_number = job_start.parameters["attempt"]
 
     # Get (in the event of a retry) or create a JobComplete.
-    if job_start.parameters["attempt"] > 1:
+    if attempt_number > 1:
         job_complete = JobComplete.objects.get(job_start=job_start)
         # Maybe update output_bytes.
         if job_complete.output_bytes != payload.output_bytes:
@@ -930,8 +931,16 @@ def register_job_complete(request, payload: JobCompleteIn):
             created_at=payload.created_at,
         )
 
-    # Abort if job did not finish successfully.
-    if job_start.get_job_status().state != JobEventTypes.FINISHED:
+    job_type = job_complete.job_start.job_type
+    job_state = job_start.get_job_status().state
+
+    # Notify on final attempt failure.
+    if job_state == JobEventTypes.FAILED and attempt_number == 3:
+        jobmail.send_job_failed(request, job_complete, send_user_email=job_type.can_run)
+        return HTTPStatus.NO_CONTENT, None
+
+    # Take no further action if job_state is anything other than FINISHED (e.g. CANCELLED).
+    if job_state != JobEventTypes.FINISHED:
         return HTTPStatus.NO_CONTENT, None
 
     # Create the JobFile objects.
@@ -953,7 +962,6 @@ def register_job_complete(request, payload: JobCompleteIn):
     )
 
     # Send a finished notification email for dataset and custom collection-type jobs.
-    job_type = job_complete.job_start.job_type
     if job_type.can_run:
         jobmail.send_dataset_finished(request, job_complete)
     elif job_type.id == KnownArchJobUuids.USER_DEFINED_QUERY:
@@ -1261,7 +1269,7 @@ def create_user(request, payload: CreateUserSchema, send_welcome: bool):
                 "arch_support_ticket_url": ARCH_SUPPORT_TICKET_URL,
             },
             subject="Welcome to ARCH!",
-            to=new_user.email,
+            to_addresses=(new_user.email,),
         )
     return HTTPStatus.CREATED, new_user
 

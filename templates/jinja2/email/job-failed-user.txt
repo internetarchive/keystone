@@ -1,0 +1,10 @@
+Hello {{username}},
+
+Your "{{ job_type }}" dataset from "{{ collection.name }}" failed to generate.
+
+You may retry your request at: {{ retry_url }}
+
+Contact us for direct support if this issue persists at: {{ support_url }}
+
+Best,
+The ARCH team

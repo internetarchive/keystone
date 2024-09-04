@@ -311,6 +311,9 @@ LOGGING = {
 
 EMAIL_HOST = env.get("KEYSTONE_EMAIL_HOST")
 DEFAULT_FROM_EMAIL = env.get("KEYSTONE_DEFAULT_FROM_EMAIL")
+# Parse a space-delimited list of staff user email addresses to which critical
+# system-related communications should be sent.
+STAFF_EMAIL_ADDRESSES = env.get("KEYSTONE_STAFF_EMAIL_ADDRESSES", "").split()
 
 if DEPLOYMENT_ENVIRONMENT == "DEV":
     # in development, always send emails to the console rather than sending

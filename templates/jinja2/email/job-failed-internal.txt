@@ -1,0 +1,11 @@
+Hello ARCH staff member,
+
+The following ARCH job has failed:
+
+     job run UUID: {{ job_uuid }}
+         job type: {{ job_type }}
+    collection ID: {{ collection.id }}
+  collection name: {{ collection.name }}
+         username: {{ username }}
+       started at: {{ started_at }}
+        failed at: {{ failed_at }}

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+    <style>
+     td:first-child {
+       text-align: right;
+       font-weight: bold;
+     }
+     td:first-child:after {
+       content: ":"
+     }
+
+    </style>
+  </head>
+  <body>
+    <p>Hello ARCH staff member,</p>
+    <p>
+      The following ARCH job has failed:<br>
+      <br>
+      <table>
+        <tr>
+          <td>job run UUID</td>
+          <td><a href="{{ job_admin_url }}">{{ job_uuid }}</a></td>
+        </tr>
+        <tr>
+          <td>job type</td>
+          <td>{{ job_type }}</td>
+        </tr>
+        <tr>
+          <td>collection</td>
+          <td><a href="{{ collection_admin_url }}">{{ collection.name }}</a></td>
+        </tr>
+        <tr>
+          <td>user</td>
+          <td><a href="{{ user_admin_url }}">{{ username }}</a></td>
+        </tr>
+        <tr>
+          <td>started at</td>
+          <td>{{ started_at }}</td>
+        </tr>
+        <tr>
+          <td>failed at</td>
+          <td>{{ failed_at }}</td>
+        </tr>
+      </table>
+    </p>
+  </body>
+</html>
