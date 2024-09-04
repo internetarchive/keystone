@@ -6,6 +6,7 @@ from json import JSONDecodeError
 from logging import getLogger
 
 import requests
+from django.utils.http import content_disposition_header
 from django.http import (
     Http404,
     HttpResponse,
@@ -63,6 +64,7 @@ class ArchAPI:
         base_url=settings.ARCH_API_BASE_URL,
         expect_response_body=JSON,
         proxy=False,
+        proxy_override_headers=None,
         follow_redirects=True,
         timeout=120,
         **params,
@@ -102,8 +104,11 @@ class ArchAPI:
             error(r.status_code, r.text)
         if proxy:
             # Return a Django StreamingHttpResponse object.
+            headers = r.headers.copy()
+            if proxy_override_headers:
+                headers.update(proxy_override_headers)
             return StreamingHttpResponse(
-                r.raw, headers=r.headers, status=r.status_code, reason=r.reason
+                r.raw, headers=headers, status=r.status_code, reason=r.reason
             )
         if expect_response_body is False:
             return None
@@ -236,21 +241,35 @@ class ArchAPI:
             raise Http404 from e
 
     @classmethod
-    def proxy_file_preview_download(cls, user, job_run_uuid, filename):
+    def proxy_file_preview_download(
+        cls, user, job_run_uuid, filename, download_filename
+    ):
         """Download a dataset file preview."""
         return cls.get(
             user,
             f"/job/{job_run_uuid}/preview/{filename}",
             proxy=True,
+            proxy_override_headers={
+                "content-disposition": content_disposition_header(
+                    True, download_filename
+                ),
+            },
         )
 
     @classmethod
-    def proxy_file_download(cls, user, job_run_uuid, filename, access_token):
+    def proxy_file_download(
+        cls, user, job_run_uuid, filename, download_filename, access_token
+    ):
         """Download a dataset file."""
         return cls.get(
             user,
             f"/job/{job_run_uuid}/download/{filename}",
             proxy=True,
+            proxy_override_headers={
+                "content-disposition": content_disposition_header(
+                    True, download_filename
+                ),
+            },
             access=access_token,
         )
 

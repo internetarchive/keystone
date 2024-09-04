@@ -436,6 +436,16 @@ class Dataset(models.Model):
     finished_time = models.DateTimeField(null=True)
     teams = models.ManyToManyField("Team", blank=True, related_name="datasets")
 
+    def get_download_filename(self, jobfile_filename, preview=False):
+        """Prefix the JobFile filename with the Keystone Dataset and Collection
+        IDs to serve as the download filename."""
+        return (
+            f"ARCH-{self.job_start.collection.id}_{self.id}"
+            f"{'_preview' if preview else ''}"
+            # Strip .gz extension from previews which are delivered uncompressed.
+            f"_{jobfile_filename.rstrip('.gz') if preview else jobfile_filename}"
+        )
+
     @classmethod
     def user_queryset(cls, user):
         """Return a queryset that constrains access to the specified user."""

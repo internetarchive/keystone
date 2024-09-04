@@ -315,9 +315,10 @@ def dataset_file_preview(request, dataset_id, filename):
     dataset = get_object_or_404(Dataset.user_queryset(request.user), id=dataset_id)
     # Request on behalf of the Dataset owner in the event of teammate access.
     return ArchAPI.proxy_file_preview_download(
-        dataset.job_start.user,
-        dataset.job_start.id,
-        filename,
+        user=dataset.job_start.user,
+        job_run_uuid=dataset.job_start.id,
+        filename=filename,
+        download_filename=dataset.get_download_filename(filename, preview=True),
     )
 
 
@@ -339,7 +340,11 @@ def dataset_file_download(request, dataset_id, filename):
         user = dataset.job_start.user
 
     return ArchAPI.proxy_file_download(
-        user, dataset.job_start.id, filename, access_token
+        user=user,
+        job_run_uuid=dataset.job_start.id,
+        filename=filename,
+        download_filename=dataset.get_download_filename(filename),
+        access_token=access_token,
     )
 
 
