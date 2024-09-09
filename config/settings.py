@@ -120,6 +120,8 @@ GLOBAL_USER_ACCOUNT_NAME = GLOBAL_USER_USERNAME + "-account"
 DEBUG = env.get("KEYSTONE_DJANGO_DEBUG", "false") == "true"
 DB_QUERY_DEBUG = False
 
+COLLECTION_IMAGE_MAX_WIDTH_PX = 250
+
 ALLOWED_HOSTS = (
     [
         "localhost",
@@ -276,9 +278,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-# embed commit hash in asset root to invalidate cache between releases
+# Embed commit hash in asset root to invalidate cache between releases
 STATIC_URL = f"/static/{KEYSTONE_GIT_COMMIT_HASH}/"
 STATIC_ROOT = env.get("KEYSTONE_STATIC_ROOT", "/opt/keystone/staticfiles")
+
+# Define the media files base URL and local storage path.
+MEDIA_URL = "/media/"
+MEDIA_ROOT = env.get("KEYSTONE_MEDIA_ROOT", "/opt/keystone/media")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -339,6 +345,7 @@ class KnownArchJobUuids:
     ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE = UUID(
         "018d1151-3a3a-7184-b6ed-8ec176ee750e"
     )
+    ARCHIVESPARK_FLEX_JOB = UUID("018f52cc-d917-71ac-9e64-19fb219114a4")
     ARCHIVESPARK_NOOP = UUID("018d1cef-c91d-7d51-9cf4-05fe51900321")
     AUDIO_FILE_INFORMATION = UUID("01895066-7db2-794b-b91b-e3f5a340e859")
     DATASET_PUBLICATION = UUID("018950a2-21cb-7034-8d2a-03dff990cc1a")
@@ -359,6 +366,27 @@ class KnownArchJobUuids:
     WEB_GRAPH = UUID("01895069-e74c-79de-8292-effb45265179")
     WORD_PROCESSING_FILE_INFORMATION = UUID("0189506a-d09d-7571-9d3c-a44698d58d39")
 
+
+# Define the set of jobs that only work with WARC-type collections.
+WARC_ONLY_JOB_IDS = {
+    KnownArchJobUuids.AUDIO_FILE_INFORMATION,
+    KnownArchJobUuids.DOMAIN_FREQUENCY,
+    KnownArchJobUuids.DOMAIN_GRAPH,
+    KnownArchJobUuids.IMAGE_FILE_INFORMATION,
+    KnownArchJobUuids.IMAGE_GRAPH,
+    KnownArchJobUuids.LONGITUDINAL_GRAPH,
+    KnownArchJobUuids.NAMED_ENTITIES,
+    KnownArchJobUuids.PDF_FILE_INFORMATION,
+    KnownArchJobUuids.PLAIN_TEXT_OF_WEBPAGES,
+    KnownArchJobUuids.PRESENTATION_FILE_INFORMATION,
+    KnownArchJobUuids.SPREADSHEET_FILE_INFORMATION,
+    KnownArchJobUuids.TEXT_FILE_INFORMATION,
+    KnownArchJobUuids.USER_DEFINED_QUERY,
+    KnownArchJobUuids.VIDEO_FILE_INFORMATION,
+    KnownArchJobUuids.WEB_ARCHIVE_TRANSFORMATION,
+    KnownArchJobUuids.WEB_GRAPH,
+    KnownArchJobUuids.WORD_PROCESSING_FILE_INFORMATION,
+}
 
 JOB_TYPE_UUID_NON_AUT_TEMPLATE_FILENAME_MAP = {
     KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION: "ars-dataset.html",

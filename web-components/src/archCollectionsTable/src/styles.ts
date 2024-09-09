@@ -7,11 +7,7 @@ export default [
     }
 
     data-table > table > thead > tr > th.type {
-      width: 5em;
-    }
-
-    data-table > table > thead > tr > th.public {
-      width: 5em;
+      width: 7em;
     }
 
     data-table > table > thead > tr > th.dataset-date {

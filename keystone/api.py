@@ -2,12 +2,17 @@
 
 import re
 from collections import defaultdict
-from datetime import datetime
+from enum import Enum
 from functools import wraps
 from http import HTTPStatus
+from datetime import (
+    datetime,
+    timezone,
+)
 from typing import (
     Any,
     List,
+    Literal,
     Optional,
     Tuple,
 )
@@ -48,8 +53,7 @@ from ninja.security import (
     HttpBasicAuth,
     django_auth,
 )
-from pydantic import PositiveInt
-
+from pydantic import PositiveInt, NonNegativeInt
 
 from config.settings import (
     ARCH_GLOBAL_USERNAME,
@@ -93,6 +97,8 @@ from .models import (
 # Constants
 ###############################################################################
 
+
+DATETIME_MIN = datetime.min.replace(tzinfo=timezone.utc)
 
 UNIQUE_INTEGRITY_ERROR_REGEX = re.compile(r"Key \((.+)\)=\((.+)\) already exists")
 
@@ -188,11 +194,10 @@ class KeystoneRequestParser(Parser):
 
 
 def apply_sort_param(
-    request: HttpRequest, queryset: QuerySet, schema: type[Schema]
+    sort_str: Optional[str], queryset: QuerySet, schema: type[Schema]
 ) -> QuerySet:
     """Apply any specified request "sort" param to the queryset as an
     order_by()"""
-    sort_str = request.GET.get("sort")
     if sort_str is None:
         return queryset
     # Resolve field aliases.
@@ -232,9 +237,7 @@ def get_model_queryset_filter_values(queryset, field_path, filter_schema):
         raise HttpError(400, f"Filtering not supported for field: {field_path}")
     # Use the filter schema to de-alias the field path.
     field_prop_q = filter_schema_props[field_name].get("q")
-    if field_prop_q is not None:
-        if not isinstance(field_prop_q, str):
-            raise HttpError(400, f"Filtering not supported for field: {field_path}")
+    if field_prop_q is not None and isinstance(field_prop_q, str):
         field_name = field_prop_q.removesuffix("__in")
     # Do the query.
     values = list(
@@ -333,6 +336,15 @@ def wasapi_api_arch_request_error_handler(request, exc):
 ###############################################################################
 
 
+class StrictSchema(Schema):
+    """Schema subclass that forbids extra fields."""
+
+    class Config:
+        """Forbid extra fields."""
+
+        extra = "forbid"
+
+
 class DatasetFileSchema(Schema):
     """Respose schema for a DatasetFile object."""
 
@@ -382,7 +394,7 @@ class JobStartIn(Schema):
     id: str
     job_type_id: str
     username: str
-    input_bytes: PositiveInt
+    input_bytes: NonNegativeInt
     sample: bool
     parameters: JobStartInParameters
     commit_hash: str
@@ -448,22 +460,90 @@ class PermissionResponse(Schema):
 
 
 ###############################################################################
+# ARCH Collection Input Spec Schema
+###############################################################################
+
+PetaboxCollectionOrItemId = str
+FilenameExtension = str
+MimeType = str
+
+
+class ArchFilesInputSpecDataSource(Enum):
+    """The files-type input spec dataSource values that ARCH supports
+    by default."""
+
+    # pylint: disable=invalid-name
+    HDFS = "hdfs"
+    HTTP = "http"
+    S3 = "s3"
+    S3_HTTP = "s3-http"
+
+
+class ArchFilesInputSpecInputType(Enum):
+    """Valid files-type input spec inputType values."""
+
+    CDX = "cdx"
+    WARC = "warc"
+
+
+class ArchFilesInputSpec(StrictSchema):
+    """Represents an ARCH files-type collection input spec."""
+
+    type: Literal["files"] = "files"
+    # Accept any string for dataSource in order to support additional
+    # type support through plugins.
+    dataSource: ArchFilesInputSpecDataSource | str
+    dataLocation: str
+    dataMime: dict[FilenameExtension, MimeType]
+    inputType: Optional[ArchFilesInputSpecInputType]
+
+    class Config:
+        """Pydantic model config."""
+
+        use_enum_values = True
+
+
+ArchInputSpec = ArchFilesInputSpec
+
+
+###############################################################################
 # Public API Schemas
 ###############################################################################
 
 
-class AITCollectionMetadata(Schema):
-    """Represents AIT collection-specific metadata."""
+class CollectionMetadataBase(StrictSchema):
+    """Represents common collection metadata."""
 
+    object_count: Optional[int]
+    object_name_singular: Optional[str]
+    object_name_plural: Optional[str]
+
+
+class SpecialCollectionMetadata(CollectionMetadataBase):
+    """Represents SPECIAL collection type metadata."""
+
+    input_spec: Optional[ArchInputSpec]
+    type_displayname: Optional[str]
+
+
+class AITCollectionMetadata(CollectionMetadataBase):
+    """Represents AIT collection type metadata."""
+
+    ait_id: int
     is_public: bool
     seed_count: int
     last_crawl_date: Optional[datetime]
 
 
-class CustomCollectionMetadata(Schema):
-    """Represents custom collection-specific metadata."""
+class CustomCollectionMetadata(CollectionMetadataBase):
+    """Represents CUSTOM collection type metadata."""
 
     state: JobEventTypes
+
+
+CollectionMetadata = (
+    AITCollectionMetadata | CustomCollectionMetadata | SpecialCollectionMetadata
+)
 
 
 class LatestDatasetSchema(Schema):
@@ -483,7 +563,7 @@ class CollectionSchema(Schema):
     size_bytes: int
     dataset_count: int = 0
     latest_dataset: LatestDatasetSchema = None
-    metadata: Optional[AITCollectionMetadata | CustomCollectionMetadata] = None
+    metadata: Optional[CollectionMetadata] = None
 
 
 class CollectionFilterSchema(FilterSchema):
@@ -497,10 +577,14 @@ class CollectionFilterSchema(FilterSchema):
     # In order to support multiple query values for a single field,
     # use type of Optional[List[T]] and a Field q value like "...__in".
     id: Optional[List[int]] = Field(None, q="id__in")
-    collection_type: Optional[List[CollectionTypes]] = Field(
-        None, q="collection_type__in"
-    )
-    metadata__is_public: Optional[List[bool]] = Field(None, q="metadata__is_public__in")
+    collection_type: Optional[List[str]] = None
+
+    def filter_collection_type(self, value: str) -> Q:
+        """If metadata.type_displayname is not defined, match on collection_type,
+        otherwise match on metadata.type_displayname."""
+        return Q(
+            collection_type__in=value, metadata__type_displayname__isnull=True
+        ) | Q(metadata__type_displayname__in=value)
 
 
 class DatasetSchema(Schema):
@@ -811,6 +895,7 @@ class WasapiResponse(Schema):
 @transaction.atomic
 def register_job_start(request, payload: JobStartIn):
     """Tell Keystone a user has started a job."""
+    # pylint: disable=too-many-locals
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
     username = payload.username
     # Maybe retrieve the global dataset user, or strip any "ks:" username
@@ -849,8 +934,13 @@ def register_job_start(request, payload: JobStartIn):
     # provided inputSpec, otherwise create a new Collection to serve as the
     # job_start.collection value.
     if job_type.id != KnownArchJobUuids.USER_DEFINED_QUERY:
+        input_spec = parameters.conf.inputSpec
+        # Strip any included "size" input_spec field. See generate_dataset() for why
+        # this may/will be here.
+        if "size" in input_spec:
+            del input_spec["size"]
         try:
-            collection = Collection.get_for_input_spec(parameters.conf.inputSpec)
+            collection = Collection.get_for_input_spec(input_spec)
         except Collection.DoesNotExist as e:
             raise Http404 from e
     else:
@@ -1016,6 +1106,15 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
         .values("count")
     )
 
+    # Pop any latest_dataset.start_time sort param which we need to handle manually
+    # since it's a computed field.
+    sort_latest_dataset_dir = None
+    querydict = request.GET.copy()
+    if querydict.get("sort", "").endswith("latest_dataset.start_time"):
+        # Note that QueryDict.pop() returns a list, whereas get() returns only the
+        # last of possible multiple values.
+        sort_latest_dataset_dir = -1 if querydict.pop("sort")[0][0] == "-" else 1
+
     queryset = filters.filter(
         Collection.user_queryset(request.user)
         .exclude(
@@ -1025,7 +1124,9 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
         )
         .annotate(dataset_count=Coalesce(datasets_count_subquery, 0))
     )
-    collections = list(apply_sort_param(request, queryset, CollectionSchema))
+    collections = list(
+        apply_sort_param(querydict.get("sort"), queryset, CollectionSchema)
+    )
 
     # Set latest_dataset.
     ordered_datasets = list(
@@ -1043,6 +1144,15 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
         datasets = collection_datasets_map[c.id]
         c.latest_dataset = None if not datasets else datasets[0]
 
+    # Apply any latest_dataset.start_time sorting. The @paginate decorator operates
+    # on the return value, so we're dealing with the full results set here.
+    if sort_latest_dataset_dir is not None:
+        collections = sorted(
+            collections,
+            key=lambda c: getattr(c.latest_dataset, "start_time", DATETIME_MIN),
+            reverse=sort_latest_dataset_dir == -1,
+        )
+
     return collections
 
 
@@ -1050,11 +1160,24 @@ def list_collections(request, filters: CollectionFilterSchema = Query(...)):
 @paginate
 def collections_filter_values(request, field: str):
     """Retrieve the distinct values for a specific Collection field."""
-    return get_model_queryset_filter_values(
-        Collection.user_queryset(request.user),
-        field,
-        CollectionFilterSchema,
+    filter_values = list(
+        get_model_queryset_filter_values(
+            Collection.user_queryset(request.user),
+            field,
+            CollectionFilterSchema,
+        )
     )
+    # Also look up the distinct metadata.type_displayname values for
+    # SPECIAL-type collections.
+    return filter_values + [
+        (x, x)
+        for x in Collection.objects.filter(
+            collection_type="SPECIAL", metadata__type_displayname__isnull=False
+        )
+        .exclude(metadata__type_displayname__in=filter_values)
+        .distinct("metadata__type_displayname")
+        .values_list("metadata__type_displayname", flat=True)
+    ]
 
 
 @public_api.get("/collections/{collection_id}/dataset_states", response=dict)
@@ -1113,7 +1236,7 @@ def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
             )
         )
     )
-    return apply_sort_param(request, queryset, DatasetSchema)
+    return apply_sort_param(request.GET.get("sort"), queryset, DatasetSchema)
 
 
 @public_api.get("/datasets/filter_values", response=List[Any])
@@ -1182,20 +1305,28 @@ def list_job_categories(request):
 
 
 @public_api.get("/available-jobs", response=List[AvailableJobsCategory])
-def list_available_jobs(request):
+def list_available_jobs(request, collection_id: Optional[int] = None):
     """Return the available, user-runnable JobTypes as an object matching
     the response from the ARCH /api/available-jobs endpoint."""
 
     def cat_img_url(job_cat):
         return static(f"/img/category/{job_cat.name.lower().replace(' ', '-')}.png")
 
-    exclude_job_uuids = (
-        # Legacy NamedEntities is replaced by ArchiveSparkEntityExtraction
-        KnownArchJobUuids.NAMED_ENTITIES,
-        KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE,
-        KnownArchJobUuids.ARCHIVESPARK_NOOP,
-    )
+    # If a collection ID was not specified, return all user-runnable JobTypes, otherwise
+    # filter by collection-specific JobTypes.
+    if collection_id is None:
+        job_types_qs = JobType.get_user_runnable()
+    else:
+        job_types_qs = (
+            Collection.user_queryset(request.user)
+            .get(id=collection_id)
+            .user_runnable_job_types
+        )
 
+    # Group by category.
+    job_category_job_types_map = defaultdict(list)
+    for job_type in job_types_qs:
+        job_category_job_types_map[job_type.category].append(job_type)
     return [
         {
             "categoryName": job_cat.name,
@@ -1211,12 +1342,10 @@ def list_available_jobs(request):
                     "code_url": job.code_url,
                     "parameters_schema": job.parameters_schema,
                 }
-                for job in job_cat.jobtype_set.filter(can_run=True).exclude(
-                    id__in=exclude_job_uuids
-                )
+                for job in job_types
             ],
         }
-        for job_cat in (JobCategory.objects.exclude(name__in=("System", "")))
+        for job_cat, job_types in job_category_job_types_map.items()
     ]
 
 
@@ -1227,7 +1356,7 @@ def list_account_users(request, filters: UserFilterSchema = Query(...)):
     """Return the users that are members of the requesting ADMIN-type user's
     account."""
     queryset = filters.filter(User.objects.filter(account=request.user.account))
-    return apply_sort_param(request, queryset, UserSchema)
+    return apply_sort_param(request.GET.get("sort"), queryset, UserSchema)
 
 
 @public_api.get("/users/filter_values", response=List[Any])
@@ -1327,7 +1456,7 @@ def list_account_teams(request, filters: TeamFilterSchema = Query(...)):
     queryset = filters.filter(
         Team.objects.filter(account=request.user.account).prefetch_related("members")
     )
-    return apply_sort_param(request, queryset, TeamSchema)
+    return apply_sort_param(request.GET.get("sort"), queryset, TeamSchema)
 
 
 @public_api.put("/teams", response={HTTPStatus.CREATED: TeamSchema})
@@ -1402,9 +1531,14 @@ def generate_dataset(request, payload: DatasetGenerationRequest):
     )
     job_type = get_object_or_404(JobType, id=payload.job_type_id)
 
+    # Extend the input_spec with a "size" field that ARCH will pass back as
+    # input_bytes in the call to register_job_start. Without it, input_bytes will
+    # be reported as -1 which will cause a pydantic validation error.
+    input_spec = collection.input_spec | {"size": collection.size_bytes}
+
     return ArchAPI.generate_dataset(
         request.user,
-        collection.input_spec,
+        input_spec,
         str(job_type.id),  # Cast UUID to serializable
         payload.params.dict(),
     )

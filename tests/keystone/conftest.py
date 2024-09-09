@@ -52,6 +52,16 @@ def django_db_setup(django_db_setup, django_db_blocker):
 
 
 @fixture
+def FILES_INPUT_SPEC():
+    return {
+        "type": "files",
+        "dataSource": "s3",
+        "dataLocation": "s3://some-bucket/",
+        "dataMime": {"m4": "video/mp4"},
+    }
+
+
+@fixture
 def make_account():
     return maker(models.Account)
 

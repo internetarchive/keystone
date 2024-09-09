@@ -11,6 +11,7 @@ def extra_builtins(request):
     return {
         "datetime": datetime,
         "isinstance": isinstance,
+        "len": len,
         "list": list,
         "str": str,
         "tuple": tuple,
@@ -33,5 +34,6 @@ def helpers(request):
         "abs_url": (
             lambda path, args=None: _settings.PUBLIC_BASE_URL + reverse(path, args=args)
         ),
+        "intcomma": "{:,}".format,
         "CollectionTypes": CollectionTypes,
     }

@@ -1,6 +1,8 @@
 {% set breadcrumbs = (("Collections", "collections"), (collection.name, ("collection-detail", collection.id))) %}
 
 {% set metadata = collection.metadata or {} %}
+{% set object_count = metadata.get("object_count") %}
+{% set object_name = metadata.get("object_name_singular") if object_count == 1 else metadata.get("object_name_plural") %}
 
 {% extends 'keystone/base.html' %}
 
@@ -21,65 +23,56 @@
       <div class="card-body">
         <div id="collection-metadata-wrapper">
 
-          {% set seed_count = metadata.get("seed_count") %}
-          {% if seed_count != None %}
-          <div>
-            <h3>
-              {{ seed_count }} seed{{ "s" if seed_count != 1 else "" }}
-            </h3>
-            <p><i class="fa fa-files-o fa-4x" aria-hidden="true"></i></p>
+          <div id="metadata-image-wrapper">
+            <img src="{{ (collection.image and collection.image.url) or static('/img/arch-collection-image-placeholder.png') }}" alt="Collection Image" />
           </div>
-          {% endif %}
 
-          {% if "last_crawl_date" in metadata %}
-          {% set last_crawl_date = metadata["last_crawl_date"] %}
-          <div>
-            {% if last_crawl_date == None %}
-            <h3>No Crawls</h3>
-            {% else %}
-            <h3>Crawled {{ datetime.datetime.fromisoformat(last_crawl_date).date() }}</h3>
+          <div id="metadata-icons-wrapper">
+
+            {% if object_count != None and object_name != None %}
+            <div>
+              <h3>
+                {{ intcomma(object_count) }} {{ object_name }}
+              </h3>
+              <p><i class="fa fa-files-o fa-4x" aria-hidden="true"></i></p>
+            </div>
             {% endif %}
-            <p><i class="fa fa-calendar-o fa-4x" aria-hidden="true"></i></p>
-          </div>
-          {% endif %}
 
-          <div>
-            <h3>{{ collection.size_bytes | filesizeformat(binary=True) }}</h3>
-            <p><i class="fa fa-database fa-4x" aria-hidden="true"></i></p>
+            <div>
+              <h3>{{ collection.size_bytes | filesizeformat(binary=True) }}</h3>
+              <p><i class="fa fa-database fa-4x" aria-hidden="true"></i></p>
+            </div>
+
+            {% if collection.collection_type == CollectionTypes.AIT %}
+            {% include 'keystone/collection-detail-ait-extra-icons.html' %}
+            {% endif %}
+
           </div>
 
-          {% set is_public = metadata.get("is_public") %}
-          {% if is_public != None %}
-          <div>
-            {% if is_public %}
-            <h3>Public Collection</h3>
-            <p><i class="fa fa-unlock fa-4x" aria-hidden="true"></i></p>
-            {% else %}
-            <h3>Private Collection</h3>
-            <p><i class="fa fa-lock fa-4x" aria-hidden="true"></i></p>
+          <div id="metadata-description-wrapper">
+            {{ (collection.description or "No description available.") | safe}}
+
+            {% if collection.info_url %}
+            <a class="collection-info-url" href="{{ collection.info_url }}">{{ collection.info_url }}</a>
             {% endif %}
           </div>
-          {% endif %}
 
         </div>
-
-        {% if collection.collection_type == CollectionTypes.AIT and "ait_id" in metadata %}
-        <p id="public-collection-link">Public Collection Link: <a href="https://archive-it.org/collections/{{ metadata['ait_id'] }}" target="_blank">https://archive-it.org/collections/{{ metadata['ait_id'] }}</a></p>
-        {% endif %}
-
       </div>
     </div>
 
-    {% if custom_context %}
-    <h2 id="datasets">Custom Collection Configuration</h2>
+    {% if configuration_info %}
+    <h2 id="datasets">Collection Configuration</h2>
     <div class="card">
-      <div class="card-body" id="custom-collection-config">
+      <div class="card-body" id="collection-config">
+
+        {% if "input_collections" in configuration_info %}
         <h3>Input Collections</h3>
-        {% if not custom_context["input_collections"] %}
+        {% if not configuration_info["input_collections"] %}
         <i>An error occurred while retrieving these collections</i>
         {% else %}
         <ul>
-          {% for input_collection in custom_context["input_collections"] %}
+          {% for input_collection in configuration_info["input_collections"] %}
           <li>
             <a href="{{ url('collection-detail', args=(input_collection.id,)) }}">
               {{ input_collection.name }}
@@ -88,14 +81,26 @@
           {% endfor %}
         </ul>
         {% endif %}
-        {% if custom_context["param_label_value_pairs"] %}
+        {% endif %}
+
+        {% if configuration_info["param_label_value_pairs"] %}
         <h3>Filters</h3>
         <dl>
-          {% for label, value in custom_context["param_label_value_pairs"] %}
+          {% for label, value in configuration_info["param_label_value_pairs"] %}
           <dt>{{ label }}</dt>
           {% if isinstance(value, list) %}
           <dd>
-            {{ ("<em>" + "</em> or <em>".join(value) + "</em>") | safe }}
+            {% set value_str = ("<em>" + "</em> or <em>".join(value) + "</em>") %}
+            {% if len(value_str) > 100 %}
+            <details>
+              <summary class="unselectable">
+                {{ len(value) }} values
+              </summary>
+              {{ value_str | safe }}
+            </details>
+            {% else %}
+            {{  value_str | safe }}
+            {% endif %}
           </dd>
           {% else %}
           <dd><em>{{ value }}</em></dd>

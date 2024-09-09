@@ -11,3 +11,5 @@ Each time you create or update a function, copy the new migration file into this
 | --- | --- | --- | --- | --- |
 | user_on_insert | n/a | n/a | Enforces account.max_users | trig_user_insert |
 | user_on_update | n/a | n/a | Prevents mutation of username | trig_user_update |
+| collection_on_insert | n/a | n/a | Enforces metadata.input_spec uniqueness | trig_collection_insert |
+| collection_on_update | n/a | n/a | Enforces metadata.input_spec uniqueness | trig_collection_update |

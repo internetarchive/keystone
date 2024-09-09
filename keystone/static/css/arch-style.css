@@ -79,38 +79,60 @@ dd:last-child::after {
 /* End global element styles */
 
 /* Begin collection detail view custom collection config */
-#custom-collection-config > h3 {
+#collection-config > h3 {
   font-size: 1.1rem;
 }
 
-#custom-collection-config > ul {
+#collection-config > ul {
   padding-inline-start: 1rem;
 }
 
-#custom-collection-config > dl {
+#collection-config > dl {
   display: grid;
   grid-template-columns: max-content auto;
 }
 
-#custom-collection-config > dl > dt {
+#collection-config > dl > dt {
   grid-column-start: 1;
   font-weight: normal;
   padding-inline-start: 1rem;
 }
 
-#custom-collection-config > dl > dd {
+#collection-config > dl > dd {
   grid-column-start: 2;
   line-height: inherit;
   margin-bottom: 0;
 }
 
-#custom-collection-config > dl > dd::after {
+#collection-config > dl > dd::after {
   content: "";
 }
 
-#custom-collection-config > dl > dd > em {
+#collection-config > dl > dd em {
   font-weight: bold;
 }
+
+#collection-config > dl > dd > details > summary {
+  display: list-item;
+  counter-increment: list-item 0;
+  list-style: inside disclosure-closed;
+  cursor: pointer;
+  text-decoration: underline
+
+}
+
+#collection-config > dl > dd > details > summary:before {
+  content: 'show';
+}
+
+#collection-config > dl > dd > details[open] > summary {
+  list-style: inside disclosure-open;
+}
+
+#collection-config > dl > dd > details[open] > summary:before {
+  content: 'hide';
+}
+
 /* End collection detail view custom collection config */
 
 div.job-card-flex {
@@ -249,9 +271,49 @@ div.graph-description {
  */
 
 #collection-metadata-wrapper {
-    display: flex;
-    justify-content: space-around;
-    text-align: center;
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(min-content, 15vw) auto;
+  grid-template-rows: auto;
+  grid-template-areas:
+    "md-image md-icons"
+    "md-image md-description";
+}
+
+#metadata-image-wrapper {
+  grid-area: md-image;
+  display: flex;
+  border-right: solid #ddd 1px;
+}
+
+#metadata-image-wrapper > img {
+  margin: 0 auto auto auto;
+  display: block;
+  max-width: 90%;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+}
+
+#metadata-icons-wrapper {
+  grid-area: md-icons;
+  display: flex;
+  justify-content: flex-start;
+  gap: 2rem;
+  text-align: center;
+  margin-left: 2rem;
+}
+
+#metadata-description-wrapper {
+  grid-area: md-description;
+  margin-left: 1rem;
+  padding: 1rem;
+  line-height: 1.2rem;
+}
+
+#metadata-description-wrapper > .collection-info-url {
+  display: block;
+  margin-top: 1rem;
 }
 
 #public-collection-link {
@@ -352,4 +414,12 @@ div.new-job-link {
 /* Override the default partner-site css center column width */
 .row {
   max-width: 80rem;
+}
+
+.unselectable {
+  -moz-user-select: -moz-none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  user-select: none;
 }

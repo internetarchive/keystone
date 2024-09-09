@@ -15,8 +15,10 @@ description = "ARCH Web Client"
 dependencies = [
     "django",
     "django-ninja",
+    "django-resized",
     "gunicorn",
     "jinja2",
+    "pillow",
     "psycopg[c]",
     "python-dotenv",
     "requests",

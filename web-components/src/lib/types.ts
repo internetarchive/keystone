@@ -17,15 +17,31 @@ export enum ProcessingState {
   CANCELLED = "CANCELLED",
 }
 
-export type AITCollectionMetadata = {
+export type CollectionMetadataBase = {
+  object_count?: number;
+  object_name_singular?: string;
+  object_name_plural?: string;
+};
+
+export type AITCollectionMetadata = CollectionMetadataBase & {
   is_public?: boolean;
   num_seeds?: number;
   last_crawl_date?: Date;
 };
 
-export type CustomCollectionMetadata = {
+export type CustomCollectionMetadata = CollectionMetadataBase & {
   state: ProcessingState;
 };
+
+export type SpecialCollectionMetadata = CollectionMetadataBase & {
+  input_spec?: Record<string, string>;
+  type_displayname?: string;
+};
+
+export type CollectionMetadata =
+  | AITCollectionMetadata
+  | CustomCollectionMetadata
+  | SpecialCollectionMetadata;
 
 export enum CollectionType {
   AIT = "AIT",
@@ -45,7 +61,7 @@ export type Collection = {
     name: string;
     start_time: Date;
   };
-  metadata: AITCollectionMetadata | CustomCollectionMetadata;
+  metadata: CollectionMetadata;
 };
 
 export type CollectionIdNamePairs = Array<

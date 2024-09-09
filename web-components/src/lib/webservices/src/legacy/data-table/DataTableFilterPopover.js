@@ -239,6 +239,9 @@ export default class DataTableFilterPopover extends HTMLElement {
     this.updateAppliedCount();
     this.emitSelectionEvent(target.name, target.checked);
     this._popover.close();
+    // Show the Clear Filters button if any values are selected.
+    this.clearButton.style.display =
+      selectedValues.size > 0 ? "block" : "none";
   }
 
   set selectedValues(values) {

@@ -8,6 +8,8 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.postgres.indexes import GinIndex
+from django.core.exceptions import MultipleObjectsReturned
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db import transaction
@@ -18,9 +20,13 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 import uuid6
+from django_resized import ResizedImageField
 
 from config import settings
-from .validators import validate_username
+from .validators import (
+    validate_and_clean_collection_metadata,
+    validate_username,
+)
 from .helpers import is_uuid7
 
 
@@ -153,18 +159,36 @@ class Collection(models.Model):
 
     arch_id = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
     collection_type = models.CharField(choices=CollectionTypes.choices, max_length=16)
     accounts = models.ManyToManyField(Account, blank=True, related_name="collections")
     teams = models.ManyToManyField(Team, blank=True, related_name="collections")
     users = models.ManyToManyField(User, blank=True, related_name="collections")
     created_at = models.DateTimeField(auto_now_add=True)
     size_bytes = models.PositiveBigIntegerField(default=0)
-    metadata = models.JSONField(encoder=DjangoJSONEncoder, null=True, blank=True)
+    info_url = models.URLField(null=True, blank=True)
+    image = ResizedImageField(
+        size=[settings.COLLECTION_IMAGE_MAX_WIDTH_PX, None], null=True, blank=True
+    )
+    metadata = models.JSONField(
+        encoder=DjangoJSONEncoder,
+        null=True,
+        blank=True,
+        validators=(validate_and_clean_collection_metadata,),
+    )
 
     class Meta:
         constraints = [
             choice_constraint(field="collection_type", choices=CollectionTypes),
         ]
+        indexes = [
+            GinIndex("metadata__input_spec", name="metadata__input_spec_idx"),
+        ]
+
+    def save(self, *args, **kwargs):
+        """Validate and clean metadata prior to save."""
+        self.metadata = validate_and_clean_collection_metadata(self.metadata, self)
+        return super().save(*args, **kwargs)
 
     @classmethod
     def user_queryset(cls, user):
@@ -195,21 +219,52 @@ class Collection(models.Model):
     @property
     def input_spec(self):
         """Return the ARCH InputSpec object for this collection."""
-        if self.collection_type not in (
-            CollectionTypes.AIT,
-            CollectionTypes.SPECIAL,
-            CollectionTypes.CUSTOM,
-        ):
-            raise NotImplementedError
-        # Return dataset-type input spec if arch_id like "CUSTOM-{uuid}".
-        if (
-            self.collection_type == CollectionTypes.CUSTOM
-            and len(splits := self.arch_id.split("-", 1)) == 2
-            and is_uuid7(splits[1])
-        ):
-            return {"type": "dataset", "inputType": "cdx", "uuid": splits[1]}
-        # Return a collection-type input spec.
-        return {"type": "collection", "collectionId": self.arch_id}
+        if self.collection_type in (CollectionTypes.AIT, CollectionTypes.SPECIAL):
+            # Return any explicitly-defined input spec for SPECIAL-type collections.
+            if (
+                self.collection_type == CollectionTypes.SPECIAL
+                and self.metadata
+                and "input_spec" in self.metadata
+                and self.metadata["input_spec"]
+            ):
+                return self.metadata["input_spec"]
+            # Return a legacy collection-type input spec for AIT and SPECIAL collections.
+            return {"type": "collection", "collectionId": self.arch_id}
+        # Handle CUSTOM collections.
+        if self.collection_type == CollectionTypes.CUSTOM:
+            if len(splits := self.arch_id.split("-", 1)) == 2 and is_uuid7(splits[1]):
+                # Return a CDX dataset type input spec for UUID-based custom collections.
+                return {"type": "dataset", "inputType": "cdx", "uuid": splits[1]}
+            # Return a legacy collection-type input spec for legacy custom collections.
+            return {"type": "collection", "collectionId": self.arch_id}
+        raise NotImplementedError
+
+    @staticmethod
+    def is_warc_type_input_spec(input_spec):
+        """Return whather the input_spec specifies a WARC-type collection."""
+        return (
+            input_spec["type"] == "collection"
+            or (
+                input_spec["type"] in ("dataset", "files")
+                and input_spec.get("inputType") in ("cdx", "warc")
+            )
+            or (
+                input_spec["type"] == "multi-specs"
+                and any(
+                    Collection.is_warc_type_input_spec(spec)
+                    for spec in input_spec["specs"]
+                )
+            )
+        )
+
+    @property
+    def user_runnable_job_types(self):
+        """Return a list of user-runnable JobTypes."""
+        # Define a base queryset for runnable, non-deprecated, JobTypes.
+        job_type_qs = JobType.get_user_runnable()
+        if not self.is_warc_type_input_spec(self.input_spec):
+            job_type_qs = job_type_qs.exclude(id__in=settings.WARC_ONLY_JOB_IDS)
+        return job_type_qs
 
     @classmethod
     def get_for_input_spec(cls, input_spec):
@@ -220,7 +275,23 @@ class Collection(models.Model):
         if input_spec["type"] == "dataset" and input_spec.get("inputType") == "cdx":
             return cls.objects.get(arch_id=f"CUSTOM-{input_spec['uuid']}")
 
-        raise NotImplementedError
+        # Try to match against a SPECIAL collection metadata.input_spec.
+        special_collections = Collection.objects.filter(
+            collection_type=CollectionTypes.SPECIAL,
+            metadata__isnull=False,
+            metadata__input_spec=input_spec,
+        ).all()
+
+        num_matched = len(special_collections)
+        if num_matched == 1:
+            return special_collections[0]
+        if num_matched > 1:
+            raise MultipleObjectsReturned(
+                f"Multiple SPECIAL Collections ({[c.id for c in special_collections]}) "
+                f"matched input_spec: {input_spec}"
+            )
+
+        raise NotImplementedError(input_spec)
 
     def __str__(self):
         return self.name
@@ -291,6 +362,18 @@ class JobType(models.Model):
     parameters_schema = models.JSONField(null=True)
     info_url = models.URLField()
     code_url = models.URLField()
+
+    @classmethod
+    def get_user_runnable(cls):
+        """Return a queryset of runnable, non-deprecated JobTypes."""
+        return cls.objects.filter(can_run=True).exclude(
+            id__in=(
+                settings.KnownArchJobUuids.NAMED_ENTITIES,
+                settings.KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE,
+                settings.KnownArchJobUuids.ARCHIVESPARK_FLEX_JOB,
+                settings.KnownArchJobUuids.ARCHIVESPARK_NOOP,
+            )
+        )
 
     def __str__(self):
         return f"{self.id} - {self.name}"
