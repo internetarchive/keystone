@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+from email.utils import parseaddr
 from pathlib import Path
 from uuid import UUID
 
@@ -47,6 +48,11 @@ def get_plugin_module_app_name(mod_name):
     """Return the app_name portion of the plugin module name, or raise a ValueError
     if mod_name is not a valid plugin module name."""
     return assert_is_plugin_module_name and "_".join(mod_name.split("_")[1:-1])
+
+
+def is_valid_email_address(email_address):
+    """Return a bool indicating whether the email address is valid."""
+    return parseaddr(email_address)[1] != ""
 
 
 ###############################################################################
@@ -311,6 +317,14 @@ LOGGING = {
 
 EMAIL_HOST = env.get("KEYSTONE_EMAIL_HOST")
 DEFAULT_FROM_EMAIL = env.get("KEYSTONE_DEFAULT_FROM_EMAIL")
+
+# Parse a space-delimited list of staff user email addresses to which critical
+# system-related communications should be sent.
+STAFF_EMAIL_ADDRESSES = [
+    addr
+    for addr in env.get("KEYSTONE_STAFF_EMAIL_ADDRESSES", "").split()
+    if is_valid_email_address(addr)
+]
 
 if DEPLOYMENT_ENVIRONMENT == "DEV":
     # in development, always send emails to the console rather than sending
