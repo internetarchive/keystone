@@ -355,6 +355,11 @@ def dataset_file_colab(request, dataset_id, filename):
     job_file = get_object_or_404(
         JobFile, job_complete__job_start=dataset.job_start, filename=filename
     )
+    if job_file.size_bytes > settings.COLAB_MAX_FILE_SIZE_BYTES:
+        return HttpResponseBadRequest(
+            f"File size ({job_file.size_bytes}) exceeds max supported "
+            f"Google Colab size ({settings.COLAB_MAX_FILE_SIZE_BYTES})"
+        )
     # Request on behalf of the Dataset owner in the event of teammate access.
     return ArchAPI.proxy_colab_redirect(
         dataset.job_start.user,

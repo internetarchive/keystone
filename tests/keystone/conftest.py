@@ -72,6 +72,16 @@ def make_jobstart():
 
 
 @fixture
+def make_jobcomplete():
+    return lambda **kwargs: maker(models.JobComplete)(**kwargs)
+
+
+@fixture
+def make_jobfile():
+    return lambda **kwargs: maker(models.JobFile)(**kwargs)
+
+
+@fixture
 def make_team():
     return maker(models.Team)
 

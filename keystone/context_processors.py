@@ -22,6 +22,7 @@ def settings(request):
     return {
         "settings": {
             "KEYSTONE_GIT_COMMIT_HASH": _settings.KEYSTONE_GIT_COMMIT_HASH,
+            "COLAB_MAX_FILE_SIZE_BYTES": _settings.COLAB_MAX_FILE_SIZE_BYTES,
         }
     }
 

@@ -88,6 +88,9 @@ PUBLIC_BASE_URL = env.get("KEYSTONE_PUBLIC_BASE_URL", "")
 # be served at a publicly-accessible URL from which Colab can fetch the data.
 COLAB_DISABLED = env.get("KEYSTONE_COLAB_DISABLED", False)
 
+# Define the our maximum supported file size for Google Colab.
+COLAB_MAX_FILE_SIZE_BYTES = 1_000_000_000
+
 # Note that publishing to archive.org requires that ARCH be configured
 # with valid arkMintBearer, iaS3AuthHeader, pboxCollection, and pboxS3Url
 # values, which is currently only possible internally within IA.

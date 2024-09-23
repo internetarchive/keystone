@@ -1100,7 +1100,11 @@ def list_datasets(request, filters: DatasetFilterSchema = Query(...)):
         .prefetch_related("job_start__job_type")
         .prefetch_related("job_start__job_type__category")
         .prefetch_related("job_start__collection")
-        .annotate(team_ids=ArrayAgg("teams__id", filter=Q(teams__id__isnull=False)))
+        .annotate(
+            team_ids=ArrayAgg(
+                "teams__id", filter=Q(teams__id__isnull=False), default=[]
+            )
+        )
         .annotate(
             collection_access=Exists(
                 Collection.user_queryset(request.user).filter(
@@ -1133,7 +1137,11 @@ def get_dataset(request, dataset_id: int):
         .prefetch_related("job_start__job_type")
         .prefetch_related("job_start__job_type__category")
         .prefetch_related("job_start__collection")
-        .annotate(team_ids=ArrayAgg("teams__id", filter=Q(teams__id__isnull=False)))
+        .annotate(
+            team_ids=ArrayAgg(
+                "teams__id", filter=Q(teams__id__isnull=False), default=[]
+            )
+        )
         .annotate(
             collection_access=Exists(
                 Collection.user_queryset(request.user).filter(
