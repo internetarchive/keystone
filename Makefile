@@ -18,21 +18,24 @@ $(KEYSTONE_VENV_PATH):
 
 venv: $(KEYSTONE_VENV_PATH)
 
+.PHONY: requirements.txt
 requirements.txt: venv
 	$(PIP_PATH)-compile \
-	--generate-hashes \
 	--output-file requirements.txt \
+	--generate-hashes \
 	--strip-extras \
+	$(if $(upgrade_package), --upgrade-package $(upgrade_package)) \
 	pyproject.toml
 
+.PHONY: requirements-dev.txt
 requirements-dev.txt: requirements.txt
-	echo "--constraint $$(pwd)/requirements.txt" | \
 	$(PIP_PATH)-compile \
-	--generate-hashes \
+	--constraint requirements.txt \
 	--output-file requirements-dev.txt \
+	--generate-hashes \
 	--strip-extras \
 	--extra dev \
-	- \
+	$(if $(upgrade_package), --upgrade-package $(upgrade_package)) \
 	pyproject.toml
 
 .PHONY: install-dev
