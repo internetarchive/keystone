@@ -97,10 +97,7 @@ COLAB_MAX_FILE_SIZE_BYTES = 1_000_000_000
 PUBLISHING_DISABLED = env.get("KEYSTONE_PUBLISHING_DISABLED", False)
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env.get(
-    "KEYSTONE_DJANGO_SECRET_KEY",
-    "devsecretkeyljkadfadfsjkl9ew0f02iefj20h8310hknsnlasd172yo1lnimposimfn",
-)
+SECRET_KEY = env.get("KEYSTONE_DJANGO_SECRET_KEY", "supersecret")
 
 PRIVATE_API_KEY = env.get("KEYSTONE_PRIVATE_API_KEY", "supersecret")
 
