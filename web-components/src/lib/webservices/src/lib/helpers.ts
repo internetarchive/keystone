@@ -1,11 +1,6 @@
 // https://stackoverflow.com/a/49286056
 export type ValueOf<T> = T[keyof T];
 
-// Escape a string for inclusion as an element attribute value.
-export function htmlAttrEscape(s: string): string {
-  return s.replace(/"/g, "&quot;");
-}
-
 export function humanBytes(bytes: number, decPlaces = 3): string {
   for (const prefix of ["", "Ki", "Mi", "Gi", "Ti", "Pi"]) {
     if (bytes < 1024) {

@@ -6,8 +6,6 @@ import { formatChoices, populateTemplate, ThrottledLIFO } from "../lib/lib.js";
 
 import {
   createElement,
-  html,
-  objToElementPropsStr,
   parseElementProps,
   removeChildren,
   slugify,
@@ -15,7 +13,7 @@ import {
 
 import AngularMixin from "../mixins/AngularMixin.js";
 
-import "./Paginator.js";
+import Paginator from  "./Paginator.js";
 import DataTableFilterPopover from "./data-table-filter-popover.js";
 import DataTableRow from "./DataTableRow.js";
 import DataTableSelectAllCheckbox from "./DataTableSelectAllCheckbox.js";
@@ -88,15 +86,15 @@ export default class DataTable extends AngularMixin(HTMLElement) {
         ["apiStaticParamPairs", []],
 
         /* cellRenderers is an array of objects or functions positionally
-           mapped to columns that can be used to convert the column value into
-           custom HTML. For example:
+           mapped to columns that can be used to convert the column value into a
+           custom string or HTMLElement. For example:
              To convert values in the first column to an eyes-friendly format:
 
                [ { "DAILY": "Daily", "MONTHLY": "Monthly" } ]
 
              To wrap all values in the first column in an <em>:
 
-               [ value => `<em>${value}</em>` ]
+               [ value => { const el = document.createElement("em"); el.textContent = value; return el; } ]
          */
         ["cellRenderers", []],
 
@@ -206,7 +204,7 @@ export default class DataTable extends AngularMixin(HTMLElement) {
          */
         ["linkTargets", []],
 
-        /* loadingMessage is HTML string to display during the API fetch.
+        /* loadingMessage is a string or HTMLElement to display during the API fetch.
          */
         ["loadingMessage", "Loading..."],
 
@@ -238,7 +236,7 @@ export default class DataTable extends AngularMixin(HTMLElement) {
 
         /* nullString is an HTML string to use in place of a column field value.
          */
-        ["nullString", "&mdash;"],
+        ["nullString", "—"],
 
         /* pageLength is the default max rows page size.
          */
@@ -370,9 +368,7 @@ export default class DataTable extends AngularMixin(HTMLElement) {
     }
 
     // Append tha Paginator wrapper element.
-    this.paginatorWrapperEl = createElement(
-      '<div class="paginator-wrapper"></div>'
-    );
+    this.paginatorWrapperEl = createElement("div", {className: "paginator-wrapper"});
     this.appendChild(this.paginatorWrapperEl);
     // Register the paginator button click handler.
     this.paginatorWrapperEl.addEventListener(
@@ -387,15 +383,13 @@ export default class DataTable extends AngularMixin(HTMLElement) {
       const searchableFieldsStr = choiceListStr.length
         ? `by ${choiceListStr}`
         : "";
-      const searchInputEl = createElement(html`
-        <input
-          type="text"
-          placeholder="Type to filter ${pluralName} ${searchableFieldsStr}"
-          class="search"
-        />
-      `);
-      // Set the search input value to the initial q value.
-      searchInputEl.value = searchState.q;
+      const searchInputEl = createElement("input", {
+        type: "text",
+        placeholder: `Type to filter ${pluralName} ${searchableFieldsStr}`,
+        className: "search",
+        // Set the search input value to the initial q value.
+        value: searchState.q,
+      });
       searchInputEl.addEventListener(
         "input",
         this.searchInputHandler.bind(this)
@@ -407,9 +401,10 @@ export default class DataTable extends AngularMixin(HTMLElement) {
       }
 
       // Append a search input clear button.
-      this.searchInputClearEl = createElement(html`
-        <button class="clear-input">&times;</button>
-      `);
+      this.searchInputClearEl = createElement("button", {
+        className: "clear-input",
+        textContent: "×",
+      });
       this.searchInputClearEl.style.visibility = searchState.q
         ? "visible"
         : "hidden";
@@ -423,59 +418,52 @@ export default class DataTable extends AngularMixin(HTMLElement) {
 
     // Maybe add the download link.
     if (showDownloadLink && csvDownloadHeaderColumnPairs.length) {
-      this.downloadLink = createElement(html`
-        <a
-          href="#"
-          class="download"
-          target="_blank"
-          download="${singleName.toLowerCase()}-list.csv"
-        >
-          <span class="fa fa-download"></span>
-          Download ${singleName} List
-        </a>
-      `);
+      this.downloadLink = createElement("a", {
+        href: "#",
+        className: "download",
+        target: "_blank",
+        children: [
+          createElement("span", {classList: ["fa", "fa-download"]}),
+          `Download ${singleName} List`,
+        ]
+      });
+      this.downloadLink.setAttribute("download", `${singleName.toLowerCase()}-list.csv`);
       // Set the initial href.
       this.updateDownloadLinkHref();
       this.appendChild(this.downloadLink);
     }
 
     // Add the action buttons.
-    const actionButtonWrapperEl = createElement(html`
-      <div class="action-button-wrapper">
-        <div class="selection-buttons">
-          ${!selectable
-            ? ""
-            : actionButtonLabels
-                .map(
-                  (label, i) => html`
-                    <button
-                      name="${label}"
-                      class="selection-action button ${actionButtonClasses[i] ||
-                      ""}"
-                      data-signal="${actionButtonSignals[i]}"
-                      disabled
-                    >
-                      ${label}
-                    </button>
-                  `
-                )
-                .join("\n")}
-        </div>
-        <div class="non-selection-buttons">
-          ${nonSelectionActions
-            .filter((action) => action !== undefined)
-            .map((action, i) => {
-              const label = nonSelectionActionLabels[i];
-              return html`
-                <button name="${label}" data-signal="${action}">
-                  ${label}
-                </button>
-              `;
-            })
-            .join("\n")}
-        </div>
-      </div>
-    `);
+    const actionButtonWrapperEl = createElement("div", {className: "action-button-wrapper"});
+    // Add the selection action buttons.
+    const selectionButtonsWrapper = createElement("div", {className: "selection-buttons"});
+    if (selectable) {
+      actionButtonLabels.forEach((label, i) => {
+        const button = createElement("button", {
+          name: label,
+          classList: ["selection-action", "button", actionButtonClasses[i]],
+          disabled: true,
+          textContent: label,
+        });
+        button.dataset.signal = actionButtonSignals[i];
+        selectionButtonsWrapper.appendChild(button);
+      });
+    }
+    actionButtonWrapperEl.appendChild(selectionButtonsWrapper);
+    // Add the non-selection action buttons.
+    const nonSelectionButtonsWrapper = createElement("div", {className: "non-selection-buttons"});
+    nonSelectionActions
+      .filter((action) => action !== undefined)
+      .forEach((action, i) => {
+        const label = nonSelectionActionLabels[i];
+        const button = createElement("button", {
+          name: label,
+          textContent: label,
+        });
+        button.dataset.signal = action;
+        nonSelectionButtonsWrapper.appendChild(button);
+      });
+    actionButtonWrapperEl.appendChild(nonSelectionButtonsWrapper);
     this.appendChild(actionButtonWrapperEl);
     // Register the action button click handler.
     actionButtonWrapperEl.addEventListener(
@@ -500,30 +488,27 @@ export default class DataTable extends AngularMixin(HTMLElement) {
           "submit",
           this.selectAllCheckboxSubmitHandler.bind(this)
         );
-        const th = createElement(html`<th class="select"></th>`, "tr");
-        th.appendChild(this.refs.selectAllCheckbox);
-        tr.appendChild(th);
+        tr.appendChild(
+          createElement("th", {
+            className: "select",
+            children: [this.refs.selectAllCheckbox]
+          })
+        );
       }
 
       columnHeaders.forEach((header, i) => {
-        const th = createElement(
-          html` <th class="${slugify(header)}"></th> `,
-          "tr"
-        );
+        const th = createElement("th", {className: slugify(header)});
         const columnName = columns[i];
 
         if (!sortableColumns[i]) {
-          th.innerHTML += header;
+          th.textContent = header;
         } else {
-          const sortButton = createElement(html`
-            <button
-              data-i="${i}"
-              class="sort"
-              aria-label="sort by ${header} ascending"
-            >
-              ${header}
-            </button>
-          `);
+          const sortButton = createElement("button", {
+            className: "sort",
+            textContent: header,
+          });
+          sortButton.dataset.i = i;
+          sortButton.setAttribute("aria-label", `sort by ${header} ascending`);
           // Visually indicate any initial active sort.
           const sortDesc = searchState.sort.startsWith("-");
           if (searchState.sort === `${sortDesc ? "-" : ""}${columnName}`) {
@@ -745,21 +730,15 @@ export default class DataTable extends AngularMixin(HTMLElement) {
     const { limit, numHits, pageNum } = this.state.search;
 
     const start = (pageNum - 1) * limit + 1;
-    this.paginatorWrapperEl.innerHTML = html`
-      <span class="showing">
-        ${singleName} List (${numHits ? start : 0} to
-        ${Math.min(numHits, start + limit - 1)} of ${numHits} ${pluralName})
-      </span>
-
-      <paginator-control
-        ${objToElementPropsStr({
-          numTotal: numHits,
-          pageSize: limit,
-          currentPage: pageNum,
-        })}
-      >
-      </paginator-control>
-    `;
+    const showingEl = createElement("span", {
+      className: "showing",
+      textContent: `${singleName} List (${numHits ? start : 0} to ${Math.min(numHits, start + limit - 1)} of ${numHits} ${pluralName})`,
+    });
+    const paginatorEl = new Paginator();
+    paginatorEl.setAttribute("num-total", numHits);
+    paginatorEl.setAttribute("page-size", limit);
+    paginatorEl.setAttribute("current-page", pageNum);
+    this.paginatorWrapperEl.replaceChildren(showingEl, paginatorEl);
   }
 
   shouldShortCiruitSearch() {
@@ -982,23 +961,11 @@ export default class DataTable extends AngularMixin(HTMLElement) {
 
   showLoadingRow() {
     const { loadingMessage } = this.props;
-    removeChildren(this.tbody);
-    this.tbody.appendChild(
-      createElement(
-        html`
-          <tr>
-            <td
-              colspan="${this.props.columns.length +
-              (this.props.selectable ? 1 : 0)}"
-              class="loading"
-            >
-              ${loadingMessage}
-            </td>
-          </tr>
-        `,
-        "tbody"
-      )
-    );
+    const tr = document.createElement("tr");
+    const td = createElement("td", {className: "loading", children: [loadingMessage]});
+    td.setAttribute("colspan", this.props.columns.length + (this.props.selectable ? 1 : 0))
+    tr.appendChild(td);
+    this.tbody.replaceChildren(tr);
   }
 
   clearSelections() {
@@ -1019,24 +986,12 @@ export default class DataTable extends AngularMixin(HTMLElement) {
   }
 
   showNoResultsRow() {
-    removeChildren(this.tbody);
     const { noResultsText } = this.props;
-    this.tbody.appendChild(
-      createElement(
-        html`
-          <tr>
-            <td
-              colspan="${this.props.columns.length +
-              (this.props.selectable ? 1 : 0)}"
-              class="no-results"
-            >
-              ${noResultsText}
-            </td>
-          </tr>
-        `,
-        "tbody"
-      )
-    );
+    const tr = document.createElement("tr");
+    const td = createElement("td", {className: "no-results", textContent: noResultsText});
+    td.setAttribute("colspan", this.props.columns.length + (this.props.selectable ? 1 : 0))
+    tr.appendChild(td);
+    this.tbody.replaceChildren(tr);
   }
 
   async updateSelectedRows() {
@@ -1165,8 +1120,6 @@ export default class DataTable extends AngularMixin(HTMLElement) {
       this.state.search.q.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"),
       "gi"
     );
-    const replacer = (match) =>
-      html`<span class="match-highlight">${match}</span>`;
 
     // Format the compound CSS selector strings to retrieve all
     // searchable/highlightable <td> elements.
@@ -1183,7 +1136,25 @@ export default class DataTable extends AngularMixin(HTMLElement) {
       }
       // Add the highlights.
       els.forEach((el) => {
-        el.innerHTML = el.textContent.replace(regex, replacer);
+        const matches = Array.from(el.textContent.matchAll(regex));
+        if (matches.length === 0) {
+          return;
+        }
+        // Step through the matches to generate an array of unmatched text nodes and highlighted match nodes.
+        const highlightEls = [];
+        let textContentIdx = 0;
+        for (const match of matches) {
+          if (match.index > textContentIdx) {
+            highlightEls.push(document.createTextNode(el.textContent.slice(textContentIdx, match.index)));
+          }
+          highlightEls.push(createElement("span", {className: "match-highlight", textContent: match[0]}));
+          textContentIdx = match.index + match[0].length;
+        }
+        if (textContentIdx < el.textContent.length) {
+          highlightEls.push(document.createTextNode(el.textContent.slice(textContentIdx)));
+        }
+        // Replace the contents with the array of text/match nodes.
+        el.replaceChildren(...highlightEls);
       });
     });
   }
@@ -1335,13 +1306,10 @@ export default class DataTable extends AngularMixin(HTMLElement) {
       selectedIdRowMap.delete(rowId);
       this.postSelectionChangeHandler();
     }
-    tr.innerHTML = html`
-      <td
-        colspan="${this.props.columns.length + (this.props.selectable ? 1 : 0)}"
-      >
-        <div>${message}</div>
-      </td>
-    `;
+    const td = document.createElement("td");
+    td.setAttribute("colspan", this.props.columns.length + (this.props.selectable ? 1 : 0));
+    td.appendChild(createElement("div", {textContent: message}));
+    tr.replaceChildren(td);
     // Kick off a new total hits query.
     this.doTotalHitsQuery();
   }

@@ -1,14 +1,13 @@
 import { PropertyValues } from "lit";
 import { customElement, state } from "lit/decorators.js";
 
-import { htmlAttrEscape } from "../../lib/webservices/src/lib/helpers";
 import { AitDataTable } from "../../lib/webservices/src/aitDataTable/index";
 
 import API from "../../lib/ait-data-table-api-adapter";
 import Styles from "./styles";
 
-import "../../archLoadingIndicator/index";
-import "../../archHoverTooltip/index";
+import { ArchLoadingIndicator } from "../../archLoadingIndicator/index";
+import { ArchHoverTooltip } from "../../archHoverTooltip/index";
 
 @customElement("arch-data-table")
 export class ArchDataTable<RowT> extends AitDataTable<RowT> {
@@ -20,7 +19,7 @@ export class ArchDataTable<RowT> extends AitDataTable<RowT> {
   constructor() {
     super();
     this.apiFactory = API;
-    this.loadingMessage = "<arch-loading-indicator></arch-loading-indicator>";
+    this.loadingMessage = new ArchLoadingIndicator();
     this.pageLength = 50;
   }
 
@@ -35,14 +34,12 @@ export class ArchDataTable<RowT> extends AitDataTable<RowT> {
       console.warn(`Could not add tooltip to header: ${headerName}`);
       return;
     }
-    el.innerHTML = `
-      <arch-hover-tooltip
-        style="display: inline-block; color: #fff;"
-        text="${htmlAttrEscape(text)}"
-      >
-        ${el.textContent as string}
-      </arch-hover-tooltip>
-    `;
+    const tooltip = new ArchHoverTooltip();
+    tooltip.text = text;
+    tooltip.textContent = el.textContent;
+    tooltip.style.display = "inline-block";
+    tooltip.style.color = "#fff";
+    el.replaceChildren(tooltip);
   }
 
   firstUpdated(_changedProperties: PropertyValues) {

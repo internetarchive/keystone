@@ -1,5 +1,6 @@
 import "../vendor/ui5/UI5Popover.js";
 import {
+  createElement,
   customElementsMaybeDefine,
   html,
   parseElementProps,
@@ -28,6 +29,7 @@ export default class DataTableFilterPopover extends HTMLElement {
       options: undefined,
     };
 
+    // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
     this.innerHTML = html`
       <button
         class="filter fa fa-cogs larger"
@@ -88,24 +90,26 @@ export default class DataTableFilterPopover extends HTMLElement {
     // Cast value to a string to check for membership in selectedValues since
     // selectedValues is populated by the input.name property which is always a string.
     const selected = selectedValues.has(`${value}`);
-    return html`
-      <li>
-        <label>
-          <input
-            type="checkbox"
-            name="${value}"
-            style="margin-right: 1em;"
-            ${selected ? "checked" : ""}
-          />
-          ${label}
-        </label>
-      </li>
-    `;
+    return createElement("li", {
+      children: [
+        createElement("label", {
+          children: [
+            createElement("input", {
+              type: "checkbox",
+              name: value,
+              checked: selected,
+              style: "margin-right: 1em;"
+            }),
+            label
+          ],
+        })
+      ]
+    });
   }
 
   renderOptions() {
     const { options } = this.state;
-    this.ol.innerHTML = options.map(this.optionToListItem.bind(this)).join("");
+    this.ol.replaceChildren(...options.map(this.optionToListItem.bind(this)));
   }
 
   updateOptions() {

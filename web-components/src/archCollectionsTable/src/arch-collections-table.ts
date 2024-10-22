@@ -8,12 +8,13 @@ import {
   CollectionType,
   CustomCollectionMetadata,
   ProcessingState,
+  ValueOf,
 } from "../../lib/types";
 import { Topics } from "../../lib/pubsub";
 import {
   Paths,
+  createElement,
   humanBytes,
-  htmlAttrEscape as _,
   isActiveProcessingState,
   isoStringToDateString,
 } from "../../lib/helpers";
@@ -22,6 +23,59 @@ import Styles from "./styles";
 @customElement("arch-collections-table")
 export class ArchCollectionsTable extends ArchDataTable<Collection> {
   static styles = [...ArchDataTable.styles, ...Styles];
+
+  static renderNameCell(
+    name: ValueOf<Collection>,
+    collection: Collection
+  ): HTMLElement {
+    /*
+     * Render the `Name` cell element.
+     */
+    const nameSpan = createElement("span", {
+      className: "highlightable",
+      textContent: collection.name,
+    });
+
+    if (
+      collection.collection_type === CollectionType.CUSTOM &&
+      (collection.metadata as CustomCollectionMetadata).state !==
+        ProcessingState.FINISHED
+    ) {
+      // Collection is an in-progress custom collection.
+      nameSpan.title =
+        "This Custom collection is in the process of being created";
+      const state = (collection.metadata as CustomCollectionMetadata).state;
+      const displayStatus =
+        state === ProcessingState.RUNNING ? "CREATING" : state;
+      nameSpan.appendChild(
+        createElement("i", { textContent: ` (${displayStatus})` })
+      );
+      return nameSpan;
+    }
+
+    // Collection is not an in-progress custom collection.
+    return createElement("a", {
+      href: `/collections/${collection.id}`,
+      title: collection.name,
+      children: [nameSpan],
+    });
+  }
+
+  static renderLatestDatasetCell(
+    lastJobName: ValueOf<Collection>,
+    collection: Collection
+  ): string | HTMLElement {
+    /*
+     * Render the `Latest Dataset` cell element.
+     */
+    return lastJobName === null
+      ? ""
+      : createElement("a", {
+          href: Paths.dataset(collection.latest_dataset.id),
+          title: lastJobName.toString(),
+          textContent: lastJobName.toString(),
+        });
+  }
 
   willUpdate(_changedProperties: PropertyValues) {
     super.willUpdate(_changedProperties);
@@ -42,50 +96,15 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
         : false;
     this.itemPollPeriodSeconds = 3;
 
-    /* eslint-disable @typescript-eslint/restrict-template-expressions */
     this.cellRenderers = [
-      (name, collection: Collection) => {
-        const nonRunningCustomValue = `
-            <a href="/collections/${_(collection.id.toString())}" title="${_(
-          name as string
-        )}">
-              <span class="highlightable">${name}</span>
-            </a>
-        `;
-
-        if (collection.collection_type !== CollectionType.CUSTOM) {
-          return nonRunningCustomValue;
-        }
-
-        const { state } = collection.metadata as CustomCollectionMetadata;
-        if (state === ProcessingState.FINISHED) {
-          return nonRunningCustomValue;
-        }
-
-        return `
-            <span title="This Custom collection is in the process of being created">${name} <i>(${
-          state === ProcessingState.RUNNING ? "CREATING" : state
-        })</i></span>
-        `;
-      },
+      ArchCollectionsTable.renderNameCell,
 
       (collectionType) =>
         CollectionTypeDisplayMap[collectionType as CollectionType],
 
       (isPublic) => `${isPublic ? "Yes" : "No"}`,
 
-      (lastJobName, collection: Collection) => {
-        if (lastJobName === null) {
-          return "";
-        }
-        lastJobName = lastJobName as string;
-        return `
-          <a href="${Paths.dataset(collection.latest_dataset.id)}"
-             title="${_(lastJobName)}">
-            ${lastJobName}
-          </a>
-        `;
-      },
+      ArchCollectionsTable.renderLatestDatasetCell,
 
       (lastJobTime) =>
         !lastJobTime ? "" : isoStringToDateString(lastJobTime as string),
@@ -97,7 +116,6 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
           ? ""
           : humanBytes(collection.size_bytes, 1),
     ];
-    /* eslint-enable @typescript-eslint/restrict-template-expressions */
 
     this.columnFilterDisplayMaps = [
       undefined,

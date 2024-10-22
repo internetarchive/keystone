@@ -75,7 +75,7 @@ export class AitDataTable<RowT> extends LitElement {
   @property({ type: Array })
   nonSelectionActions: PropsT<RowT>["nonSelectionActions"] = [];
   @property() noResultsText: PropsT<RowT>["noResultsText"] = "No Results";
-  @property() nullString: PropsT<RowT>["nullString"] = "&mdash;";
+  @property() nullString: PropsT<RowT>["nullString"] = "—";
   @property({ type: Number }) pageLength: PropsT<RowT>["pageLength"] = 100;
   @property() pluralName: PropsT<RowT>["pluralName"] = "Items";
   @property({ type: Boolean })

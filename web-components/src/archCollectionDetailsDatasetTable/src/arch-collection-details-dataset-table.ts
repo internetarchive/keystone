@@ -3,10 +3,11 @@ import { customElement, property, state } from "lit/decorators.js";
 
 import { ArchDataTable } from "../../archDataTable/index";
 import { BoolDisplayMap, EventTypeDisplayMap } from "../../lib/constants";
-import { Dataset } from "../../lib/types";
+import { Dataset, ValueOf } from "../../lib/types";
 import { Topics } from "../../lib/pubsub";
 import {
   Paths,
+  createElement,
   isActiveProcessingState,
   isoStringToDateString,
 } from "../../lib/helpers";
@@ -26,6 +27,27 @@ export class ArchCollectionDetailsDatasetTable extends ArchDataTable<Dataset> {
 
   static styles = [...ArchDataTable.styles, ...Styles];
 
+  static renderDatasetCell(
+    name: ValueOf<Dataset>,
+    dataset: Dataset
+  ): string | HTMLElement {
+    /*
+     * Render a `Dataset` cell value.
+     */
+    if (dataset.state !== ProcessingState.FINISHED) {
+      return dataset.name;
+    }
+    return createElement("a", {
+      href: Paths.dataset(dataset.id),
+      children: [
+        createElement("span", {
+          className: "highlightable",
+          textContent: dataset.name,
+        }),
+      ],
+    });
+  }
+
   willUpdate(_changedProperties: PropertyValues) {
     super.willUpdate(_changedProperties);
 
@@ -36,12 +58,7 @@ export class ArchCollectionDetailsDatasetTable extends ArchDataTable<Dataset> {
     this.itemPollPeriodSeconds = 3;
     this.apiStaticParamPairs = [["collection_id", `${this.collectionId}`]];
     this.cellRenderers = [
-      (name, dataset) =>
-        dataset.state !== ProcessingState.FINISHED
-          ? `${dataset.name}`
-          : `<a href="${Paths.dataset(dataset.id)}">
-               <span class="highlightable">${dataset.name}</span>
-            </a>`,
+      ArchCollectionDetailsDatasetTable.renderDatasetCell,
       (categoryName) => categoryName as Dataset["category_name"],
       (isSample) =>
         BoolDisplayMap[(isSample as Dataset["is_sample"]).toString()],

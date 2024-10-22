@@ -7,7 +7,7 @@ import {
   SurtPrefixRegex,
   UrlCollectionsParamName,
 } from "../../lib/constants";
-import { Paths, identity } from "../../lib/helpers";
+import { Paths, createElement, identity } from "../../lib/helpers";
 import { Collection, ValueOf } from "../../lib/types";
 import { AlertClass } from "../../archAlert/index";
 import { ArchGlobalModal } from "../../archGlobalModal";
@@ -462,6 +462,19 @@ export class ArchSubCollectionBuilder extends LitElement {
     return false;
   }
 
+  private get successModalContent(): HTMLSpanElement {
+    /* Return an element to serve as the success modal content. */
+    return createElement("span", {
+      children: [
+        "You will receive an email when your custom collection is ready to view. You will be able to access it from the ",
+        createElement("a", {
+          href: Paths.collections,
+          textContent: "Collections page",
+        }),
+      ],
+    });
+  }
+
   private async createSubCollection(e: Event) {
     // Prevent the form submission.
     e.preventDefault();
@@ -473,7 +486,7 @@ export class ArchSubCollectionBuilder extends LitElement {
       this.form.reset();
       ArchGlobalModal.showNotification(
         "ARCH is creating your custom collection",
-        `You will receive an email when your custom collection is ready to view. You will be able to access it from the <a href="${Paths.collections}">Collections page</a>.`,
+        this.successModalContent,
         submitButton
       );
     } else {

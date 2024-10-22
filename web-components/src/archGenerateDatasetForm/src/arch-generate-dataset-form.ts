@@ -14,7 +14,11 @@ import "@spectrum-web-components/tabs/sp-tab-panel.js";
 import "@spectrum-web-components/theme/sp-theme.js";
 import "@spectrum-web-components/theme/src/themes.js";
 
-import { Paths, isActiveProcessingState } from "../../lib/helpers";
+import {
+  Paths,
+  createElement,
+  isActiveProcessingState,
+} from "../../lib/helpers";
 import {
   DefaultSelectElementPromptText,
   UrlCollectionParamName,
@@ -286,6 +290,19 @@ export class ArchGenerateDatasetForm extends LitElement {
     }
   }
 
+  private get successModalContent(): HTMLSpanElement {
+    /* Return an element to serve as the success modal content. */
+    return createElement("span", {
+      children: [
+        "You will receive an email when your dataset is ready. You can monitor its progress on the ",
+        createElement("a", {
+          href: Paths.datasets,
+          textContent: "Dataset list",
+        }),
+      ],
+    });
+  }
+
   private async generateDatasetHandler(e: Event) {
     const archJobCard = (e as CustomEvent<GenerateDatasetDetail>).detail
       .archJobCard;
@@ -325,9 +342,10 @@ export class ArchGenerateDatasetForm extends LitElement {
       );
       return;
     }
+
     ArchGlobalModal.showNotification(
       "ARCH is generating your dataset",
-      `You will receive an email when your dataset is ready. You can monitor its progress on the <a href="${Paths.datasets}">Dataset list</a>.`,
+      this.successModalContent,
       archJobCard.jobButton
     );
     this.maybeStartPolling();
