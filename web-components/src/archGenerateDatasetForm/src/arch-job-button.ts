@@ -1,6 +1,5 @@
 import { LitElement, TemplateResult, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { unsafeHTML } from "lit/directives/unsafe-html.js";
 
 import "../../archLoadingIndicator/index";
 
@@ -36,23 +35,28 @@ export class ArchJobButton extends LitElement {
     const { jobStateTuples } = this;
 
     const _renderButton = (
-      innerHTML: string,
-      className: string,
-      disabled: boolean
+      text: string,
+      loading: boolean,
+      disabled: boolean,
+      className = ""
     ) => html`
       <button slot="trigger" class=${className} ?disabled=${disabled}>
-        ${unsafeHTML(innerHTML)}
+        ${!loading
+          ? text
+          : html`<arch-loading-indicator
+              text=${text}
+            ></arch-loading-indicator>`}
       </button>
     `;
 
     switch (jobStateTuples) {
       case undefined:
         // Job states are loading - likely in response to a collection selection change.
-        return _renderButton("Loading...", "", true);
+        return _renderButton("Loading", true, true);
         break;
       case null:
         // No previous runs exist for this job.
-        return _renderButton("Generate Dataset", "primary", false);
+        return _renderButton("Generate Dataset", false, false, "primary");
         break;
     }
 
@@ -60,27 +64,19 @@ export class ArchJobButton extends LitElement {
     switch (latestState) {
       case ProcessingState.SUBMITTED:
         // A new job was submitted.
-        return _renderButton(
-          `<arch-loading-indicator text="Job Starting"></arch-loading-indicator>`,
-          "",
-          true
-        );
+        return _renderButton("Job Starting", true, true);
         break;
       case ProcessingState.QUEUED:
-        return _renderButton("Job Queued", "", true);
+        return _renderButton("Job Queued", false, true);
         break;
       case ProcessingState.RUNNING:
-        return _renderButton(
-          `<arch-loading-indicator text="Job Running"></arch-loading-indicator>`,
-          "",
-          true
-        );
+        return _renderButton("Job Running", true, true);
         break;
       case ProcessingState.FINISHED:
       case ProcessingState.FAILED:
       case ProcessingState.CANCELLED:
         // The most recent job run has finished.
-        return _renderButton(`Generate New Dataset`, "primary", false);
+        return _renderButton("Generate New Dataset", false, false, "primary");
         break;
     }
   }

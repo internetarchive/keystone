@@ -36,7 +36,7 @@ export interface DataTable<RowT> extends HTMLElement {
         apiItemResponseIsArray: boolean;
         apiItemTemplate: string | null;
         apiStaticParamPairs: Array<[string, string]>;
-        cellRenderers: Array<((field: ValueOf<RowT>, row: RowT) => string) | Record<string, string> | undefined>;
+        cellRenderers: Array<((field: ValueOf<RowT>, row: RowT) => string | HTMLElement) | Record<string, string> | undefined>;
         columnHeaders: Array<string>;
         columns: Array<string>;
         columnSortParamMap: Record<string, string>;
@@ -45,7 +45,7 @@ export interface DataTable<RowT> extends HTMLElement {
         columnFilterParams: Array<Record<string, string> | undefined>;
         itemPollPredicate: ((row: RowT) => boolean) | null;
         itemPollPeriodSeconds: number;
-        loadingMessage: string;
+        loadingMessage: string | HTMLElement;
         noInitialSearch: boolean;
         nonSelectionActionLabels: Array<string>;
         nonSelectionActions: Array<Topics>;

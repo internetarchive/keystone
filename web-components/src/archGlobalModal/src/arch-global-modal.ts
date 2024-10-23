@@ -48,23 +48,23 @@ export class ArchGlobalModal extends ArchModal {
   }
 
   private errorHandler(e: Event) {
-    const { message, elementToFocusOnClose } = (
+    const { content, elementToFocusOnClose } = (
       e as CustomEvent<GlobalModalDetail>
     ).detail;
     this.elementToFocusOnClose = elementToFocusOnClose;
     this.title = `⚠ Error`;
-    this.contentSlot.innerHTML = message;
+    this.contentSlot.replaceChildren(content);
     this.headingEl.classList.add("error");
     this.open = true;
   }
 
   private notificationHandler(e: Event) {
-    const { message, elementToFocusOnClose, title } = (
+    const { content, elementToFocusOnClose, title } = (
       e as CustomEvent<GlobalModalDetail>
     ).detail;
     this.elementToFocusOnClose = elementToFocusOnClose;
     this.title = title;
-    this.contentSlot.innerHTML = message;
+    this.contentSlot.replaceChildren(content);
     this.headingEl.classList.remove("error");
     this.open = true;
   }
@@ -72,40 +72,40 @@ export class ArchGlobalModal extends ArchModal {
   private static show(
     eventName: string,
     title: string,
-    message: string,
+    content: string | HTMLElement,
     elementToFocusOnClose: HTMLElement
   ) {
     document.dispatchEvent(
       new CustomEvent(eventName, {
         bubbles: true,
         composed: true,
-        detail: { title, message, elementToFocusOnClose },
+        detail: { title, content, elementToFocusOnClose },
       })
     );
   }
 
   static showNotification(
     title: string,
-    message: string,
+    content: string | HTMLElement,
     elementToFocusOnClose: HTMLElement
   ) {
     this.show(
       ArchGlobalModal.NotificationModalEventName,
       title,
-      message,
+      content,
       elementToFocusOnClose
     );
   }
 
   static showError(
     title: string,
-    message: string,
+    content: string | HTMLElement,
     elementToFocusOnClose: HTMLElement
   ) {
     this.show(
       ArchGlobalModal.ErrorModalEventName,
       title,
-      message,
+      content,
       elementToFocusOnClose
     );
   }

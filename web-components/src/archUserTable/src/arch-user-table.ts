@@ -1,8 +1,12 @@
 import { PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import { User, UserRoles } from "../../lib/types";
-import { isoStringToDateString, toTitleCase } from "../../lib/helpers";
+import { User, UserRoles, ValueOf } from "../../lib/types";
+import {
+  createElement,
+  isoStringToDateString,
+  toTitleCase,
+} from "../../lib/helpers";
 import { Topics } from "../../lib/pubsub";
 
 import { ArchDataTable } from "../../archDataTable/index";
@@ -40,10 +44,12 @@ export class ArchUserTable extends ArchDataTable<User> {
     this.apiStaticParamPairs = [];
     this.cellRenderers = [
       undefined,
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      (first_name, user) => {
+      (first_name: ValueOf<User>, user: User): HTMLElement => {
         const s = `${first_name as string} ${user.last_name}`;
-        return `<span title="${s}">${s}</span>`;
+        return createElement("span", {
+          title: s,
+          textContent: s,
+        });
       },
       undefined,
       (date_joined) =>

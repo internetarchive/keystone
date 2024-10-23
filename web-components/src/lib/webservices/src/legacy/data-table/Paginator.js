@@ -8,11 +8,22 @@
 import {
   createElement,
   customElementsMaybeDefine,
-  html,
   parseElementProps,
 } from "../lib/domLib.js";
 
 export default class Paginator extends HTMLElement {
+  static makeButton(text, page, start, disabled) {
+    const button = createElement("button", {
+      // Ensure that type=button to prevent form submission on click.
+      type: "button",
+      textContent: text,
+      disabled: disabled,
+    });
+    button.setAttribute("page", page);
+    button.setAttribute("start", start);
+    return button;
+  }
+
   async connectedCallback() {
     this.props = parseElementProps(this, [
       "numTotal",
@@ -20,7 +31,6 @@ export default class Paginator extends HTMLElement {
       "currentPage",
     ]);
     const { numTotal, pageSize, currentPage } = this.props;
-
     const maxPage = Math.max(Math.ceil(numTotal / pageSize), 1);
 
     // Define the max number of page number button to display on each side
@@ -35,32 +45,20 @@ export default class Paginator extends HTMLElement {
     const pageToStart = (pageNum) => pageSize * (pageNum - 1);
 
     // Add the previous page button.
-    // Ensure that type=button to prevent form submission on click.
     this.appendChild(
-      createElement(html`
-        <button
-          type="button"
-          page="${currentPage - 1}"
-          start="${pageToStart(currentPage - 1)}"
-          ${currentPage === 1 ? "disabled" : ""}
-        >
-          &lt;
-        </button>
-      `)
+      Paginator.makeButton("<", currentPage - 1, pageToStart(currentPage - 1), currentPage === 1)
     );
 
     // Define an Ellipsis element.
-    const ellipsisElement = createElement(
-      '<span class="position-relative mr-1" style="top: .4em">&#8230;</span>'
-    );
+    const ellipsisElement = createElement("span", {
+      classList: ["position-relative", "mr-1"],
+      textContent: "…",
+    });
+    ellipsisElement.style.top = "0.4em";
 
     // Maybe add a first page button.
     if (showFirstPageButton) {
-      this.appendChild(
-        createElement(html`
-          <button type="button" page="1" start="${pageToStart(1)}">1</button>
-        `)
-      );
+      this.appendChild(Paginator.makeButton("1", 1, pageToStart(1)));
       this.appendChild(ellipsisElement.cloneNode(true));
     }
 
@@ -75,18 +73,7 @@ export default class Paginator extends HTMLElement {
         page <= maxPage
       ) {
         const isCurrentPage = page === currentPage;
-        this.appendChild(
-          createElement(html`
-            <button
-              type="button"
-              page="${page}"
-              start="${pageToStart(page)}"
-              ${isCurrentPage ? "disabled" : ""}
-            >
-              ${page}
-            </button>
-          `)
-        );
+        this.appendChild(Paginator.makeButton(page, page, pageToStart(page), isCurrentPage));
       }
       pageDelta += 1;
     }
@@ -94,32 +81,11 @@ export default class Paginator extends HTMLElement {
     // Maybe add a last page button.
     if (showLastPageButton) {
       this.appendChild(ellipsisElement.cloneNode(true));
-      this.appendChild(
-        createElement(html`
-          <button
-            type="button"
-            page="${maxPage}"
-            start="${pageToStart(maxPage)}"
-          >
-            ${maxPage}
-          </button>
-        `)
-      );
+      this.appendChild(Paginator.makeButton(maxPage, maxPage, pageToStart(maxPage)));
     }
 
     // Add the next page button.
-    this.appendChild(
-      createElement(html`
-        <button
-          type="button"
-          page="${currentPage + 1}"
-          start="${pageToStart(currentPage + 1)}"
-          ${currentPage === maxPage ? "disabled" : ""}
-        >
-          &gt;
-        </button>
-      `)
-    );
+    this.appendChild(Paginator.makeButton(">", currentPage + 1, pageToStart(currentPage + 1), currentPage === maxPage));
   }
 }
 

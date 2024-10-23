@@ -27,6 +27,7 @@ export declare class ArchSubCollectionBuilder extends LitElement {
     private setFormInputValidity;
     private doPost;
     validateForm(): boolean;
+    private get successModalContent();
     private createSubCollection;
 }
 declare global {

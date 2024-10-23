@@ -213,7 +213,7 @@ export type GenerateDatasetDetail = {
 export type GlobalModalDetail = {
     elementToFocusOnClose: HTMLElement;
     title: string;
-    message: string;
+    content: string | HTMLElement;
 };
 export type RunJobRequest = {
     collection_id: Collection["id"];

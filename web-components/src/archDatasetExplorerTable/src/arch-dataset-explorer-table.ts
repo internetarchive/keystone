@@ -3,9 +3,10 @@ import { customElement, state } from "lit/decorators.js";
 
 import { ArchDataTable } from "../../archDataTable/index";
 import { BoolDisplayMap, EventTypeDisplayMap } from "../../lib/constants";
-import { Dataset, ProcessingState } from "../../lib/types";
+import { Dataset, ProcessingState, ValueOf } from "../../lib/types";
 import {
   Paths,
+  createElement,
   isActiveProcessingState,
   isoStringToDateString,
 } from "../../lib/helpers";
@@ -22,6 +23,48 @@ export class ArchDatasetExplorerTable extends ArchDataTable<Dataset> {
 
   static styles = [...ArchDataTable.styles, ...Styles];
 
+  static renderNameCell(
+    name: ValueOf<Dataset>,
+    dataset: Dataset
+  ): string | HTMLElement {
+    /*
+     * Render the `Name` cell value.
+     */
+    if (dataset.state !== ProcessingState.FINISHED) {
+      return dataset.name;
+    }
+    return createElement("a", {
+      href: Paths.dataset(dataset.id),
+      children: [
+        createElement("span", {
+          className: "highlightable",
+          textContent: dataset.name,
+        }),
+      ],
+    });
+  }
+
+  static renderCollectionCell(
+    collectionName: ValueOf<Dataset>,
+    dataset: Dataset
+  ): HTMLElement {
+    const nameEl = createElement("span", {
+      className: "highlightable",
+      textContent: collectionName.toString(),
+    });
+
+    if (!dataset.collection_access) {
+      nameEl.classList.add("no-collection-access");
+      nameEl.title = "You are not authorized to access this collection";
+      return nameEl;
+    }
+
+    return createElement("a", {
+      href: Paths.collection(dataset.collection_id),
+      children: [nameEl],
+    });
+  }
+
   willUpdate(_changedProperties: PropertyValues) {
     super.willUpdate(_changedProperties);
 
@@ -32,26 +75,19 @@ export class ArchDatasetExplorerTable extends ArchDataTable<Dataset> {
     this.itemPollPeriodSeconds = 3;
     this.apiStaticParamPairs = [];
     this.cellRenderers = [
-      (name, dataset) =>
-        dataset.state !== ProcessingState.FINISHED
-          ? `${dataset.name}`
-          : `<a href="${Paths.dataset(dataset.id)}">
-               <span class="highlightable">${dataset.name}</span>
-            </a>`,
+      ArchDatasetExplorerTable.renderNameCell,
+
       (categoryName) => categoryName as Dataset["category_name"],
-      (collectionName, dataset) =>
-        !dataset.collection_access
-          ? `<span class="highlightable no-collection-access"
-                   title="You are not authorized to access this collection">
-            ${collectionName as string}
-          </span>`
-          : `<a href="${Paths.collection(dataset.collection_id)}">
-            <span class="highlightable">${collectionName as string}</span>
-          </a>`,
+
+      ArchDatasetExplorerTable.renderCollectionCell,
+
       (isSample) =>
         BoolDisplayMap[(isSample as Dataset["is_sample"]).toString()],
+
       (state) => EventTypeDisplayMap[state as Dataset["state"]],
+
       (startTime) => isoStringToDateString(startTime as Dataset["start_time"]),
+
       (finishedTime) =>
         finishedTime === null
           ? ""

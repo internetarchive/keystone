@@ -1,4 +1,5 @@
 export * from "./webservices/src/lib/helpers";
+export { createElement } from "./webservices/src/legacy/lib/domLib";
 
 import { UrlCollectionParamName, UrlCollectionsParamName } from "./constants";
 import { Collection, Dataset, ProcessingState } from "./types";

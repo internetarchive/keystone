@@ -11,6 +11,7 @@ export default class DataTableSelectAllCheckbox extends HTMLElement {
       numSelected: 0,
     };
 
+    // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
     this.innerHTML = html`
       <input type="checkbox" class="select-all" aria-label="Select All Rows" />
       <span class="fa fa-caret-down"></span>
@@ -57,23 +58,26 @@ export default class DataTableSelectAllCheckbox extends HTMLElement {
     const { ol } = this.refs;
     removeChildren(ol);
     if (!numHits && !numSelected) {
+      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
       ol.innerHTML = html`
         <li class="nothing-to-do">Nothing to select or clear</li>
       `;
       return;
     }
     if (numHits) {
+      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
       ol.innerHTML += html`
         <li data-action="SELECT_PAGE">Select All on this Page</li>
         <li data-action="SELECT_ALL">
-          Select All <span class="num-hits">${numHits}</span> Items
+          Select All <span class="num-hits">${parseInt(numHits)}</span> Items
         </li>
       `;
     }
     if (numSelected) {
+      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
       ol.innerHTML += html`
         <li data-action="SELECT_NONE">
-          Clear Selection (<span class="num-selected">${numSelected}</span>)
+          Clear Selection (<span class="num-selected">${parseInt(numSelected)}</span>)
         </li>
       `;
     }
