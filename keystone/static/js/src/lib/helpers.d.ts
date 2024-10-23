@@ -1,4 +1,5 @@
 export * from "./webservices/src/lib/helpers";
+export { createElement } from "./webservices/src/legacy/lib/domLib";
 import { Collection, Dataset, ProcessingState } from "./types";
 export declare const identity: <T>(x: T) => T;
 export declare const Paths: {

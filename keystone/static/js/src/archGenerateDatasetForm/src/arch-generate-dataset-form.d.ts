@@ -29,6 +29,7 @@ export declare class ArchGenerateDatasetForm extends LitElement {
     private fetchJobIdStatesMap;
     pollDatasetStates(): Promise<void>;
     private maybeStartPolling;
+    private get successModalContent();
     private generateDatasetHandler;
 }
 declare global {

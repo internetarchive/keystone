@@ -9,8 +9,8 @@ export declare class ArchGlobalModal extends ArchModal {
     private errorHandler;
     private notificationHandler;
     private static show;
-    static showNotification(title: string, message: string, elementToFocusOnClose: HTMLElement): void;
-    static showError(title: string, message: string, elementToFocusOnClose: HTMLElement): void;
+    static showNotification(title: string, content: string | HTMLElement, elementToFocusOnClose: HTMLElement): void;
+    static showError(title: string, content: string | HTMLElement, elementToFocusOnClose: HTMLElement): void;
 }
 declare global {
     interface HTMLElementTagNameMap {
