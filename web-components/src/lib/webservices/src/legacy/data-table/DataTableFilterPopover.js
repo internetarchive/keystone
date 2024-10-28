@@ -2,7 +2,6 @@ import "../vendor/ui5/UI5Popover.js";
 import {
   createElement,
   customElementsMaybeDefine,
-  html,
   parseElementProps,
 } from "../lib/domLib.js";
 
@@ -29,35 +28,42 @@ export default class DataTableFilterPopover extends HTMLElement {
       options: undefined,
     };
 
-    // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
-    this.innerHTML = html`
-      <button
-        class="filter fa fa-cogs larger"
-        aria-label="filter ${header} values"
-      >
-        <span class="applied-count" style="vertical-align: sub;"></span>
-      </button>
+    this.appliedCount = createElement("span", {
+      className: "applied-count", style: "vertical-align: sub;"
+    });
 
-      <ui5-popover placement-type="Bottom">
-        <div class="popover-content">
-          <button class="clear" style="display: none">
-            <span class="fa fa-times-circle"></span>
-            Clear Filters
-          </button>
-          <ol>
-            <li><em style="color: #888;">Loading...</em></li>
-          </ol>
-        </div>
-      </ui5-popover>
-    `;
+    this.filterButton = createElement("button", {
+      classList: ["filter", "fa", "fa-cogs", "larger"],
+      ariaLabel: `filter ${header} values`,
+      children: [this.appliedCount]
+    });
 
-    this.filterButton = this.querySelector(":scope > button.filter");
-    this.clearButton = this.querySelector(":scope button.clear");
-    this.appliedCount = this.filterButton.querySelector(
-      ":scope > span.applied-count"
-    );
-    this._popover = this.querySelector(":scope > ui5-popover");
-    this.ol = this._popover.querySelector(":scope > div > ol");
+    this.clearButton = createElement("button", {
+      className: "clear",
+      style: "display: none",
+      children: [
+        createElement("span", {
+          classList: ["fa", "fa-times-circle"], textContent: "Clear Filters"
+        })
+    ]});
+
+    this.ol = createElement("ol", {
+      children: [
+        createElement("li", {
+          children: [
+            createElement("em", {style: "color: #888;", textContent: "Loading..."})
+        ]}
+      )]
+    });
+
+    this._popover = createElement("ui5-popover", {placementType: "Bottom", children: [
+      createElement("div", {className: "popover-content", children: [
+        this.clearButton,
+        this.ol,
+      ]})
+    ]});
+
+    this.replaceChildren(this.filterButton, this._popover);
 
     this.filterButton.addEventListener(
       "click",

@@ -1,6 +1,6 @@
 import DataTableCell from "./DataTableCell.js";
 
-import { customElementsMaybeDefine } from "../lib/domLib.js";
+import { createElement, customElementsMaybeDefine } from "../lib/domLib.js";
 
 export default class DataTableRow extends HTMLTableRowElement {
   constructor() {
@@ -25,16 +25,13 @@ export default class DataTableRow extends HTMLTableRowElement {
     } = this.props;
 
     // Add a checkbox cell if selectable.
+    let checkbox;
     if (selectable) {
-      this.innerHTML = `
-        <td class="select">
-          <input type="checkbox" ${
-            selected ? "checked" : ""
-          } aria-label="Select Row">
-        </td>
-      `;
+      checkbox = createElement("input", {
+        type: "checkbox", checked: selected,  ariaLabel: "Select Row"
+      });
+      this.replaceChildren(createElement("td", {className: "select", children: [checkbox]}));
     }
-    const checkbox = this.querySelector(":scope > td.select > input");
 
     this.refs = { checkbox };
 

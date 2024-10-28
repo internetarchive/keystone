@@ -8,6 +8,9 @@ export function createElement(tagName, attrs = {}) {
   // Pop any defined classList value and filter non-strings.
   const classList = (attrs.classList ?? []).filter(x => typeof(x) === "string");
   delete finalAttrs.classList
+  // Pop any defined dataset.
+  const dataset = attrs.dataset;
+  delete finalAttrs.dataset;
   // If children and textContent are specified, move textContent into children.
   if (children.length && attrs.textContent) {
     children.unshift(attrs.textContent);
@@ -28,6 +31,10 @@ export function createElement(tagName, attrs = {}) {
   if (classList.length) {
     el.classList.add(...classList);
   }
+  // Maybe update the dataset.
+  if (typeof(dataset) === "object") {
+    Object.assign(el.dataset, dataset);
+  }
   return el;
 }
 
@@ -40,14 +47,7 @@ export function customElementsMaybeDefine(tagName, cls, ...args) {
   }
 }
 
-export const removeChildren = (el) => el.replaceChildren();
-
 export const slugify = (s) => s.toLowerCase().replace(/[^a-zA-Z0-9\-_]/g, "-");
-
-// Define a dummy html tagged template that simply returns the concatenated string
-// in order to signal to Prettier that these strings should be formatted as HTML.
-export const html = (strs, ...refs) =>
-  strs.reduce((acc, s, i) => acc + s + (refs[i] ?? ""), "");
 
 export function parseElementProps(el, objKeys, errorOnMissing = true) {
   /*
