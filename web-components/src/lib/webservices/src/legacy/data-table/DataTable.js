@@ -7,7 +7,6 @@ import { formatChoices, populateTemplate, ThrottledLIFO } from "../lib/lib.js";
 import {
   createElement,
   parseElementProps,
-  removeChildren,
   slugify,
 } from "../lib/domLib.js";
 
@@ -360,7 +359,7 @@ export default class DataTable extends AngularMixin(HTMLElement) {
     };
 
     // Remove any existing children in the event of a reconnect.
-    removeChildren(this);
+    this.replaceChildren();
 
     if (persistSearchStateInUrl) {
       // Update this.state.search from the current URL params.
@@ -1032,7 +1031,7 @@ export default class DataTable extends AngularMixin(HTMLElement) {
     rowElements.length = 0;
 
     // Remove any existing rows from the tbody.
-    removeChildren(this.tbody);
+    this.tbody.replaceChildren();
 
     // Append the new rows.
     let rowIdx = 0;

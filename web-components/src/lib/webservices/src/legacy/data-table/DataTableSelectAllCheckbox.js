@@ -1,7 +1,6 @@
 import {
+  createElement,
   customElementsMaybeDefine,
-  html,
-  removeChildren,
 } from "../lib/domLib.js";
 
 export default class DataTableSelectAllCheckbox extends HTMLElement {
@@ -11,28 +10,30 @@ export default class DataTableSelectAllCheckbox extends HTMLElement {
       numSelected: 0,
     };
 
-    // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
-    this.innerHTML = html`
-      <input type="checkbox" class="select-all" aria-label="Select All Rows" />
-      <span class="fa fa-caret-down"></span>
+    this.replaceChildren(
+      createElement("input", {
+        type: "checkbox", className: "select-all", ariaLabel: "Select All Rows"
+      }),
+      createElement("span", {classList: ["fa", "fa-caret-down"]}),
 
-      <ui5-popover placement-type="Bottom" horizontal-align="Left">
-        <div class="popover-content">
-          <ol></ol>
-        </div>
-      </ui5-popover>
+      createElement("ui5-popover", {
+        placementType: "Bottom",
+        horizontalAlign: "Left",
+        children: [
+          createElement("div", {className: "popover-content", children: [createElement("ol")]})
+        ],
+      }),
 
-      <ui5-popover
-        placement-type="Top"
-        horizontal-align="Left"
-        class="loading"
-        modal="true"
-        hide-backdrop="true"
-        style="--sapGroup_ContentBackground: #888;"
-      >
-        Selection Loading...
-      </ui5-popover>
-    `;
+      createElement("ui5-popover", {
+        placementType: "Top",
+        horizontalAlign: "Left",
+        className: "loading",
+        modal: true,
+        hideBackdrop: true,
+        style: "--sapGroup_ContentBackground: #888;",
+        textContent: "Selection Loading...",
+      }),
+    );
 
     const ol = this.querySelector("ol");
     const [optionPopover, loadingPopover] = this.querySelectorAll(
@@ -56,30 +57,40 @@ export default class DataTableSelectAllCheckbox extends HTMLElement {
   updateOptions() {
     const { numHits, numSelected } = this.state;
     const { ol } = this.refs;
-    removeChildren(ol);
+    ol.replaceChildren();
     if (!numHits && !numSelected) {
-      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
-      ol.innerHTML = html`
-        <li class="nothing-to-do">Nothing to select or clear</li>
-      `;
+      ol.appendChild(createElement("li", {
+        className: "nothing-to-do", textContent: "Nothing to select or clear"
+      }));
       return;
     }
     if (numHits) {
-      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
-      ol.innerHTML += html`
-        <li data-action="SELECT_PAGE">Select All on this Page</li>
-        <li data-action="SELECT_ALL">
-          Select All <span class="num-hits">${parseInt(numHits)}</span> Items
-        </li>
-      `;
+      ol.append(
+        createElement("li", {
+          textContent: "Select All on this Page",
+          dataset: {action: "SELECT_PAGE"},
+        }),
+        createElement("li", {
+          dataset: {action: "SELECT_ALL"},
+          children: [
+            "Select All ",
+            createElement("span", {className: "num-hits", textContent: numHits}),
+            " Items"
+          ],
+        }),
+      );
     }
     if (numSelected) {
-      // nosemgrep: javascript.browser.security.insecure-document-method.insecure-document-method
-      ol.innerHTML += html`
-        <li data-action="SELECT_NONE">
-          Clear Selection (<span class="num-selected">${parseInt(numSelected)}</span>)
-        </li>
-      `;
+      ol.appendChild(
+        createElement("li", {
+          dataset: {action: "SELECT_NONE"},
+          children: [
+            "Clear Selection (",
+            createElement("span", {className: "num-selected", textContent: numSelected}),
+            ")",
+          ]
+        })
+      );
     }
   }
 
