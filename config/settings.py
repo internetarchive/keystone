@@ -20,34 +20,20 @@ from dotenv import dotenv_values
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
+from keystone.plugins import is_plugin_module_name
+
 
 ###############################################################################
 # Helpers
 ###############################################################################
 
 
-def is_plugin_module_name(mod_name):
-    """Return a bool indicated whether mod_name matches the expected Keystone
-    plugin module name format of: 'keystone_{app_name}_plugin'.
-    """
-    return mod_name.startswith("keystone_") and mod_name.endswith("_plugin")
-
-
 def assert_is_plugin_module_name(mod_name):
     """Raise an ValueError if mod_name if not a valid plugin module name,
     otherwise return mod_name."""
     if not is_plugin_module_name(mod_name):
-        raise ValueError(
-            f"Invalid Keystone plugin module name: '{mod_name}', "
-            "expected: 'keystone_{app_name}_plugin'"
-        )
+        raise ValueError(f"Invalid Keystone plugin module name: '{mod_name}'")
     return mod_name
-
-
-def get_plugin_module_app_name(mod_name):
-    """Return the app_name portion of the plugin module name, or raise a ValueError
-    if mod_name is not a valid plugin module name."""
-    return assert_is_plugin_module_name and "_".join(mod_name.split("_")[1:-1])
 
 
 def is_valid_email_address(email_address):
