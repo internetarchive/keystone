@@ -22,6 +22,7 @@ import uuid6
 from config import settings
 from .validators import validate_username
 from .helpers import is_uuid7
+from .plugins import get_plugin_apps
 
 
 # Define a namedtuple to return from JobStart.get_job_status()
@@ -221,6 +222,12 @@ class Collection(models.Model):
             return cls.objects.get(arch_id=f"CUSTOM-{input_spec['uuid']}")
 
         raise NotImplementedError
+
+    def refresh_metadata(self):
+        """Call on any compatible installed plugins to update this collection's metadata."""
+        for plugin in get_plugin_apps():
+            if plugin.is_collection_metadata_handler(self):
+                plugin.update_collection_metadata(self, timeout_ms=100)
 
     def __str__(self):
         return self.name
