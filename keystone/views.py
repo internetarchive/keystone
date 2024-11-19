@@ -265,6 +265,8 @@ def collection_detail(request, collection_id):
     collection = get_object_or_404(
         Collection.user_queryset(request.user), id=collection_id
     )
+    # Ensure that the collection's metadata is up-to-date.
+    collection.refresh_metadata()
     if collection.collection_type == CollectionTypes.CUSTOM:
         configuration_info = get_custom_collection_configuration_info(collection)
     elif collection.collection_type == CollectionTypes.SPECIAL:
