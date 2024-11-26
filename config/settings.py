@@ -375,8 +375,6 @@ WARC_ONLY_JOB_IDS = {
 }
 
 JOB_TYPE_UUID_NON_AUT_TEMPLATE_FILENAME_MAP = {
-    KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION: "ars-dataset.html",
-    KnownArchJobUuids.ARCHIVESPARK_ENTITY_EXTRACTION_CHINESE: "ars-dataset.html",
     KnownArchJobUuids.LONGITUDINAL_GRAPH: "ars-dataset.html",
     KnownArchJobUuids.NAMED_ENTITIES: "ars-dataset.html",
     KnownArchJobUuids.WEB_ARCHIVE_TRANSFORMATION: "ars-dataset.html",
