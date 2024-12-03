@@ -86,6 +86,10 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
       Topics.GENERATE_DATASET,
       Topics.CREATE_SUB_COLLECTION,
     ];
+    this.actionButtonDisabledTitles = [
+      "Select a single collection below to generate a dataset",
+      "Select one or more of the collections below to create a custom collection",
+    ];
     this.apiCollectionEndpoint = "/collections";
     this.apiItemResponseIsArray = true;
     this.apiItemTemplate = "/collections?id=:id";
