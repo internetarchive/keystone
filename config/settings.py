@@ -393,3 +393,25 @@ JOB_TYPE_UUID_NON_AUT_TEMPLATE_FILENAME_MAP = {
         "binary-information-extraction-dataset.html"
     ),
 }
+
+# Define the DerivationOutput(Arch)/JobFile(Keystone) filenames for which Colab Notebooks exist.
+SUPPORTED_COLAB_JOBFILE_FILENAMES = {
+    "audio-information.csv.gz",
+    "css-file-information.csv.gz",
+    "domain-frequency.csv.gz",
+    "domain-graph.csv.gz",
+    "html-file-information.csv.gz",
+    "image-graph.csv.gz",
+    "image-information.csv.gz",
+    "js-file-information.csv.gz",
+    "json-file-information.csv.gz",
+    "pdf-information.csv.gz",
+    "plain-text-file-information.csv.gz",
+    "powerpoint-information.csv.gz",
+    "spreadsheet-information.csv.gz",
+    "video-information.csv.gz",
+    "web-graph.csv.gz",
+    "web-pages.csv.gz",
+    "word-document-information.csv.gz",
+    "xml-file-information.csv.gz",
+}

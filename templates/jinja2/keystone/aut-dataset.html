@@ -151,7 +151,7 @@
               <i class="fa fa-cloud-download fa-5x"></i>
               <p class="card-text center">Download</p>
             </a>
-            {% if not colab_disabled %}
+            {% if not colab_disabled and file.filename in settings.SUPPORTED_COLAB_JOBFILE_FILENAMES %}
               {% if file.size_bytes < settings.COLAB_MAX_FILE_SIZE_BYTES %}
             <a href="{{ url('dataset-file-colab', args=[dataset.id, file.filename]) }}" target="_blank">
               <img style="padding-top:15px;" src="{{ static('/img/colab-badge.svg') }}" alt="Open In Colab">
