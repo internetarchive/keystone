@@ -11,3 +11,5 @@ Each time you create or update a trigger, copy the new migration file into this 
 | --- | --- | --- | --- |
 | trig_user_insert | keystone_user | INSERT | user_on_insert |
 | trig_user_update | keystone_user | UPDATE | user_on_update |
+| trig_collection_insert | keystone_collection | INSERT | collection_on_insert |
+| trig_collection_update | keystone_collection | UPDATE | collection_on_update |

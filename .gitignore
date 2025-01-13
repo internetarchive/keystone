@@ -8,3 +8,5 @@ keystone.egg-info
 *.DS_Store
 dev/arch
 arch-shared/
+staticfiles/
+media/

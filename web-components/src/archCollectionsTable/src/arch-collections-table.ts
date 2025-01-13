@@ -7,6 +7,7 @@ import {
   Collection,
   CollectionType,
   CustomCollectionMetadata,
+  SpecialCollectionMetadata,
   ProcessingState,
   ValueOf,
 } from "../../lib/types";
@@ -99,10 +100,10 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
     this.cellRenderers = [
       ArchCollectionsTable.renderNameCell,
 
-      (collectionType) =>
+      (collectionType, collection) =>
+        ((collection?.metadata as SpecialCollectionMetadata)
+          ?.type_displayname as string | null) ||
         CollectionTypeDisplayMap[collectionType as CollectionType],
-
-      (isPublic) => `${isPublic ? "Yes" : "No"}`,
 
       ArchCollectionsTable.renderLatestDatasetCell,
 
@@ -117,15 +118,9 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
           : humanBytes(collection.size_bytes, 1),
     ];
 
-    this.columnFilterDisplayMaps = [
-      undefined,
-      undefined,
-      { true: "Yes", false: "No" },
-    ];
     this.columns = [
       "name",
       "collection_type",
-      "metadata.is_public",
       "latest_dataset.name",
       "latest_dataset.start_time",
       "size_bytes",
@@ -133,7 +128,6 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
     this.columnHeaders = [
       "Name",
       "Type",
-      "Public",
       "Latest Dataset",
       "Dataset Date",
       "Size",
@@ -144,8 +138,8 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
     };
     this.selectable = true;
     this.sort = "-id";
-    this.sortableColumns = [true, true, false, false, false, true];
-    this.filterableColumns = [false, true, true];
+    this.sortableColumns = [true, true, false, true, true];
+    this.filterableColumns = [false, true];
     this.searchColumns = ["name"];
     this.searchColumnLabels = ["Name"];
     this.singleName = "Collection";

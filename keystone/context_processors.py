@@ -11,6 +11,7 @@ def extra_builtins(request):
     return {
         "datetime": datetime,
         "isinstance": isinstance,
+        "len": len,
         "list": list,
         "str": str,
         "tuple": tuple,
@@ -23,6 +24,7 @@ def settings(request):
         "settings": {
             "KEYSTONE_GIT_COMMIT_HASH": _settings.KEYSTONE_GIT_COMMIT_HASH,
             "COLAB_MAX_FILE_SIZE_BYTES": _settings.COLAB_MAX_FILE_SIZE_BYTES,
+            "SUPPORTED_COLAB_JOBFILE_FILENAMES": _settings.SUPPORTED_COLAB_JOBFILE_FILENAMES,
         }
     }
 
@@ -33,5 +35,6 @@ def helpers(request):
         "abs_url": (
             lambda path, args=None: _settings.PUBLIC_BASE_URL + reverse(path, args=args)
         ),
+        "intcomma": "{:,}".format,
         "CollectionTypes": CollectionTypes,
     }

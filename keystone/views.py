@@ -21,7 +21,7 @@ from config import settings
 from .arch_api import ArchAPI
 from .context_processors import helpers as ctx_helpers
 from .forms import CSVUploadForm
-from .helpers import identity, parse_csv, parse_solr_facet_data
+from .helpers import get_in, identity, parse_csv, parse_solr_facet_data
 from .models import (
     Collection,
     CollectionTypes,
@@ -208,6 +208,57 @@ def sub_collection_builder(request):
     return render(request, "keystone/sub-collection-builder.html")
 
 
+def get_custom_collection_configuration_info(collection):
+    """Return a configuration info dict comprising the custom collections's
+    input collections and configuration parameters."""
+    # Lookup the custom collection job configuration.
+    custom_conf = collection.jobstart_set.get(
+        job_type__id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
+    ).parameters["conf"]
+    # Create the list of input collections.
+    input_spec = custom_conf["inputSpec"]
+    try:
+        input_collections = (
+            [Collection.get_for_input_spec(x) for x in input_spec["specs"]]
+            if input_spec["type"] == "multi-specs"
+            else [Collection.get_for_input_spec(input_spec)]
+        )
+    except Collection.DoesNotExist:
+        # If for some reason an input_spec can't be resolved to a collection,
+        # set input_collection=None and display a message on the frontend.
+        input_collections = None
+    # Create the list of param label/value pairs.
+    custom_params = custom_conf["params"]
+    custom_param_pairs = []
+    for (
+        param_key,
+        param_label,
+        param_formatter,
+    ) in CUSTOM_COLLECTION_PARAM_KEY_LABEL_FORMATTER_TUPLES:
+        if param_key not in custom_params:
+            continue
+        custom_param_pairs.append(
+            (param_label, param_formatter(custom_params[param_key]))
+        )
+    return {
+        "input_collections": input_collections,
+        "param_label_value_pairs": custom_param_pairs,
+    }
+
+
+def get_special_collection_configuration_info(collection):
+    """Return a configuration info dict comprising the special collections's
+    configuration parameters, or None if no such configuration exists."""
+    mimetype_d = get_in(("input_spec", "dataMime"), collection.metadata)
+    if not mimetype_d:
+        return None
+    return {
+        "param_label_value_pairs": [
+            ["MIME Type(s)", list(mimetype_d.values())],
+        ]
+    }
+
+
 @login_required
 def collection_detail(request, collection_id):
     """Collection detail view"""
@@ -216,48 +267,18 @@ def collection_detail(request, collection_id):
     )
     # Ensure that the collection's metadata is up-to-date.
     collection.refresh_metadata()
-    if collection.collection_type != CollectionTypes.CUSTOM:
-        custom_context = None
+    if collection.collection_type == CollectionTypes.CUSTOM:
+        configuration_info = get_custom_collection_configuration_info(collection)
+    elif collection.collection_type == CollectionTypes.SPECIAL:
+        configuration_info = get_special_collection_configuration_info(collection)
     else:
-        # Lookup the custom collection job configuration.
-        custom_conf = collection.jobstart_set.get(
-            job_type__id=settings.KnownArchJobUuids.USER_DEFINED_QUERY
-        ).parameters["conf"]
-        # Create the list of input collections.
-        input_spec = custom_conf["inputSpec"]
-        try:
-            input_collections = (
-                [Collection.get_for_input_spec(x) for x in input_spec["specs"]]
-                if input_spec["type"] == "multi-specs"
-                else [Collection.get_for_input_spec(input_spec)]
-            )
-        except Collection.DoesNotExist:
-            # If for some reason an input_spec can't be resolved to a collection,
-            # set input_collection=None and display a message on the frontend.
-            input_collections = None
-        # Create the list of param label/value pairs.
-        custom_params = custom_conf["params"]
-        custom_param_pairs = []
-        for (
-            param_key,
-            param_label,
-            param_formatter,
-        ) in CUSTOM_COLLECTION_PARAM_KEY_LABEL_FORMATTER_TUPLES:
-            if param_key not in custom_params:
-                continue
-            custom_param_pairs.append(
-                (param_label, param_formatter(custom_params[param_key]))
-            )
-        custom_context = {
-            "input_collections": input_collections,
-            "param_label_value_pairs": custom_param_pairs,
-        }
+        configuration_info = None
     return render(
         request,
         "keystone/collection-detail.html",
         context={
             "collection": collection,
-            "custom_context": custom_context,
+            "configuration_info": configuration_info,
         },
     )
 

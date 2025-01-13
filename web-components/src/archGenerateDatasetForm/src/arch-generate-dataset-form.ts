@@ -185,6 +185,7 @@ export class ArchGenerateDatasetForm extends LitElement {
     this.sourceCollectionId = collectionId;
     // If a collection is selected, fetch the job states.
     if (collectionId) {
+      await this.initAvailableJobs();
       this.collectionJobIdStatesMapMap[collectionId] =
         await this.fetchJobIdStatesMap(collectionId);
       this.maybeStartPolling();
@@ -192,7 +193,10 @@ export class ArchGenerateDatasetForm extends LitElement {
   }
 
   private async initCollections() {
-    const response = await ArchAPI.collections.get();
+    const response = await ArchAPI.collections.get([
+      ["limit", "=", 10000],
+      ["sort", "=", "name"],
+    ]);
     this.collections = response.items;
     this.collectionIdNameMap = new Map(
       this.collections.map((c) => [c.id, c.name])
@@ -209,8 +213,14 @@ export class ArchGenerateDatasetForm extends LitElement {
   }
 
   private async initAvailableJobs() {
+    const { sourceCollectionId } = this;
     const availableJobs = (await (
-      await fetch("/api/available-jobs")
+      await fetch(
+        "/api/available-jobs" +
+          (sourceCollectionId === null
+            ? ""
+            : `?collection_id=${sourceCollectionId}`)
+      )
     ).json()) as AvailableJobs;
     // Apply the desired display order.
     availableJobs

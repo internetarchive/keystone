@@ -312,10 +312,7 @@ class ArchAPI:
             input_spec=input_spec,
             job_id=job_id,
             sample=sample,
-            job_params={
-                "dataset": job_id,
-                **params,
-            },
+            job_params=params,
         )
 
     @classmethod

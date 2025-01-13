@@ -1,9 +1,10 @@
+from django.core.exceptions import ValidationError
 from django.db import OperationalError
 from model_bakery import baker
 from pytest import mark
 import pytest  # noqa
 
-from keystone.models import ArchQuota, Account, User, Team, Collection
+from keystone.models import ArchQuota, Account, User, Team, Collection, CollectionTypes
 from .test_helpers import read_json_file
 
 
@@ -37,6 +38,68 @@ class TestCollection:
             collection3,
             collection4,
         }
+
+    @mark.django_db
+    def test_ait_collection_input_spec(self, make_collection):
+        """An AIT-type collection uses a legacy collection-type input spec."""
+        c = make_collection(collection_type=CollectionTypes.AIT)
+        assert c.input_spec == {"type": "collection", "collectionId": c.arch_id}
+
+    @mark.django_db
+    def test_legacy_custom_collection_input_spec(self, make_collection):
+        """A CUSTOM-type collection with a non-UUID-based arch_id uses a
+        legacy collection-type input spec."""
+        c = make_collection(
+            collection_type=CollectionTypes.CUSTOM,
+            arch_id="CUSTOM-ks:test:ARCHIVEIT-18017_1710966891017",
+        )
+        assert c.input_spec == {"type": "collection", "collectionId": c.arch_id}
+
+    @mark.django_db
+    def test_cdx_dataset_custom_collection_input_spec(self, make_collection):
+        """A CUSTOM-type collection with a UUID-based arch_id uses a dataset/cdx-type
+        input spec."""
+        c = make_collection(
+            collection_type=CollectionTypes.CUSTOM,
+            arch_id="CUSTOM-018fa5ec-523e-7a2d-bda5-d87b0d5c46b2",
+        )
+        assert c.input_spec == {
+            "type": "dataset",
+            "inputType": "cdx",
+            "uuid": "018fa5ec-523e-7a2d-bda5-d87b0d5c46b2",
+        }
+
+    @mark.django_db
+    def test_normal_special_collection_input_spec(self, make_collection):
+        """A SPECIAL-type collection that does not define a custom metadata.input_spec
+        uses a legacy collection-type input spec."""
+        c = make_collection(collection_type=CollectionTypes.SPECIAL)
+        assert c.input_spec == {"type": "collection", "collectionId": c.arch_id}
+
+    @mark.django_db
+    def test_extra_special_collection_input_spec(
+        self, FILES_INPUT_SPEC, make_collection
+    ):
+        """A SPECIAL-type collection that defines a valid metadata.input_spec value will have
+        that value returned by its input_spec property."""
+        c = make_collection(
+            collection_type=CollectionTypes.SPECIAL,
+            metadata={"input_spec": FILES_INPUT_SPEC},
+        )
+        assert c.input_spec == FILES_INPUT_SPEC
+
+    @mark.django_db
+    def test_extra_special_collection_input_spec_validation(
+        self, FILES_INPUT_SPEC, make_collection
+    ):
+        """Validation is enforced on SPECIAL-type collection metadata.input_spec values."""
+        with pytest.raises(ValidationError) as exc_info:
+            make_collection(
+                collection_type=CollectionTypes.SPECIAL,
+                metadata={"input_spec": FILES_INPUT_SPEC | {"type": "filez"}},
+            )
+        exc_msg = exc_info.value.args[0]
+        assert exc_msg.startswith("1 validation error") and "given=filez" in exc_msg
 
 
 class TestArchQuota:

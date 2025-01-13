@@ -24,7 +24,7 @@ requirements.txt: venv
 	--output-file requirements.txt \
 	--generate-hashes \
 	--strip-extras \
-	$(if $(upgrade_package), --upgrade-package $(upgrade_package)) \
+	$(if $(extra_args), $(extra_args)) \
 	pyproject.toml
 
 .PHONY: requirements-dev.txt
@@ -35,7 +35,7 @@ requirements-dev.txt: requirements.txt
 	--generate-hashes \
 	--strip-extras \
 	--extra dev \
-	$(if $(upgrade_package), --upgrade-package $(upgrade_package)) \
+	$(if $(extra_args), $(extra_args)) \
 	pyproject.toml
 
 .PHONY: install-dev

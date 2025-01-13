@@ -1,10 +1,21 @@
-import functools
 import csv
+import functools
+import operator
 from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 import sentry_sdk
+
+
+def get_in(keys, coll, default=None, no_default=False):
+    """https://toolz.readthedocs.io/en/latest/_modules/toolz/dicttoolz.html#get_in"""
+    try:
+        return functools.reduce(operator.getitem, keys, coll)
+    except (KeyError, IndexError, TypeError):
+        if no_default:
+            raise
+        return default
 
 
 def identity(x):

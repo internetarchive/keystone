@@ -15,6 +15,8 @@
 
 {% set breadcrumbs = (("Datasets", "datasets-explore"), (dataset_displayname, ("dataset-detail", dataset.id))) %}
 
+{% set is_jsonl = files and (files[0].filename.endswith(".jsonl.gz") or files[0].file_type.endswith("/jsonl")) %}
+
 {% extends 'keystone/base.html' %}
 
 {% block header_title %}
@@ -27,17 +29,41 @@
 <script src="{{ static('/js/arch-dataset-publishing-card.js') }}" type="module"></script>
 {% endif %}
 
+{% if is_jsonl %}
+<link rel="stylesheet" href="{{ static('/css/highlight.js/11.9.0/intellij-light.min.css') }}">
+<script src="{{ static('/js/ext/highlight.js/11.9.0/highlight.min.js') }}"></script>
+<script src="{{ static('/js/ext/highlight.js/11.9.0/json.min.js') }}"></script>
+{% else %}
 <script src="{{ static('/js/ext/d3.v3.min.js') }}"></script>
+{% endif %}
 
-<script>
+<script type="module">
   function init() {
     // Initialize previews.
     Array.from(document.querySelectorAll("div[data-preview-url]"))
-      .forEach(el => {
+      .forEach(async (el) => {
         const {previewUrl} = el.dataset;
         // Show a loading indicator.
         const loadingEl = document.createElement("arch-loading-indicator");
         el.appendChild(loadingEl);
+
+{% if is_jsonl %}
+        // Render JSONL preview.
+        const res = await fetch(previewUrl);
+        // https://highlightjs.readthedocs.io/en/latest/readme.html#in-the-browser
+        const pre = document.createElement("pre");
+        const code = document.createElement("code");
+        code.classList.add("language-json");
+        code.textContent = (await res.text())
+          .split("\n")
+          .map(JSON.parse)
+          .map(o => JSON.stringify(o, null, 2))
+          .join("\n");
+        pre.appendChild(code);
+        loadingEl.replaceWith(pre);
+        hljs.highlightAll();
+{% else %}
+        // Render CSV preview.
         d3.text(previewUrl, data => {
           const previewCSV = d3.csv.parseRows(data);
           // Remove the loading indicator.
@@ -63,6 +89,7 @@
             .append("td")
             .text(function(d) { return d; });
         });
+{% endif %}
       });
   }
 
@@ -124,7 +151,7 @@
               <i class="fa fa-cloud-download fa-5x"></i>
               <p class="card-text center">Download</p>
             </a>
-            {% if not colab_disabled %}
+            {% if not colab_disabled and file.filename in settings.SUPPORTED_COLAB_JOBFILE_FILENAMES %}
               {% if file.size_bytes < settings.COLAB_MAX_FILE_SIZE_BYTES %}
             <a href="{{ url('dataset-file-colab', args=[dataset.id, file.filename]) }}" target="_blank">
               <img style="padding-top:15px;" src="{{ static('/img/colab-badge.svg') }}" alt="Open In Colab">
@@ -152,7 +179,7 @@
         <div data-preview-url="{{ url('dataset-file-preview', args=[dataset.id, files[0].filename]) }}"></div>
         <br />
         <a class="right" href="{{ url('dataset-file-preview', args=[dataset.id, files[0].filename]) }}" download="{{ dataset.get_download_filename(files[0].filename, preview=True) }}">
-          <arch-hover-tooltip style="color: inherit;" text="Download a csv of only the data listed in the preview">Download Preview Data</arch-hover-tooltip>
+          <arch-hover-tooltip style="color: inherit;" text="Download only the data shown in this preview">Download Preview Data</arch-hover-tooltip>
         </a>
       </div>
     </div>

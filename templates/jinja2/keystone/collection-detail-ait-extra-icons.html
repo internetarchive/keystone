@@ -1,0 +1,25 @@
+
+{% if "last_crawl_date" in metadata %}
+{% set last_crawl_date = metadata["last_crawl_date"] %}
+<div>
+  {% if last_crawl_date == None %}
+  <h3>No Crawls</h3>
+  {% else %}
+  <h3>Crawled {{ datetime.datetime.fromisoformat(last_crawl_date).date() }}</h3>
+  {% endif %}
+  <p><i class="fa fa-calendar-o fa-4x" aria-hidden="true"></i></p>
+</div>
+{% endif %}
+
+{% set is_public = metadata.get("is_public") %}
+{% if is_public != None %}
+<div>
+  {% if is_public %}
+  <h3>Public Collection</h3>
+  <p><i class="fa fa-unlock fa-4x" aria-hidden="true"></i></p>
+  {% else %}
+  <h3>Private Collection</h3>
+  <p><i class="fa fa-lock fa-4x" aria-hidden="true"></i></p>
+  {% endif %}
+</div>
+{% endif %}
