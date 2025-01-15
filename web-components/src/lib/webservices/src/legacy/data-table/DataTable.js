@@ -48,6 +48,11 @@ export default class DataTable extends AngularMixin(HTMLElement) {
          */
         ["actionButtonDisabled", []],
 
+        /* actionButtonDisabledTitles is an array of strings to set as the title
+           attribute for disabled selection action buttons.
+         */
+        ["actionButtonDisabled", []],
+
         /* actionButtonSignals is an array of signal name strings that indicate
            the signal to emit when the button is clicked.
          */
@@ -308,6 +313,7 @@ export default class DataTable extends AngularMixin(HTMLElement) {
     const {
       API,
       actionButtonClasses,
+      actionButtonDisabledTitles,
       actionButtonLabels,
       actionButtonSignals,
       columnFilterDisplayMaps,
@@ -443,6 +449,7 @@ export default class DataTable extends AngularMixin(HTMLElement) {
           classList: ["selection-action", "button", actionButtonClasses[i]],
           disabled: true,
           textContent: label,
+          title: actionButtonDisabledTitles[i] || "",
         });
         button.dataset.signal = actionButtonSignals[i];
         selectionButtonsWrapper.appendChild(button);
@@ -1185,7 +1192,10 @@ export default class DataTable extends AngularMixin(HTMLElement) {
        unless the button is permanently disabled in props.actionButtonDisabled.
      */
     this.querySelectorAll("button.selection-action").forEach((el, i) => {
-      el.disabled = this.props.actionButtonDisabled[i] || disabled;
+      const _disabled = this.props.actionButtonDisabled[i] || disabled
+      el.disabled = _disabled;
+      const disabledTitle = this.props.actionButtonDisabledTitles[i];
+      el.title = _disabled && disabledTitle ? disabledTitle : "";
     });
   }
 

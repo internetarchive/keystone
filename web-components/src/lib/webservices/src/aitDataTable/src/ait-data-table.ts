@@ -43,6 +43,8 @@ export class AitDataTable<RowT> extends LitElement {
   @property({ type: Array })
   actionButtonDisabled: PropsT<RowT>["actionButtonDisabled"] = [];
   @property({ type: Array })
+  actionButtonDisabledTitles: PropsT<RowT>["actionButtonDisabledTitles"] = [];
+  @property({ type: Array })
   actionButtonSignals: PropsT<RowT>["actionButtonSignals"] = [];
   @property() apiBaseUrl: PropsT<RowT>["apiBaseUrl"] = "/api";
   apiFactory: ApiConstructorType<RowT> = DefaultAPI;
@@ -111,6 +113,7 @@ export class AitDataTable<RowT> extends LitElement {
         actionButtonClasses: this.actionButtonClasses,
         actionButtonLabels: this.actionButtonLabels,
         actionButtonDisabled: this.actionButtonDisabled,
+        actionButtonDisabledTitles: this.actionButtonDisabledTitles,
         actionButtonSignals: this.actionButtonSignals,
         apiBaseUrl: this.apiBaseUrl,
         apiCollectionEndpoint: this.apiCollectionEndpoint,

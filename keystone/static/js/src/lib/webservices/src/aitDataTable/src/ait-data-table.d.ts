@@ -5,6 +5,7 @@ export declare class AitDataTable<RowT> extends LitElement {
     actionButtonClasses: PropsT<RowT>["actionButtonClasses"];
     actionButtonLabels: PropsT<RowT>["actionButtonLabels"];
     actionButtonDisabled: PropsT<RowT>["actionButtonDisabled"];
+    actionButtonDisabledTitles: PropsT<RowT>["actionButtonDisabledTitles"];
     actionButtonSignals: PropsT<RowT>["actionButtonSignals"];
     apiBaseUrl: PropsT<RowT>["apiBaseUrl"];
     apiFactory: ApiConstructorType<RowT>;

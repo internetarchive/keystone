@@ -31,6 +31,7 @@ export interface DataTable<RowT> extends HTMLElement {
         actionButtonClasses: Array<string>;
         actionButtonLabels: Array<string>;
         actionButtonDisabled: Array<boolean>;
+        actionButtonDisabledTitles: Array<undefined | string>;
         actionButtonSignals: Array<Topics>;
         apiCollectionEndpoint: string;
         apiItemResponseIsArray: boolean;

@@ -14,3 +14,4 @@ export declare const Paths: {
 export declare function isActiveProcessingState(state: ProcessingState): boolean;
 export declare function timestampStringToYearMonthString(timestamp: string): string;
 export declare function readableFacetName(facetName: string, facetField: string): string;
+export declare function isValidCustomInputCollection(collection: Collection): boolean;

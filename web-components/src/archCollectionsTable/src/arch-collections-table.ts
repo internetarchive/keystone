@@ -17,6 +17,7 @@ import {
   createElement,
   humanBytes,
   isActiveProcessingState,
+  isValidCustomInputCollection,
   isoStringToDateString,
 } from "../../lib/helpers";
 import Styles from "./styles";
@@ -85,6 +86,10 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
     this.actionButtonSignals = [
       Topics.GENERATE_DATASET,
       Topics.CREATE_SUB_COLLECTION,
+    ];
+    this.actionButtonDisabledTitles = [
+      "Select a single collection below to generate a dataset",
+      "Select one or more of the Archive-It, Custom, or Special-type collections below to create a custom collection",
     ];
     this.apiCollectionEndpoint = "/collections";
     this.apiItemResponseIsArray = true;
@@ -155,7 +160,9 @@ export class ArchCollectionsTable extends ArchDataTable<Collection> {
     const { props } = dataTable;
     const numSelected = selectedRows.length;
     const generateDatasetEnabled = numSelected === 1;
-    const createSubCollectionEnabled = true;
+    const createSubCollectionEnabled = selectedRows.every(
+      isValidCustomInputCollection
+    );
     props.actionButtonDisabled = [
       !generateDatasetEnabled,
       !createSubCollectionEnabled,
