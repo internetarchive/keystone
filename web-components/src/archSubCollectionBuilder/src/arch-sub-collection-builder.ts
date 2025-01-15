@@ -7,7 +7,12 @@ import {
   SurtPrefixRegex,
   UrlCollectionsParamName,
 } from "../../lib/constants";
-import { Paths, createElement, identity } from "../../lib/helpers";
+import {
+  Paths,
+  createElement,
+  identity,
+  isValidCustomInputCollection,
+} from "../../lib/helpers";
 import { Collection, ValueOf } from "../../lib/types";
 import { AlertClass } from "../../archAlert/index";
 import { ArchGlobalModal } from "../../archGlobalModal";
@@ -260,7 +265,7 @@ export class ArchSubCollectionBuilder extends LitElement {
 
   private async initCollections() {
     const response = await ArchAPI.collections.get();
-    this.collections = response.items;
+    this.collections = response.items.filter(isValidCustomInputCollection);
   }
 
   private setSourceCollectionIdsUrlParam(

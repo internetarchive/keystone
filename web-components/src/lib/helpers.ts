@@ -2,7 +2,13 @@ export * from "./webservices/src/lib/helpers";
 export { createElement } from "./webservices/src/legacy/lib/domLib";
 
 import { UrlCollectionParamName, UrlCollectionsParamName } from "./constants";
-import { Collection, Dataset, ProcessingState } from "./types";
+import {
+  Collection,
+  CollectionType,
+  Dataset,
+  ProcessingState,
+  SpecialCollectionMetadata,
+} from "./types";
 
 export const identity = <T>(x: T) => x;
 
@@ -56,4 +62,17 @@ export function readableFacetName(facetName: string, facetField: string) {
   } else {
     return facetName;
   }
+}
+
+export function isValidCustomInputCollection(collection: Collection): boolean {
+  /**
+   * Return a bool indicating whether the specified collection can be used as a
+   * custom collection input.
+   */
+  return (
+    collection.collection_type === CollectionType.AIT ||
+    collection.collection_type === CollectionType.CUSTOM ||
+    (collection.collection_type === CollectionType.SPECIAL &&
+      !(collection.metadata as SpecialCollectionMetadata)?.input_spec)
+  );
 }
